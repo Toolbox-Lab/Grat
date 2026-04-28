@@ -4,9 +4,9 @@
 //! `getLedgerEntries`, `getEvents`, `getLatestLedger`. Handles retries and
 //! basic rate-limit backoff.
 
-use crate::rpc::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
-use crate::network::NetworkConfig;
 use crate::error::{PrismError, PrismResult};
+use crate::network::NetworkConfig;
+use crate::rpc::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
@@ -93,8 +93,6 @@ pub struct SorobanRpcClient {
     /// Soroban RPC endpoint URL.
     rpc_url: String,
 }
-
-
 
 /// Transaction status in Soroban.
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -183,12 +181,13 @@ impl SorobanRpcClient {
         tx_xdr: &str,
     ) -> PrismResult<SimulateTransactionResponse> {
         let params = serde_json::json!({ "transaction": tx_xdr });
-        let raw = self.call::<serde_json::Value>("simulateTransaction", params).await?;
+        let raw = self
+            .call::<serde_json::Value>("simulateTransaction", params)
+            .await?;
 
-        let response: SimulateTransactionResponse =
-            serde_json::from_value(raw).map_err(|e| {
-                PrismError::RpcError(format!("Failed to parse simulateTransaction response: {e}"))
-            })?;
+        let response: SimulateTransactionResponse = serde_json::from_value(raw).map_err(|e| {
+            PrismError::RpcError(format!("Failed to parse simulateTransaction response: {e}"))
+        })?;
 
         // Surface simulation-level errors as a proper Rust error so callers
         // don't need to inspect the struct themselves.
@@ -204,7 +203,8 @@ impl SorobanRpcClient {
     /// Fetch ledger entries by their XDR keys.
     pub async fn get_ledger_entries(&self, keys: &[String]) -> PrismResult<serde_json::Value> {
         let params = serde_json::json!({ "keys": keys });
-        self.call::<serde_json::Value>("getLedgerEntries", params).await
+        self.call::<serde_json::Value>("getLedgerEntries", params)
+            .await
     }
 
     /// Query events starting from `start_ledger` with the given filters.
@@ -250,6 +250,15 @@ impl SorobanRpcClient {
                 Ok(response) => {
                     let status = response.status();
                     let elapsed_ms = started.elapsed().as_millis();
+                    tracing::info!(
+                        method,
+                        endpoint = %self.rpc_url,
+                        attempt,
+                        %status,
+                        elapsed_ms,
+                        "RPC request latency"
+                    );
+
                     let body = response.text().await.map_err(|e| {
                         PrismError::RpcError(format!("Failed to read response body: {e}"))
                     })?;
@@ -296,11 +305,21 @@ impl SorobanRpcClient {
                     });
                 }
                 Err(e) => {
+                    let elapsed_ms = started.elapsed().as_millis();
+                    tracing::info!(
+                        method,
+                        endpoint = %self.rpc_url,
+                        attempt,
+                        elapsed_ms,
+                        error = %e,
+                        "RPC request latency"
+                    );
+
                     tracing::debug!(
                         method,
                         endpoint = %self.rpc_url,
                         attempt,
-                        elapsed_ms = started.elapsed().as_millis(),
+                        elapsed_ms,
                         error = %e,
                         "RPC request failed"
                     );
