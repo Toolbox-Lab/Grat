@@ -47,3 +47,5 @@ thiserror = { workspace = true }
 [dev-dependencies]
 tokio-test = "0.4"
 insta = { version = "1", features = ["json"] }
+tracing-subscriber = { workspace = true }
+ctor = "0.2"

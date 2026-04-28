@@ -40,3 +40,17 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// Soroban ledger protocol version supported by the linked core crates.
 pub const SOROBAN_PROTOCOL_VERSION: u32 =
     soroban_env_host::meta::get_ledger_protocol_version(soroban_env_host::meta::INTERFACE_VERSION);
+
+#[cfg(test)]
+#[ctor::ctor]
+fn init_test_logging() {
+    use tracing_subscriber::EnvFilter;
+
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("prism_core=debug,soroban_env_host=warn"));
+
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_test_writer()
+        .try_init();
+}
