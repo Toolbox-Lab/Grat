@@ -48,7 +48,7 @@ pub enum PrismError {
     RpcError(String),
 
     /// Standard JSON-RPC 2.0 error (e.g. Parse error, Invalid request).
-    #[error("JSON-RPC error (code: {0.code}): {0.message}")]
+    #[error("JSON-RPC error (code: {code}): {message}", code = _0.code, message = _0.message)]
     JsonRpc(JsonRpcError),
     
     /// Error fetching or parsing history archive data.
