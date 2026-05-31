@@ -1,7 +1,7 @@
 //! Error types for the Prism crate.
 
-use thiserror::Error;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 /// Standard JSON-RPC 2.0 error object.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -10,6 +10,12 @@ pub struct JsonRpcError {
     pub code: i64,
     /// Human-readable error message.
     pub message: String,
+}
+
+impl std::fmt::Display for JsonRpcError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "JSON-RPC error (code: {}): {}", self.code, self.message)
+    }
 }
 
 /// Specific failure kinds for history archive operations.
@@ -48,56 +54,59 @@ pub enum PrismError {
     RpcError(String),
 
     /// Standard JSON-RPC 2.0 error (e.g. Parse error, Invalid request).
-    #[error("JSON-RPC error (code: {0.code}): {0.message}")]
+    #[error("JSON-RPC error: {0}")]
     JsonRpc(JsonRpcError),
-    
+
     /// Error fetching or parsing history archive data.
     #[error("Archive error: {0}")]
     ArchiveError(#[from] ArchiveErrorKind),
-    
+
     /// Error decoding XDR data.
     #[error("XDR error: {0}")]
     XdrError(String),
-    
+
     /// XDR base64 decoding failed for a specific type.
     ///
     /// Returned by [`crate::xdr::codec::XdrCodec::from_xdr_base64`] when the
     /// input is malformed or does not match the expected XDR type.
     #[error("XDR decoding failed for {type_name}: {reason}")]
-    XdrDecodingFailed { type_name: &'static str, reason: String },
-    
+    XdrDecodingFailed {
+        type_name: &'static str,
+        reason: String,
+    },
+
     /// Error parsing WASM or contract spec data.
     #[error("Spec error: {0}")]
     SpecError(String),
-    
+
     /// Error in the local cache layer.
     #[error("Cache error: {0}")]
     CacheError(String),
-    
+
     /// Error loading or querying the taxonomy database.
     #[error("Taxonomy error: {0}")]
     TaxonomyError(String),
-    
+
     /// Error during transaction replay.
     #[error("Replay error: {0}")]
     ReplayError(String),
-    
+
     /// The requested transaction was not found.
     #[error("Transaction not found: {0}")]
     TransactionNotFound(String),
-    
+
     /// The requested contract was not found on the ledger.
     #[error("Contract not found: {0}")]
     ContractNotFound(String),
-    
+
     /// An invalid network or configuration was provided.
     #[error("Config error: {0}")]
     ConfigError(String),
-    
+
     /// An invalid Stellar address was provided.
     #[error("Invalid address: {0}")]
     InvalidAddress(String),
-    
+
     /// Generic internal error.
     #[error("Internal error: {0}")]
     Internal(String),

@@ -7,6 +7,7 @@ pub mod context;
 pub mod contract_error;
 pub mod diagnostic;
 pub mod host_error;
+pub mod mappings;
 pub mod report;
 
 use crate::error::PrismResult;
