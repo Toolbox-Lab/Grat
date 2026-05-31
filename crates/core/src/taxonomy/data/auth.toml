@@ -13,11 +13,11 @@ code = 0
 name = "InvalidAction"
 severity = "Error"
 since_protocol = 20
-summary = "The authorization context for a contract call is invalid or malformed."
+summary = "The authorization context is malformed or does not match the current invocation."
 detailed_explanation = """
-Soroban contracts can require authorization for specific operations. When the auth entries \
-provided with the transaction do not match the authorization requirements of the contract \
-invocation, this error is raised.
+Soroban contracts can require authorization for specific operations. When the auth entries
+provided with the transaction do not match the authorization requirements of the contract
+invocation, the host cannot validate the action and raises this error.
 """
 
 [[errors.common_causes]]
@@ -39,4 +39,187 @@ difficulty = "medium"
 requires_upgrade = false
 
 related_errors = ["host.auth.not_authorized"]
+source_file = "soroban-env-host/src/auth.rs"
+
+[[errors]]
+id = "host.auth.invalid_signature"
+category = "auth"
+code = 1
+name = "InvalidSignature"
+severity = "Error"
+since_protocol = 20
+summary = "The auth signature could not be verified."
+detailed_explanation = """
+This error appears when the signature attached to an auth entry fails validation. For Ed25519
+accounts it usually means the signature does not match the authorization payload, the wrong
+signing key was used, or the auth entry expired. For smart-wallet or contract-account flows,
+it means the wallet's __check_auth logic rejected the payload or could not authenticate the
+request it was asked to approve.
+"""
+
+[[errors.common_causes]]
+description = "The payload was signed by the wrong Ed25519 key"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "The auth entry expired before enforcement"
+likelihood = "medium"
+
+[[errors.common_causes]]
+description = "A smart-wallet __check_auth implementation rejected the payload"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Rebuild and sign the auth entry from a fresh simulation"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Confirm the account key or wallet logic is signing the exact auth payload that was simulated"
+difficulty = "medium"
+requires_upgrade = false
+
+related_errors = ["host.auth.missing_auth", "host.auth.forbidden"]
+source_file = "soroban-env-host/src/builtin_contracts/account_contract.rs"
+
+[[errors]]
+id = "host.auth.missing_auth"
+category = "auth"
+code = 2
+name = "MissingAuth"
+severity = "Error"
+since_protocol = 20
+summary = "A required auth entry or signer was not supplied."
+detailed_explanation = """
+The contract or host expected an authorization record for a required signer, but the transaction
+did not include one. This often happens when the client skips simulation, rebuilds the operation
+without preserving sorobanData, or omits one of the signers needed by a multi-party flow.
+"""
+
+[[errors.common_causes]]
+description = "The transaction was rebuilt without the required sorobanData"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "A required signer did not sign the auth entry"
+likelihood = "high"
+
+[[errors.suggested_fixes]]
+description = "Re-run simulation and keep the generated auth entries attached to the rebuilt transaction"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Check that every required signer is present before submitting"
+difficulty = "medium"
+requires_upgrade = false
+
+related_errors = ["host.auth.invalid_action"]
+source_file = "soroban-env-host/src/auth.rs"
+
+[[errors]]
+id = "host.auth.forbidden"
+category = "auth"
+code = 3
+name = "Forbidden"
+severity = "Error"
+since_protocol = 20
+summary = "The caller is not allowed to perform the requested action or cross-contract call."
+detailed_explanation = """
+The authorization tree may be structurally valid, but the requested operation is outside the
+permissions granted to the signer, wallet, or delegated auth chain. This commonly shows up when
+a contract tries to escalate privileges, invoke a protected branch, or use a signer that is not
+permitted to approve the current action.
+"""
+
+[[errors.common_causes]]
+description = "The auth tree does not include the role required for the current call"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "A policy signer or delegated wallet rejected the requested branch"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Review the contract's access-control rules and ensure the caller is granted the required role"
+difficulty = "medium"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Rebuild the auth tree so the approved signer covers the exact sub-invocation being attempted"
+difficulty = "medium"
+requires_upgrade = false
+
+related_errors = ["host.auth.not_authorized"]
+source_file = "soroban-env-host/src/builtin_contracts/account_contract.rs"
+
+[[errors]]
+id = "host.auth.expired_auth"
+category = "auth"
+code = 4
+name = "ExpiredAuth"
+severity = "Error"
+since_protocol = 20
+summary = "The auth entry expired before the transaction was enforced."
+detailed_explanation = """
+Auth entries are only valid up to their signature expiration ledger. If the transaction is
+submitted after that ledger, the host rejects the authorization even if the signature itself
+was otherwise correct.
+"""
+
+[[errors.common_causes]]
+description = "The signature expiration ledger was set too low for the submission delay"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "The transaction sat in a queue or fee-payer flow long enough to expire"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Use a shorter build-to-submit path and refresh auth entries before resubmitting"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Increase the signature expiration window only as much as the workflow requires"
+difficulty = "medium"
+requires_upgrade = false
+
+related_errors = ["host.auth.invalid_signature"]
+source_file = "soroban-env-host/src/auth.rs"
+
+[[errors]]
+id = "host.auth.not_authorized"
+category = "auth"
+code = 5
+name = "NotAuthorized"
+severity = "Error"
+since_protocol = 20
+summary = "The auth tree is valid, but it does not grant permission for this invocation."
+detailed_explanation = """
+The supplied signer or wallet may have authenticated successfully, but the resulting authorization
+tree still does not cover the exact invocation or sub-invocation being executed. This is common
+when a contract call is legitimate in principle but the specific branch needs a stronger signer,
+another delegated approval, or a different permission scope.
+"""
+
+[[errors.common_causes]]
+description = "The caller authenticated successfully but lacked permission for the specific branch"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "A cross-contract call required a signer that was not present in the auth tree"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Broaden the approved auth tree so it includes the exact invocation path"
+difficulty = "medium"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Verify any delegated or policy signer actually authorizes the current contract branch"
+difficulty = "medium"
+requires_upgrade = false
+
+related_errors = ["host.auth.forbidden"]
 source_file = "soroban-env-host/src/auth.rs"
