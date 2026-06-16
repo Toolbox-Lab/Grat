@@ -101,18 +101,7 @@ fn render_invocation(
         auth_prefix,
         icons::AUTH_REQUIRED
     )?;
-    writeln!(
-        output,
-        "{}│  └─ {} Provided: ✓",
-        auth_prefix,
-        icons::AUTH_PROVIDED
-    )?;
-    writeln!(
-        output,
-        "{}│  └─ {} Verified: ✓",
-        auth_prefix,
-        icons::AUTH_PROVIDED
-    )?;
+    render_auth_status(output, &auth_prefix, &invocation.auth_signatures)?;
 
     writeln!(output, "{auth_prefix}├─ ⚡ Resources:")?;
     writeln!(
@@ -197,18 +186,7 @@ fn render_auth_invocation(
         auth_prefix,
         icons::AUTH_REQUIRED
     )?;
-    writeln!(
-        output,
-        "{}│  └─ {} Contract authority",
-        auth_prefix,
-        icons::AUTH_PROVIDED
-    )?;
-    writeln!(
-        output,
-        "{}│  └─ {} Function caller",
-        auth_prefix,
-        icons::AUTH_PROVIDED
-    )?;
+    render_required_signatures(output, &auth_prefix, &invocation.auth_signatures)?;
 
     if invocation.sub_invocations.is_empty() {
         writeln!(
@@ -227,6 +205,80 @@ fn render_auth_invocation(
             let sub_prefix = format!("{auth_prefix}│  ");
             render_auth_invocation(output, sub_invocation, &sub_prefix, sub_is_last)?;
         }
+    }
+
+    Ok(())
+}
+
+fn render_auth_status(
+    output: &mut String,
+    auth_prefix: &str,
+    signatures: &[String],
+) -> anyhow::Result<()> {
+    writeln!(
+        output,
+        "{}│  ├─ {} Provided: ✓",
+        auth_prefix,
+        icons::AUTH_PROVIDED
+    )?;
+    writeln!(
+        output,
+        "{}│  ├─ {} Verified: ✓",
+        auth_prefix,
+        icons::AUTH_PROVIDED
+    )?;
+
+    if signatures.is_empty() {
+        writeln!(output, "{auth_prefix}│  └─ No decoded signatures")?;
+    } else {
+        writeln!(output, "{auth_prefix}│  └─ Decoded signatures:")?;
+        render_signature_values(output, auth_prefix, signatures)?;
+    }
+
+    Ok(())
+}
+
+fn render_required_signatures(
+    output: &mut String,
+    auth_prefix: &str,
+    signatures: &[String],
+) -> anyhow::Result<()> {
+    if signatures.is_empty() {
+        writeln!(
+            output,
+            "{}│  ├─ {} Contract authority",
+            auth_prefix,
+            icons::AUTH_PROVIDED
+        )?;
+        writeln!(
+            output,
+            "{}│  └─ {} Function caller",
+            auth_prefix,
+            icons::AUTH_PROVIDED
+        )?;
+    } else {
+        render_signature_values(output, auth_prefix, signatures)?;
+    }
+
+    Ok(())
+}
+
+fn render_signature_values(
+    output: &mut String,
+    auth_prefix: &str,
+    signatures: &[String],
+) -> anyhow::Result<()> {
+    for (i, signature) in signatures.iter().enumerate() {
+        let connector = if i == signatures.len().saturating_sub(1) {
+            box_chars::TOP_RIGHT
+        } else {
+            box_chars::VERTICAL_RIGHT
+        };
+        writeln!(
+            output,
+            "{auth_prefix}│  {connector} {} Ed25519 signature: {signature}",
+            icons::AUTH_PROVIDED
+        )?;
     }
 
     Ok(())
@@ -253,6 +305,7 @@ mod tests {
             total_cpu_instructions: 1500000,
             total_memory_bytes: 50000,
             is_error: false,
+            auth_signatures: vec![],
         };
 
         let trace = ExecutionTrace {
@@ -283,6 +336,7 @@ mod tests {
             total_cpu_instructions: 800000,
             total_memory_bytes: 25000,
             is_error: false,
+            auth_signatures: vec![],
         };
 
         let main_invocation = ContractInvocation {
@@ -295,6 +349,7 @@ mod tests {
             total_cpu_instructions: 2000000,
             total_memory_bytes: 75000,
             is_error: false,
+            auth_signatures: vec![],
         };
 
         let trace = ExecutionTrace {
@@ -311,5 +366,37 @@ mod tests {
         assert!(result.contains("Sub-invocations"));
         assert!(result.contains("approve"));
         assert!(result.contains("🔗"));
+    }
+
+    #[test]
+    fn test_render_auth_only_shows_decoded_signature_hex() {
+        let signature = "00".repeat(64);
+        let invocation = ContractInvocation {
+            contract_id: "SIGNED123...".to_string(),
+            function_name: "transfer".to_string(),
+            arguments: vec![],
+            return_value: Some("Success".to_string()),
+            host_calls: vec![],
+            sub_invocations: vec![],
+            total_cpu_instructions: 1000,
+            total_memory_bytes: 512,
+            is_error: false,
+            auth_signatures: vec![signature.clone()],
+        };
+
+        let trace = ExecutionTrace {
+            tx_hash: "signed789...".to_string(),
+            ledger_sequence: 789,
+            network: "testnet".to_string(),
+            invocations: vec![invocation],
+            state_diff: Default::default(),
+            resource_profile: Default::default(),
+            diagnostic_events: vec![],
+        };
+
+        let result = render_auth_only(&trace).unwrap();
+
+        assert!(result.contains("Ed25519 signature"));
+        assert!(result.contains(&signature));
     }
 }

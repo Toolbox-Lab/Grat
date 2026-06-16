@@ -227,7 +227,7 @@ fn free_bytes(path: &Path) -> Option<u64> {
     let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
     let rc = unsafe { libc::statvfs(cpath.as_ptr(), &mut stat) };
     if rc == 0 {
-        Some(stat.f_bavail * stat.f_frsize)
+        Some((stat.f_bavail as u64).saturating_mul(stat.f_frsize as u64))
     } else {
         None
     }

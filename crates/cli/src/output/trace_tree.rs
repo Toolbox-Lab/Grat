@@ -356,6 +356,7 @@ mod tests {
             total_cpu_instructions: 1500,
             total_memory_bytes: 2048,
             is_error: false,
+            auth_signatures: vec![],
         };
 
         let mut buffer = Buffer::no_color();

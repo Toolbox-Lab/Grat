@@ -31,6 +31,7 @@ pub fn build_trace_tree(result: &SandboxResult) -> PrismResult<Vec<ContractInvoc
                     total_cpu_instructions: 0,
                     total_memory_bytes: 0,
                     is_error: false,
+                    auth_signatures: Vec::new(),
                 };
                 stack.push(invocation);
             }

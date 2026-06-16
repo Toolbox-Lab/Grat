@@ -41,6 +41,9 @@ pub struct ContractInvocation {
     pub total_memory_bytes: u64,
 
     pub is_error: bool,
+
+    #[serde(default)]
+    pub auth_signatures: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

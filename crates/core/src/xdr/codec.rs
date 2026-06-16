@@ -3,8 +3,8 @@
 use crate::error::{PrismError, PrismResult};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use stellar_xdr::curr::{
-    DiagnosticEvent, LedgerEntry, Limits, ReadXdr, ScVec, TransactionEnvelope, TransactionMeta,
-    WriteXdr, TransactionResult,
+    DiagnosticEvent, LedgerEntry, Limits, ReadXdr, ScVal, ScVec, SorobanAuthorizationEntry,
+    SorobanCredentials, TransactionEnvelope, TransactionMeta, TransactionResult, WriteXdr,
 };
 
 pub trait XdrCodec: Sized {
@@ -156,6 +156,52 @@ pub fn encode_xdr_base64(bytes: &[u8]) -> String {
     STANDARD.encode(bytes)
 }
 
+/// Decode signatures from Soroban auth-entry XDR into display-ready labels.
+pub fn decode_auth_entry_signatures(auth_entries_xdr: &[String]) -> Vec<String> {
+    auth_entries_xdr
+        .iter()
+        .map(|entry_xdr| decode_auth_entry_signature(entry_xdr))
+        .collect()
+}
+
+fn decode_auth_entry_signature(entry_xdr_base64: &str) -> String {
+    let entry = match decode_xdr_base64(entry_xdr_base64).and_then(|bytes| {
+        SorobanAuthorizationEntry::from_xdr(&bytes, Limits::none()).map_err(|e| {
+            PrismError::XdrDecodingFailed {
+                type_name: "SorobanAuthorizationEntry",
+                reason: e.to_string(),
+            }
+        })
+    }) {
+        Ok(entry) => entry,
+        Err(e) => return format!("malformed_signature(auth_entry_xdr: {e})"),
+    };
+
+    match &entry.credentials {
+        SorobanCredentials::Address(credentials) => decode_signature_scval(&credentials.signature),
+        SorobanCredentials::SourceAccount => "source_account_signature".to_string(),
+    }
+}
+
+fn decode_signature_scval(signature: &ScVal) -> String {
+    match signature {
+        ScVal::Bytes(bytes) => decode_raw_signature_bytes(bytes.as_ref()),
+        other => format!("malformed_signature(non_bytes_scval: {})", other.name()),
+    }
+}
+
+fn decode_raw_signature_bytes(bytes: &[u8]) -> String {
+    match bytes.len() {
+        0 => "malformed_signature(empty)".to_string(),
+        64 => hex_encode(bytes),
+        len => format!("malformed_signature({len}_bytes)"),
+    }
+}
+
+fn hex_encode(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
 /// Decode a transaction hash from hex string.
 pub fn decode_tx_hash(hash_hex: &str) -> PrismResult<[u8; 32]> {
     let bytes = hex_decode(hash_hex)
@@ -191,8 +237,11 @@ fn hex_decode(input: &str) -> Result<Vec<u8>, String> {
 mod tests {
     use super::*;
     use stellar_xdr::curr::{
-        ExtensionPoint, Memo, MuxedAccount, OperationMeta, Preconditions, SequenceNumber,
-        Transaction, TransactionExt, TransactionMetaV3, TransactionV1Envelope, Uint256,
+        AccountId, ExtensionPoint, InvokeContractArgs, Memo, MuxedAccount, OperationMeta,
+        Preconditions, ScAddress, ScBytes, ScSymbol, ScVal, SequenceNumber,
+        SorobanAddressCredentials, SorobanAuthorizationEntry, SorobanAuthorizedFunction,
+        SorobanAuthorizedInvocation, SorobanCredentials, Transaction, TransactionExt,
+        TransactionMetaV3, TransactionV1Envelope, Uint256,
     };
 
     fn make_test_envelope() -> TransactionEnvelope {
@@ -208,6 +257,27 @@ mod tests {
             },
             signatures: vec![].try_into().unwrap(),
         })
+    }
+
+    fn make_auth_entry(signature: ScVal) -> SorobanAuthorizationEntry {
+        SorobanAuthorizationEntry {
+            credentials: SorobanCredentials::Address(SorobanAddressCredentials {
+                address: ScAddress::Account(AccountId(
+                    stellar_xdr::curr::PublicKey::PublicKeyTypeEd25519(Uint256([7; 32])),
+                )),
+                nonce: 123,
+                signature_expiration_ledger: 456,
+                signature,
+            }),
+            root_invocation: SorobanAuthorizedInvocation {
+                function: SorobanAuthorizedFunction::ContractFn(InvokeContractArgs {
+                    contract_address: ScAddress::Contract(stellar_xdr::curr::Hash([8; 32])),
+                    function_name: ScSymbol::try_from("transfer".as_bytes().to_vec()).unwrap(),
+                    args: vec![].try_into().unwrap(),
+                }),
+                sub_invocations: vec![].try_into().unwrap(),
+            },
+        }
     }
 
     #[test]
@@ -305,5 +375,34 @@ mod tests {
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&scvec).expect("encode");
         let decoded = <ScVec as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
         assert_eq!(scvec, decoded);
+    }
+
+    #[test]
+    fn decode_auth_entry_signature_renders_ed25519_bytes_as_hex() {
+        let signature: Vec<u8> = (0..64).collect();
+        let entry = make_auth_entry(ScVal::Bytes(ScBytes::try_from(signature.clone()).unwrap()));
+        let entry_xdr = entry
+            .to_xdr_base64(Limits::none())
+            .expect("encode auth entry");
+
+        let decoded = decode_auth_entry_signatures(&[entry_xdr]);
+        let expected = signature
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+
+        assert_eq!(decoded, vec![expected]);
+    }
+
+    #[test]
+    fn decode_auth_entry_signature_labels_empty_signature_as_malformed() {
+        let entry = make_auth_entry(ScVal::Bytes(ScBytes::try_from(Vec::<u8>::new()).unwrap()));
+        let entry_xdr = entry
+            .to_xdr_base64(Limits::none())
+            .expect("encode empty auth entry");
+
+        let decoded = decode_auth_entry_signatures(&[entry_xdr]);
+
+        assert_eq!(decoded, vec!["malformed_signature(empty)"]);
     }
 }
