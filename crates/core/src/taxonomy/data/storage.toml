@@ -40,3 +40,30 @@ requires_upgrade = false
 
 related_errors = ["host.storage.missing_key"]
 source_file = "soroban-env-host/src/storage.rs"
+
+[[errors]]
+id = "host.storage.near_expiry"
+category = "storage"
+code = 4
+name = "NearExpiry"
+severity = "Warning"
+since_protocol = 20
+summary = "The accessed ledger entry is approaching its expiration ledger and will soon become read-only unless extended."
+detailed_explanation = """
+Soroban ledger entries have a time-to-live measured in ledgers. This warning indicates that a \
+contract read or written an entry that is close to expiring. The operation succeeded, but the \
+entry must be extended with extendTTL before it archives or future transactions will fail with \
+EntryNotFound. This is not a blocking error — it is a signal to act before the entry is lost.
+"""
+
+[[errors.common_causes]]
+description = "Contract data was created or last extended many ledgers ago and TTL refresh was missed"
+likelihood = "high"
+
+[[errors.suggested_fixes]]
+description = "Call extendTTL on the entry to push the expiration ledger further into the future"
+difficulty = "easy"
+requires_upgrade = false
+
+related_errors = ["host.storage.entry_not_found"]
+source_file = "soroban-env-host/src/storage.rs"

@@ -182,4 +182,60 @@ mod tests {
             .expect("auth code 1 in taxonomy");
         assert_eq!(entry.severity, "Error");
     }
+
+    // ------------------------------------------------------------------
+    // Warning severity — mapping table and build_report
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn storage_near_expiry_maps_to_warning() {
+        use crate::decode::mappings::storage;
+        // Storage code 4 (NearExpiry) is the canonical Warning entry.
+        let detail = storage::lookup(4).expect("storage code 4 exists");
+        assert_eq!(detail.severity, Severity::Warning);
+    }
+
+    #[test]
+    fn build_report_storage_near_expiry_is_warning() {
+        use crate::decode::host_error::ClassifiedError;
+        use crate::decode::report::build_report;
+
+        let classified = ClassifiedError {
+            category: ErrorCategory::Storage,
+            error_code: 4,
+            is_contract_error: false,
+            contract_id: None,
+            raw_data: serde_json::Value::Null,
+        };
+        let report = build_report(&classified).expect("report should build");
+        assert_eq!(report.severity, Severity::Warning);
+    }
+
+    #[test]
+    fn taxonomy_warning_severity_is_correctly_parsed() {
+        let db = TaxonomyDatabase::load_embedded().expect("taxonomy loads");
+        // Storage code 4 (NearExpiry) is the canonical Warning entry in the taxonomy.
+        let entry = db
+            .lookup(&ErrorCategory::Storage, 4)
+            .expect("storage code 4 in taxonomy");
+        assert_eq!(entry.severity, "Warning");
+    }
+
+    // ------------------------------------------------------------------
+    // Exhaustive: every storage mapping-table entry has a valid severity
+    // ------------------------------------------------------------------
+
+    #[test]
+    fn all_storage_entries_have_valid_severity() {
+        use crate::decode::mappings::storage::STORAGE_ERROR_DETAILS;
+
+        for entry in STORAGE_ERROR_DETAILS {
+            assert!(
+                matches!(entry.severity, Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info),
+                "Unexpected severity for storage code {}: {:?}",
+                entry.code,
+                entry.severity
+            );
+        }
+    }
 }
