@@ -1,12 +1,10 @@
-
-
 #![allow(dead_code)]
 
+use crate::output::theme::ColorPalette;
 use colored::Colorize;
-use prism_core::types::report::{DiagnosticReport, TransactionContext};
+use prism_core::types::report::{DiagnosticReport, RootCause, TransactionContext};
 use prism_core::types::trace::ResourceProfile;
 use tabled::{Table, Tabled};
-use crate::output::theme::ColorPalette;
 
 const BAR_WIDTH: usize = 10;
 const HEAT_BLOCKS: [&str; 4] = ["░", "▒", "▓", "█"];
@@ -21,6 +19,10 @@ pub fn render_error_card(report: &DiagnosticReport) -> String {
 
 pub fn render_fix_list(fixes: &[prism_core::types::report::SuggestedFix]) -> String {
     FixList::new(fixes).render()
+}
+
+pub fn render_cause_list(causes: &[RootCause]) -> String {
+    CauseList::new(causes).render()
 }
 
 pub fn render_state_diff_table(diff: &prism_core::types::trace::StateDiff) -> String {
@@ -64,12 +66,13 @@ impl<'a> ErrorCard<'a> {
         let mut output = String::new();
 
         let category_badge = format!("[{}]", self.report.error_category.to_uppercase());
-        let error_line = format!(
-            " {} ({})",
-            self.report.error_name, self.report.error_code
-        );
+        let error_line = format!(" {} ({})", self.report.error_name, self.report.error_code);
 
-        let max_width = error_line.len().max(self.report.summary.len()).max(category_badge.len()) + 4;
+        let max_width = error_line
+            .len()
+            .max(self.report.summary.len())
+            .max(category_badge.len())
+            + 4;
         let border = "█".repeat(max_width);
 
         let border_colored = border.red().bold().to_string();
@@ -83,7 +86,11 @@ impl<'a> ErrorCard<'a> {
 
         if let Some(contract_error) = &self.report.contract_error {
             let component_line = format!("Component: {}", contract_error.contract_id);
-            output.push_str(&format!("{} {}\n", "█".red().bold(), component_line.white()));
+            output.push_str(&format!(
+                "{} {}\n",
+                "█".red().bold(),
+                component_line.white()
+            ));
         }
 
         output.push_str(&format!("{} {}\n", "█".red().bold(), summary_colored));
@@ -122,6 +129,34 @@ impl<'a> FixList<'a> {
                     .to_string();
                 output.push_str(&format!("{code_block}\n"));
             }
+        }
+
+        output
+    }
+}
+
+pub struct CauseList<'a> {
+    causes: &'a [RootCause],
+}
+
+impl<'a> CauseList<'a> {
+    pub fn new(causes: &'a [RootCause]) -> Self {
+        Self { causes }
+    }
+
+    pub fn render(&self) -> String {
+        if self.causes.is_empty() {
+            return String::new();
+        }
+
+        let mut output = String::new();
+        let palette = ColorPalette::default();
+
+        output.push_str(&palette.accent_text("COMMON CAUSES\n"));
+
+        for cause in self.causes {
+            let likelihood = format!("[{}]", cause.likelihood).cyan();
+            output.push_str(&format!("  - {} {}\n", likelihood, cause.description));
         }
 
         output
@@ -414,7 +449,8 @@ mod tests {
             error_category: "Contract".to_string(),
             error_code: 1,
             error_name: "InsufficientBalance".to_string(),
-            summary: "The account does not have enough balance to complete this transaction.".to_string(),
+            summary: "The account does not have enough balance to complete this transaction."
+                .to_string(),
             detailed_explanation: String::new(),
             severity: Severity::Error,
             root_causes: Vec::new(),
@@ -448,15 +484,13 @@ mod tests {
 
     #[test]
     fn heatmap_renders_function_names() {
-        let profile = make_profile(vec![
-            ResourceHotspot {
-                location: "transfer::invoke".to_string(),
-                cpu_instructions: 800_000,
-                cpu_percentage: 80.0,
-                memory_bytes: 300_000,
-                memory_percentage: 30.0,
-            },
-        ]);
+        let profile = make_profile(vec![ResourceHotspot {
+            location: "transfer::invoke".to_string(),
+            cpu_instructions: 800_000,
+            cpu_percentage: 80.0,
+            memory_bytes: 300_000,
+            memory_percentage: 30.0,
+        }]);
         let output = render_heatmap(&profile);
         assert!(output.contains("transfer::invoke"));
     }
@@ -468,6 +502,21 @@ mod tests {
         assert!(rendered.contains("InsufficientBalance"));
         assert!(rendered.contains("[CONTRACT]"));
         assert!(rendered.contains("does not have enough balance"));
+    }
+
+    #[test]
+    fn cause_list_renders_common_causes() {
+        let causes = vec![RootCause {
+            description: "The transaction was submitted with an undersized resource budget."
+                .to_string(),
+            likelihood: "high".to_string(),
+        }];
+
+        let rendered = render_cause_list(&causes);
+
+        assert!(rendered.contains("COMMON CAUSES"));
+        assert!(rendered.contains("undersized resource budget"));
+        assert!(rendered.contains("high"));
     }
 
     #[test]

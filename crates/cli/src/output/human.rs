@@ -1,8 +1,8 @@
-
-
 use prism_core::types::report::DiagnosticReport;
 
-use crate::output::renderers::{render_section_header, render_error_card, render_fix_list, BudgetBar};
+use crate::output::renderers::{
+    render_cause_list, render_error_card, render_fix_list, render_section_header, BudgetBar,
+};
 
 pub fn print_report(report: &DiagnosticReport) -> anyhow::Result<()> {
     println!("{}", render_error_card(report));
@@ -36,6 +36,11 @@ pub fn print_report(report: &DiagnosticReport) -> anyhow::Result<()> {
             )
             .render()
         );
+    }
+
+    if !report.root_causes.is_empty() {
+        println!();
+        println!("{}", render_cause_list(&report.root_causes));
     }
 
     if !report.suggested_fixes.is_empty() {

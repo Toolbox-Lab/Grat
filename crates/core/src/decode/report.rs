@@ -1,8 +1,6 @@
-
-
 use crate::decode::host_error::ClassifiedError;
-use crate::taxonomy::loader::TaxonomyDatabase;
 use crate::error::PrismResult;
+use crate::taxonomy::loader::TaxonomyDatabase;
 use crate::types::report::{DiagnosticReport, RootCause, Severity, SuggestedFix};
 
 pub fn build_report(error: &ClassifiedError) -> PrismResult<DiagnosticReport> {
@@ -57,5 +55,36 @@ pub fn build_report(error: &ClassifiedError) -> PrismResult<DiagnosticReport> {
                 error.category, error.error_code
             ),
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::taxonomy::schema::ErrorCategory;
+
+    #[test]
+    fn tier1_common_causes_surface_in_decoded_report() {
+        let classified = ClassifiedError {
+            category: ErrorCategory::Budget,
+            error_code: 0,
+            is_contract_error: false,
+            contract_id: None,
+            raw_data: serde_json::Value::Null,
+        };
+
+        let report = build_report(&classified).expect("Report should build");
+
+        assert!(
+            !report.root_causes.is_empty(),
+            "Decoded report should include at least one common cause"
+        );
+        assert!(
+            report
+                .root_causes
+                .iter()
+                .any(|cause| cause.description.contains("loops")),
+            "Decoded report should include taxonomy common cause descriptions"
+        );
     }
 }

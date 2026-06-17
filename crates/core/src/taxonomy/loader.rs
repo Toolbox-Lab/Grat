@@ -1,29 +1,23 @@
-
-
-use crate::taxonomy::schema::{ErrorCategory, TaxonomyEntry, TaxonomySchema};
 use crate::error::{PrismError, PrismResult};
+use crate::taxonomy::schema::{ErrorCategory, TaxonomyEntry, TaxonomySchema};
 use std::collections::HashMap;
 
 pub struct TaxonomyParser;
 
 impl TaxonomyParser {
-
     pub fn parse(input: &str) -> PrismResult<TaxonomySchema> {
-        toml::from_str(input).map_err(|e| {
-            PrismError::TaxonomyError(format!("TOML parse error: {e}"))
-        })
+        toml::from_str(input)
+            .map_err(|e| PrismError::TaxonomyError(format!("TOML parse error: {e}")))
     }
 }
 
 pub struct TaxonomyDatabase {
-
     entries: HashMap<(ErrorCategory, u32), TaxonomyEntry>,
 
     all_entries: Vec<TaxonomyEntry>,
 }
 
 impl TaxonomyDatabase {
-
     pub fn load_embedded() -> PrismResult<Self> {
         let mut db = Self {
             entries: HashMap::new(),
@@ -105,6 +99,10 @@ impl TaxonomyDatabase {
             .collect()
     }
 
+    pub fn all_entries(&self) -> &[TaxonomyEntry] {
+        &self.all_entries
+    }
+
     pub fn len(&self) -> usize {
         self.entries.len()
     }
@@ -152,5 +150,36 @@ mod tests {
         let toml = "invalid toml = [[";
         let result = TaxonomyParser::parse(toml);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn tier1_entries_with_fixes_have_common_causes() {
+        let db = TaxonomyDatabase::load_embedded().expect("Taxonomy should load");
+        assert!(!db.is_empty(), "Taxonomy should contain entries");
+
+        for entry in db.all_entries() {
+            if entry.suggested_fixes.is_empty() {
+                continue;
+            }
+
+            assert!(
+                !entry.common_causes.is_empty(),
+                "{} has suggested fixes but no common causes",
+                entry.id
+            );
+            assert!(
+                entry.common_causes.len() <= 3,
+                "{} has more than three common causes",
+                entry.id
+            );
+            assert!(
+                entry
+                    .common_causes
+                    .iter()
+                    .all(|cause| !cause.description.trim().is_empty()),
+                "{} has an empty common cause description",
+                entry.id
+            );
+        }
     }
 }

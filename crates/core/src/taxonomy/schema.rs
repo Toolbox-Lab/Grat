@@ -1,10 +1,7 @@
-
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaxonomyEntry {
-
     pub id: String,
 
     pub category: ErrorCategory,
@@ -23,10 +20,13 @@ pub struct TaxonomyEntry {
 
     pub detailed_explanation: String,
 
+    #[serde(default)]
     pub common_causes: Vec<TaxonomyCause>,
 
+    #[serde(default)]
     pub suggested_fixes: Vec<TaxonomyFix>,
 
+    #[serde(default)]
     pub related_errors: Vec<String>,
 
     pub source_file: Option<String>,
@@ -38,7 +38,6 @@ pub struct TaxonomyEntry {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaxonomyCause {
-
     pub description: String,
 
     pub likelihood: String,
@@ -46,7 +45,6 @@ pub struct TaxonomyCause {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaxonomyFix {
-
     pub description: String,
 
     pub difficulty: String,
