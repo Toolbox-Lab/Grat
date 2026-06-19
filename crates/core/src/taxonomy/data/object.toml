@@ -7,31 +7,193 @@ description = "Errors triggered during host object creation, access, or manipula
 source_module = "soroban-env-host/src/host/mem_helper.rs"
 
 [[errors]]
-id = "host.object.out_of_bounds"
+id = "host.object.unknown_error"
 category = "object"
 code = 0
-name = "IndexBounds"
+name = "UnknownError"
 severity = "Error"
 since_protocol = 20
-summary = "An index out of bounds was used when accessing a host object (vector, bytes)."
+summary = "An unknown or unclassified host object error occurred."
 detailed_explanation = """
-When a contract accesses a vector element, byte slice, or map entry with an index or key \
-that is outside the valid range, the host raises this error. This is analogous to an \
-array-out-of-bounds error in traditional programming.
+The host encountered an error while interacting with or managing an object that does not map to \
+any other known object error code. This typically points to an internal state discrepancy, \
+memory allocation failure, or an unhandled edge case within the host environment's object subsystem.
 """
+[[errors.common_causes]]
+description = "Internal host memory management or allocator errors"
+likelihood = "low"
+[[errors.common_causes]]
+description = "Using an outdated Soroban runtime version that does not correctly parse newer host objects"
+likelihood = "low"
+[[errors.suggested_fixes]]
+description = "Examine the diagnostic events emitted prior to the failure to find more context"
+difficulty = "easy"
+requires_upgrade = false
+[[errors.suggested_fixes]]
+description = "Update the Soroban SDK and test environment to the latest version"
+difficulty = "easy"
+requires_upgrade = false
 
+[[errors]]
+id = "host.object.unknown_reference"
+category = "object"
+code = 1
+name = "UnknownReference"
+severity = "Error"
+since_protocol = 20
+summary = "The provided object handle does not reference a valid host object."
+detailed_explanation = """
+Contracts interact with host-managed memory via object handles (such as Vec, Map, Bytes, Address). \
+If a contract provides a handle identifier that does not exist in the host's object registry for the \
+current invocation, this error is raised.
+"""
+[[errors.common_causes]]
+description = "Passing an uninitialized or fabricated object handle to a host function"
+likelihood = "high"
+[[errors.common_causes]]
+description = "Attempting to use a handle that belonged to a different transaction context or cross-contract call that has finished"
+likelihood = "medium"
+[[errors.suggested_fixes]]
+description = "Verify that all objects are instantiated correctly using the SDK constructors before calling host functions"
+difficulty = "easy"
+requires_upgrade = false
+[[errors.suggested_fixes]]
+description = "Avoid manually creating or editing raw u32 object handles in contract code"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors]]
+id = "host.object.unexpected_type"
+category = "object"
+code = 2
+name = "UnexpectedType"
+severity = "Error"
+since_protocol = 20
+summary = "The host object's type does not match the expected type for the operation."
+detailed_explanation = """
+A host function expected a host object of a specific type (e.g. Map), but the contract supplied \
+a handle to a different type of host object (e.g. Vector). The host validates object types at the \
+FFI boundary and aborts execution upon mismatch.
+"""
+[[errors.common_causes]]
+description = "Passing a Vector handle to a function expecting a Map handle, or vice versa"
+likelihood = "high"
+[[errors.common_causes]]
+description = "Type mismatch when casting or using unsafe conversion functions on raw object handles"
+likelihood = "medium"
+[[errors.suggested_fixes]]
+description = "Check the contract signature and host function arguments to ensure correct collection types are used"
+difficulty = "easy"
+requires_upgrade = false
+[[errors.suggested_fixes]]
+description = "Use the strongly-typed wrappers provided by the Soroban SDK instead of raw handles"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors]]
+id = "host.object.object_count_exceeds_u32_max"
+category = "object"
+code = 3
+name = "ObjectCountExceedsU32Max"
+severity = "Error"
+since_protocol = 20
+summary = "The total number of host objects allocated in this transaction has exceeded the maximum capacity."
+detailed_explanation = """
+The host environment tracks all active objects using a list indexed by a u32 handle. If a contract \
+attempts to allocate more host objects than the maximum capacity of a u32 index, the host throws \
+this error to prevent memory exhaustion and overflow.
+"""
+[[errors.common_causes]]
+description = "Unbounded allocation of objects (e.g. nested vectors or maps) inside a large loop"
+likelihood = "high"
+[[errors.common_causes]]
+description = "Infinite recursion resulting in continuous allocation of local variables/objects"
+likelihood = "medium"
+[[errors.suggested_fixes]]
+description = "Refactor loops to avoid creating new collections in each iteration; reuse existing collections where possible"
+difficulty = "medium"
+requires_upgrade = false
+[[errors.suggested_fixes]]
+description = "Add pagination or chunking to process data in smaller batches across multiple transactions"
+difficulty = "medium"
+requires_upgrade = false
+
+[[errors]]
+id = "host.object.object_not_exist"
+category = "object"
+code = 4
+name = "ObjectNotExist"
+severity = "Error"
+since_protocol = 20
+summary = "The requested host object does not exist."
+detailed_explanation = """
+Similar to UnknownReference, but specifically raised when attempting to retrieve or dereference an \
+object that is expected to exist in the host state but is missing. This can occur if the host object \
+registry has been corrupted, or if the handle was invalidated during host-side optimization.
+"""
+[[errors.common_causes]]
+description = "Using an invalid or expired object handle that has been cleared from host memory"
+likelihood = "medium"
+[[errors.common_causes]]
+description = "Passing a handle that was never registered in the host's current object storage"
+likelihood = "medium"
+[[errors.suggested_fixes]]
+description = "Ensure the host object was correctly created and not discarded or out of scope"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors]]
+id = "host.object.vec_index_out_of_bound"
+category = "object"
+code = 5
+name = "VecIndexOutOfBound"
+severity = "Error"
+since_protocol = 20
+summary = "An index out of bounds was used when accessing a host vector or byte array."
+detailed_explanation = """
+When a contract accesses a vector element, byte slice, or array entry with an index that is \
+greater than or equal to the collection's length, the host raises this error. This prevents \
+invalid memory access in the host's WebAssembly execution environment.
+"""
 [[errors.common_causes]]
 description = "Accessing a vector or bytes object with an index >= length"
 likelihood = "high"
-
 [[errors.common_causes]]
 description = "Off-by-one errors in loop bounds when iterating over collections"
 likelihood = "high"
-
 [[errors.suggested_fixes]]
 description = "Check the length of the collection before accessing elements by index"
 difficulty = "easy"
-requires_upgrade = true
+requires_upgrade = false
+[[errors.suggested_fixes]]
+description = "Use safe accessors (like `get`) that return `Option` instead of direct index access"
+difficulty = "easy"
+requires_upgrade = false
 
-related_errors = ["host.value.invalid_input"]
-source_file = "soroban-env-host/src/host/mem_helper.rs"
+[[errors]]
+id = "host.object.contract_hash_wrong_length"
+category = "object"
+code = 6
+name = "ContractHashWrongLength"
+severity = "Error"
+since_protocol = 20
+summary = "The provided contract hash or address has an incorrect length."
+detailed_explanation = """
+Soroban contract hashes, addresses, and cryptographic keys are represented by specific byte lengths \
+(typically exactly 32 bytes). If a contract passes a byte array object representing a hash or public key \
+with an incorrect length, the host rejects it immediately to ensure cryptographic validity.
+"""
+[[errors.common_causes]]
+description = "Passing a contract address or hash with a length other than 32 bytes"
+likelihood = "high"
+[[errors.common_causes]]
+description = "Truncation or padding errors when manipulating hex strings or byte vectors before passing them to the host"
+likelihood = "medium"
+[[errors.suggested_fixes]]
+description = "Ensure that hex decoding or byte array construction outputs exactly 32 bytes"
+difficulty = "easy"
+requires_upgrade = false
+[[errors.suggested_fixes]]
+description = "Validate the byte length of the address or hash before invoking the target host function"
+difficulty = "easy"
+requires_upgrade = false

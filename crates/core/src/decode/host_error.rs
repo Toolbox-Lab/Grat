@@ -88,9 +88,12 @@ impl HostError {
                     format!("Value error (code {code}): a host value could not be converted or validated.")
                 }
             },
-            Self::Object { code } => match code {
-                0 => "Index out of bounds: the contract accessed a vector or byte array with an index beyond its length.".to_string(),
-                _ => format!("Object error (code {code}): an operation on a host object (vector, map, bytes) failed."),
+            Self::Object { code } => {
+                if let Some(detail) = crate::decode::mappings::object::lookup(*code) {
+                    detail.summary.to_string()
+                } else {
+                    format!("Object error (code {code}): an operation on a host object (vector, map, bytes) failed.")
+                }
             },
             Self::Crypto { code } => match code {
                 0 => "Invalid cryptographic input: a public key, signature, or hash input has the wrong length or format.".to_string(),
@@ -317,7 +320,11 @@ mod tests {
         );
         assert_eq!(
             HostError::Object { code: 0 }.summary(),
-            "Index out of bounds: the contract accessed a vector or byte array with an index beyond its length."
+            "An unknown or unclassified host object error occurred."
+        );
+        assert_eq!(
+            HostError::Object { code: 5 }.summary(),
+            "An index out of bounds was used when accessing a host vector or byte array."
         );
         assert_eq!(
             HostError::Crypto { code: 0 }.summary(),
