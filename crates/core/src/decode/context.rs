@@ -109,6 +109,7 @@ fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
     let inclusion_fee = total_fee - resource_fee;
 
     FeeBreakdown {
+        total_charged_fee: total_fee,
         inclusion_fee,
         resource_fee,
         refundable_fee: refundable_fee + rent_fee,
@@ -169,6 +170,7 @@ mod tests {
         });
 
         let breakdown = extract_fee_breakdown(&tx_data);
+        assert_eq!(breakdown.total_charged_fee, 120);
         assert_eq!(breakdown.bid_fee, Some(150));
         assert_eq!(breakdown.inclusion_fee, 120);
         assert_eq!(breakdown.resource_fee, 0);
@@ -226,6 +228,7 @@ mod tests {
         });
 
         let breakdown = extract_fee_breakdown(&tx_data);
+        assert_eq!(breakdown.total_charged_fee, 450);
         assert_eq!(breakdown.bid_fee, Some(500));
         assert_eq!(breakdown.resource_fee, 350); // 100 + 200 + 50
         assert_eq!(breakdown.inclusion_fee, 100); // 450 - 350

@@ -65,6 +65,7 @@ pub struct TransactionContext {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FeeBreakdown {
+    pub total_charged_fee: i64,
     pub inclusion_fee: i64,
     pub resource_fee: i64,
     pub refundable_fee: i64,

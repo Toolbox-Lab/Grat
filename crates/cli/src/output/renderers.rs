@@ -3,7 +3,7 @@
 #![allow(dead_code)]
 
 use colored::Colorize;
-use prism_core::types::report::{DiagnosticReport, TransactionContext};
+use prism_core::types::report::{DiagnosticReport, TransactionContext, FeeBreakdown};
 use prism_core::types::trace::ResourceProfile;
 use tabled::{Table, Tabled};
 use crate::output::theme::ColorPalette;
@@ -388,6 +388,50 @@ impl<'a> StateDiffTable<'a> {
     }
 }
 
+pub fn render_fee_breakdown(fee: &FeeBreakdown) -> String {
+    let palette = ColorPalette::default();
+    let mut out = String::new();
+
+    out.push_str(&render_section_header("Fee Breakdown"));
+    out.push('\n');
+
+    let format_fee = |value: i64| format!("{value} stroops");
+    let format_opt_fee = |value: Option<i64>| match value {
+        Some(v) => format!("{v} stroops"),
+        None => "N/A".to_string(),
+    };
+
+    out.push_str(&format!(
+        "  Bid Fee:            {}\n",
+        palette.metadata_text(&format_opt_fee(fee.bid_fee))
+    ));
+    out.push_str(&format!(
+        "  Total Charged Fee:  {}\n",
+        palette.accent_text(&format_fee(fee.total_charged_fee))
+    ));
+    out.push_str(&format!(
+        "  Inclusion Fee:      {}\n",
+        palette.success_text(&format_fee(fee.inclusion_fee))
+    ));
+    out.push_str(&format!(
+        "  Resource Fee:       {}\n",
+        palette.warning_text(&format_fee(fee.resource_fee))
+    ));
+
+    if fee.resource_fee > 0 {
+        out.push_str(&format!(
+            "    Refundable:       {}\n",
+            palette.muted_text(&format_fee(fee.refundable_fee))
+        ));
+        out.push_str(&format!(
+            "    Non-Refundable:   {}\n",
+            palette.muted_text(&format_fee(fee.non_refundable_fee))
+        ));
+    }
+
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -478,6 +522,7 @@ mod tests {
             function_name: Some("transfer".to_string()),
             arguments: vec!["GABC".to_string(), "100".to_string()],
             fee: FeeBreakdown {
+                total_charged_fee: 150,
                 inclusion_fee: 100,
                 resource_fee: 50,
                 refundable_fee: 25,
@@ -498,5 +543,21 @@ mod tests {
         assert!(output.contains("Function: transfer"));
         assert!(output.contains("Arguments:"));
         assert!(output.contains("GABC"));
+    }
+
+    #[test]
+    fn render_fee_breakdown_works() {
+        let fee = FeeBreakdown {
+            total_charged_fee: 150,
+            inclusion_fee: 100,
+            resource_fee: 50,
+            refundable_fee: 25,
+            non_refundable_fee: 25,
+            bid_fee: Some(150),
+        };
+        let output = render_fee_breakdown(&fee);
+        assert!(output.contains("FEE BREAKDOWN"));
+        assert!(output.contains("Total Charged Fee:"));
+        assert!(output.contains("150 stroops"));
     }
 }
