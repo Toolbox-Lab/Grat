@@ -1,5 +1,6 @@
 
 
+pub mod auth;
 pub mod context;
 pub mod contract_error;
 pub mod diagnostic;
@@ -8,6 +9,9 @@ pub mod mappings;
 pub mod report;
 pub mod walker;
 
+pub use auth::{
+    AddressCredential, AuthChain, AuthCredential, AuthFunctionKind, AuthInvocation,
+};
 pub use walker::{
     walk_diagnostic_events, DiagnosticEventKind, DiagnosticEventWalker,
     StructuredDiagnosticEvent,
