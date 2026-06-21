@@ -6,6 +6,12 @@ pub mod diagnostic;
 pub mod host_error;
 pub mod mappings;
 pub mod report;
+pub mod walker;
+
+pub use walker::{
+    walk_diagnostic_events, DiagnosticEventKind, DiagnosticEventWalker,
+    StructuredDiagnosticEvent,
+};
 
 use crate::error::PrismResult;
 use crate::types::report::DiagnosticReport;

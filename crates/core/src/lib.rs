@@ -18,6 +18,10 @@ pub use types::address::Address;
 pub use types::config::NetworkConfig;
 pub use error::{PrismError, PrismResult};
 pub use types::report::DiagnosticReport;
+pub use decode::{
+    walk_diagnostic_events, DiagnosticEventKind, DiagnosticEventWalker,
+    StructuredDiagnosticEvent,
+};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
