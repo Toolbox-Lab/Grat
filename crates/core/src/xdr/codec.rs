@@ -3,8 +3,8 @@
 use crate::error::{PrismError, PrismResult};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use stellar_xdr::curr::{
-    DiagnosticEvent, LedgerEntry, Limits, ReadXdr, ScVec, TransactionEnvelope, TransactionMeta,
-    WriteXdr, TransactionResult,
+    ContractEvent, DiagnosticEvent, LedgerEntry, Limits, ReadXdr, ScVal, ScVec,
+    TransactionEnvelope, TransactionMeta, WriteXdr, TransactionResult,
 };
 
 pub trait XdrCodec: Sized {
@@ -144,6 +144,44 @@ impl XdrCodec for ScVec {
     }
 }
 
+impl XdrCodec for ContractEvent {
+    const TYPE_NAME: &'static str = "ContractEvent";
+
+    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+        ContractEvent::from_xdr(bytes, Limits::none()).map_err(|e| {
+            PrismError::XdrDecodingFailed {
+                type_name: Self::TYPE_NAME,
+                reason: e.to_string(),
+            }
+        })
+    }
+
+    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+        self.to_xdr(Limits::none()).map_err(|e| {
+            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+        })
+    }
+}
+
+impl XdrCodec for ScVal {
+    const TYPE_NAME: &'static str = "ScVal";
+
+    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+        ScVal::from_xdr(bytes, Limits::none()).map_err(|e| {
+            PrismError::XdrDecodingFailed {
+                type_name: Self::TYPE_NAME,
+                reason: e.to_string(),
+            }
+        })
+    }
+
+    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+        self.to_xdr(Limits::none()).map_err(|e| {
+            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+        })
+    }
+}
+
 /// Decode a base64-encoded XDR string to raw bytes.
 pub fn decode_xdr_base64(xdr_base64: &str) -> PrismResult<Vec<u8>> {
     STANDARD.decode(xdr_base64).map_err(|e| {
@@ -191,8 +229,9 @@ fn hex_decode(input: &str) -> Result<Vec<u8>, String> {
 mod tests {
     use super::*;
     use stellar_xdr::curr::{
-        ExtensionPoint, Memo, MuxedAccount, OperationMeta, Preconditions, SequenceNumber,
-        Transaction, TransactionExt, TransactionMetaV3, TransactionV1Envelope, Uint256,
+        ExtensionPoint, Memo, MuxedAccount, OperationMeta, Preconditions, ScMapEntry, ScVal,
+        SequenceNumber, Transaction, TransactionExt, TransactionMetaV3, TransactionV1Envelope,
+        Uint256,
     };
 
     fn make_test_envelope() -> TransactionEnvelope {
@@ -305,5 +344,60 @@ mod tests {
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&scvec).expect("encode");
         let decoded = <ScVec as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
         assert_eq!(scvec, decoded);
+    }
+
+    #[test]
+    fn test_scmap_empty_round_trip() {
+        let map = ScMap(vec![].try_into().unwrap());
+        let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&map).expect("encode");
+        let decoded = <ScMap as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        assert_eq!(map, decoded);
+        assert_eq!(decoded.0.len(), 0);
+    }
+
+    #[test]
+    fn test_scmap_single_entry_round_trip() {
+        let entry = ScMapEntry {
+            key: ScVal::U32(1),
+            val: ScVal::Bool(true),
+        };
+        // ScMapEntry round-trip
+        let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&entry).expect("encode");
+        let decoded_entry = <ScMapEntry as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        assert_eq!(entry, decoded_entry);
+
+        // ScMap with single entry
+        let map = ScMap::sorted_from_entries(vec![ScMapEntry {
+            key: ScVal::U32(1),
+            val: ScVal::Bool(true),
+        }].into_iter()).expect("sorted_from_entries");
+        let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&map).expect("encode");
+        let decoded = <ScMap as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        assert_eq!(map, decoded);
+        assert_eq!(decoded.0.len(), 1);
+        assert_eq!(decoded.0[0].key, ScVal::U32(1));
+        assert_eq!(decoded.0[0].val, ScVal::Bool(true));
+    }
+
+    #[test]
+    fn test_scmap_multi_entry_round_trip() {
+        // Entries inserted out of order — sorted_from_entries must sort them by key.
+        let entries = vec![
+            ScMapEntry { key: ScVal::U32(3), val: ScVal::Bool(false) },
+            ScMapEntry { key: ScVal::U32(1), val: ScVal::Void },
+            ScMapEntry { key: ScVal::U32(2), val: ScVal::Bool(true) },
+        ];
+        let map = ScMap::sorted_from_entries(entries.into_iter()).expect("sorted_from_entries");
+        let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&map).expect("encode");
+        let decoded = <ScMap as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        assert_eq!(map, decoded);
+        assert_eq!(decoded.0.len(), 3);
+        // Keys must be in ascending order after sorting.
+        assert_eq!(decoded.0[0].key, ScVal::U32(1));
+        assert_eq!(decoded.0[1].key, ScVal::U32(2));
+        assert_eq!(decoded.0[2].key, ScVal::U32(3));
+        assert_eq!(decoded.0[0].val, ScVal::Void);
+        assert_eq!(decoded.0[1].val, ScVal::Bool(true));
+        assert_eq!(decoded.0[2].val, ScVal::Bool(false));
     }
 }

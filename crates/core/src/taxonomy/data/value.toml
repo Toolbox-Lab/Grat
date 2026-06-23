@@ -1,5 +1,5 @@
 # Value Error Taxonomy
-# Category: Value — errors related to SCVal type conversions and validation.
+# Category: Value - errors related to SCVal type conversions and validation.
 
 [category]
 name = "Value"
@@ -7,25 +7,26 @@ description = "Errors triggered when converting, validating, or operating on Sor
 source_module = "soroban-env-host/src/host/conversion.rs"
 
 [[errors]]
-id = "host.value.invalid_input"
+id = "host.value.unknown_error"
 category = "value"
 code = 0
-name = "InvalidInput"
+name = "UnknownError"
 severity = "Error"
 since_protocol = 20
-summary = "An invalid value was passed to a host function."
+summary = "Invalid value: a host function received an argument of the wrong type or format."
 detailed_explanation = """
-Host functions expect values of specific types. When a value of the wrong type or an invalid \
-representation is passed, this error is raised. Common examples include passing a negative \
-number where an unsigned value is expected, or passing a malformed byte array.
+The host could not classify the value failure more specifically. This usually means a value passed
+to a host function could not be converted, decoded, or validated against the expected shape.
 """
+related_errors = ["host.value.unexpected_type", "host.value.invalid_input"]
+source_file = "soroban-env-host/src/host/conversion.rs"
 
 [[errors.common_causes]]
-description = "Type mismatch between contract code arguments and host function expectations"
+description = "Type mismatch between contract call arguments and host function expectations"
 likelihood = "high"
 
 [[errors.common_causes]]
-description = "Malformed or corrupted data passed from contract storage"
+description = "Malformed or corrupted data was read from contract storage"
 likelihood = "medium"
 
 [[errors.suggested_fixes]]
@@ -33,5 +34,233 @@ description = "Check the function signature in the contract spec and ensure argu
 difficulty = "easy"
 requires_upgrade = false
 
-related_errors = ["host.value.unexpected_type"]
+[[errors]]
+id = "host.value.unexpected_type"
+category = "value"
+code = 1
+name = "UnexpectedType"
+severity = "Error"
+since_protocol = 20
+summary = "The provided value is not of the expected type for this operation."
+detailed_explanation = """
+A host function or contract ABI expected one Soroban value type but received another, such as a
+symbol where an address was expected or a map where a vector was expected.
+"""
+related_errors = ["host.value.unknown_error", "host.value.invalid_input"]
 source_file = "soroban-env-host/src/host/conversion.rs"
+
+[[errors.common_causes]]
+description = "A caller passed an argument type that does not match the contract function signature"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "Stored contract data was decoded using a newer or different expected type"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Compare the submitted ScVal arguments with the contract spec"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Migrate or rewrite stored data so it matches the current contract type"
+difficulty = "medium"
+requires_upgrade = true
+
+[[errors]]
+id = "host.value.unexpected_size"
+category = "value"
+code = 2
+name = "UnexpectedSize"
+severity = "Error"
+since_protocol = 20
+summary = "The provided value has an unexpected size or length."
+detailed_explanation = """
+The host received a value with a length, byte count, or collection size that does not match the
+operation's requirements.
+"""
+related_errors = ["host.value.invalid_input"]
+source_file = "soroban-env-host/src/host/conversion.rs"
+
+[[errors.common_causes]]
+description = "A byte array, signature, key, or hash has the wrong length"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "A collection argument contains too many or too few elements"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Validate byte lengths and collection sizes before building the transaction"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Update the caller to encode fixed-size values using the exact expected length"
+difficulty = "medium"
+requires_upgrade = false
+
+[[errors]]
+id = "host.value.missing_value"
+category = "value"
+code = 3
+name = "MissingValue"
+severity = "Error"
+since_protocol = 20
+summary = "A required value was missing from the input."
+detailed_explanation = """
+The host expected a value to be present but found no value, such as a missing map key, absent
+optional argument, or missing decoded field.
+"""
+related_errors = ["host.value.invalid_input"]
+source_file = "soroban-env-host/src/host/conversion.rs"
+
+[[errors.common_causes]]
+description = "A required contract argument or map entry was omitted"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "The caller encoded an optional value as missing when the contract required it"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Include the missing argument or field when constructing the contract call"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Add input validation before submitting the transaction"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors]]
+id = "host.value.internal_error"
+category = "value"
+code = 4
+name = "InternalError"
+severity = "Fatal"
+since_protocol = 20
+summary = "An internal host error occurred while processing a value."
+detailed_explanation = """
+The host encountered an unexpected internal state while converting, validating, or handling a
+Soroban value.
+"""
+related_errors = ["host.context.internal_error"]
+source_file = "soroban-env-host/src/host/conversion.rs"
+
+[[errors.common_causes]]
+description = "The host hit an unexpected value conversion or validation state"
+likelihood = "medium"
+
+[[errors.common_causes]]
+description = "Malformed input exposed a host-side edge case"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Inspect diagnostic events for the value conversion that failed"
+difficulty = "medium"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Report a reproducible transaction with the full input values"
+difficulty = "medium"
+requires_upgrade = false
+
+[[errors]]
+id = "host.value.added_value"
+category = "value"
+code = 5
+name = "AddedValue"
+severity = "Error"
+since_protocol = 20
+summary = "An unexpected or disallowed value was provided."
+detailed_explanation = """
+The host received an extra value in a place where no additional value was allowed, such as an
+unexpected field, argument, or authorization payload component.
+"""
+related_errors = ["host.value.invalid_input"]
+source_file = "soroban-env-host/src/host/conversion.rs"
+
+[[errors.common_causes]]
+description = "The caller supplied extra arguments or fields that the contract does not accept"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "A generated transaction builder included stale data from an older contract interface"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Remove unexpected arguments or fields from the contract call"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Regenerate client bindings from the current contract spec"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors]]
+id = "host.value.invalid_input"
+category = "value"
+code = 6
+name = "InvalidInput"
+severity = "Error"
+since_protocol = 20
+summary = "Malformed ScVal conversion, out-of-range integer, or otherwise invalid input passed to a host function."
+detailed_explanation = """
+The input value had the right general shape but failed validation, conversion, or range checks
+required by the host function.
+"""
+related_errors = ["host.value.unexpected_type", "host.value.unexpected_size"]
+source_file = "soroban-env-host/src/host/conversion.rs"
+
+[[errors.common_causes]]
+description = "A ScVal was malformed or encoded with a value outside the allowed range"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "The caller passed contract input produced by an incompatible SDK or serializer"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Rebuild the transaction arguments with the current SDK and contract spec"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Validate numeric ranges, addresses, and encoded values before submission"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors]]
+id = "host.value.authentication_error"
+category = "value"
+code = 7
+name = "AuthenticationError"
+severity = "Error"
+since_protocol = 20
+summary = "An authentication-related value was invalid or malformed."
+detailed_explanation = """
+The host rejected a value used during authorization, such as an auth payload, signer value, nonce,
+or credential component.
+"""
+related_errors = ["host.auth.invalid_signature", "host.auth.missing_auth"]
+source_file = "soroban-env-host/src/host/conversion.rs"
+
+[[errors.common_causes]]
+description = "Authorization payload values do not match the invocation being authorized"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "Signer, nonce, or credential data was malformed before signature verification"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Regenerate the auth entries from the exact invocation being submitted"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Check signer, nonce, and credential encoding before collecting signatures"
+difficulty = "medium"
+requires_upgrade = false

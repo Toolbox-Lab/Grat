@@ -39,6 +39,12 @@ pub const STORAGE_ERROR_DETAILS: &[StorageErrorDetail] = &[
         summary: "An internal storage failure occurred. This code alone reveals nothing; check the diagnostic events to get more signal on the underlying issue.",
         severity: Severity::Error,
     },
+    StorageErrorDetail {
+        code: 4,
+        name: "NearExpiry",
+        summary: "The accessed ledger entry is approaching its expiration ledger and will soon become read-only unless extended.",
+        severity: Severity::Warning,
+    },
 ];
 
 pub fn lookup(code: u32) -> Option<&'static StorageErrorDetail> {
@@ -58,10 +64,8 @@ mod tests {
 
     #[test]
     fn table_covers_known_storage_codes() {
-        assert_eq!(STORAGE_ERROR_DETAILS.len(), 4);
-        assert!(STORAGE_ERROR_DETAILS
-            .iter()
-            .all(|detail| detail.severity == Severity::Error));
+        assert_eq!(STORAGE_ERROR_DETAILS.len(), 5);
+        assert!(lookup(4).is_some());
         assert!(lookup(99).is_none());
     }
 }

@@ -1,12 +1,10 @@
-
-
 #![allow(dead_code)]
 
+use crate::output::theme::ColorPalette;
 use colored::Colorize;
-use prism_core::types::report::{DiagnosticReport, TransactionContext};
+use prism_core::types::report::{DiagnosticReport, RootCause, TransactionContext, FeeBreakdown};
 use prism_core::types::trace::ResourceProfile;
 use tabled::{Table, Tabled};
-use crate::output::theme::ColorPalette;
 
 const BAR_WIDTH: usize = 10;
 const HEAT_BLOCKS: [&str; 4] = ["░", "▒", "▓", "█"];
@@ -21,6 +19,10 @@ pub fn render_error_card(report: &DiagnosticReport) -> String {
 
 pub fn render_fix_list(fixes: &[prism_core::types::report::SuggestedFix]) -> String {
     FixList::new(fixes).render()
+}
+
+pub fn render_cause_list(causes: &[RootCause]) -> String {
+    CauseList::new(causes).render()
 }
 
 pub fn render_state_diff_table(diff: &prism_core::types::trace::StateDiff) -> String {
@@ -64,12 +66,13 @@ impl<'a> ErrorCard<'a> {
         let mut output = String::new();
 
         let category_badge = format!("[{}]", self.report.error_category.to_uppercase());
-        let error_line = format!(
-            " {} ({})",
-            self.report.error_name, self.report.error_code
-        );
+        let error_line = format!(" {} ({})", self.report.error_name, self.report.error_code);
 
-        let max_width = error_line.len().max(self.report.summary.len()).max(category_badge.len()) + 4;
+        let max_width = error_line
+            .len()
+            .max(self.report.summary.len())
+            .max(category_badge.len())
+            + 4;
         let border = "█".repeat(max_width);
 
         let border_colored = border.red().bold().to_string();
@@ -83,7 +86,11 @@ impl<'a> ErrorCard<'a> {
 
         if let Some(contract_error) = &self.report.contract_error {
             let component_line = format!("Component: {}", contract_error.contract_id);
-            output.push_str(&format!("{} {}\n", "█".red().bold(), component_line.white()));
+            output.push_str(&format!(
+                "{} {}\n",
+                "█".red().bold(),
+                component_line.white()
+            ));
         }
 
         output.push_str(&format!("{} {}\n", "█".red().bold(), summary_colored));
@@ -122,6 +129,34 @@ impl<'a> FixList<'a> {
                     .to_string();
                 output.push_str(&format!("{code_block}\n"));
             }
+        }
+
+        output
+    }
+}
+
+pub struct CauseList<'a> {
+    causes: &'a [RootCause],
+}
+
+impl<'a> CauseList<'a> {
+    pub fn new(causes: &'a [RootCause]) -> Self {
+        Self { causes }
+    }
+
+    pub fn render(&self) -> String {
+        if self.causes.is_empty() {
+            return String::new();
+        }
+
+        let mut output = String::new();
+        let palette = ColorPalette::default();
+
+        output.push_str(&palette.accent_text("COMMON CAUSES\n"));
+
+        for cause in self.causes {
+            let likelihood = format!("[{}]", cause.likelihood).cyan();
+            output.push_str(&format!("  - {} {}\n", likelihood, cause.description));
         }
 
         output
@@ -388,6 +423,50 @@ impl<'a> StateDiffTable<'a> {
     }
 }
 
+pub fn render_fee_breakdown(fee: &FeeBreakdown) -> String {
+    let palette = ColorPalette::default();
+    let mut out = String::new();
+
+    out.push_str(&render_section_header("Fee Breakdown"));
+    out.push('\n');
+
+    let format_fee = |value: i64| format!("{value} stroops");
+    let format_opt_fee = |value: Option<i64>| match value {
+        Some(v) => format!("{v} stroops"),
+        None => "N/A".to_string(),
+    };
+
+    out.push_str(&format!(
+        "  Bid Fee:            {}\n",
+        palette.metadata_text(&format_opt_fee(fee.bid_fee))
+    ));
+    out.push_str(&format!(
+        "  Total Charged Fee:  {}\n",
+        palette.accent_text(&format_fee(fee.total_charged_fee))
+    ));
+    out.push_str(&format!(
+        "  Inclusion Fee:      {}\n",
+        palette.success_text(&format_fee(fee.inclusion_fee))
+    ));
+    out.push_str(&format!(
+        "  Resource Fee:       {}\n",
+        palette.warning_text(&format_fee(fee.resource_fee))
+    ));
+
+    if fee.resource_fee > 0 {
+        out.push_str(&format!(
+            "    Refundable:       {}\n",
+            palette.muted_text(&format_fee(fee.refundable_fee))
+        ));
+        out.push_str(&format!(
+            "    Non-Refundable:   {}\n",
+            palette.muted_text(&format_fee(fee.non_refundable_fee))
+        ));
+    }
+
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -414,7 +493,8 @@ mod tests {
             error_category: "Contract".to_string(),
             error_code: 1,
             error_name: "InsufficientBalance".to_string(),
-            summary: "The account does not have enough balance to complete this transaction.".to_string(),
+            summary: "The account does not have enough balance to complete this transaction."
+                .to_string(),
             detailed_explanation: String::new(),
             severity: Severity::Error,
             root_causes: Vec::new(),
@@ -448,15 +528,13 @@ mod tests {
 
     #[test]
     fn heatmap_renders_function_names() {
-        let profile = make_profile(vec![
-            ResourceHotspot {
-                location: "transfer::invoke".to_string(),
-                cpu_instructions: 800_000,
-                cpu_percentage: 80.0,
-                memory_bytes: 300_000,
-                memory_percentage: 30.0,
-            },
-        ]);
+        let profile = make_profile(vec![ResourceHotspot {
+            location: "transfer::invoke".to_string(),
+            cpu_instructions: 800_000,
+            cpu_percentage: 80.0,
+            memory_bytes: 300_000,
+            memory_percentage: 30.0,
+        }]);
         let output = render_heatmap(&profile);
         assert!(output.contains("transfer::invoke"));
     }
@@ -471,6 +549,21 @@ mod tests {
     }
 
     #[test]
+    fn cause_list_renders_common_causes() {
+        let causes = vec![RootCause {
+            description: "The transaction was submitted with an undersized resource budget."
+                .to_string(),
+            likelihood: "high".to_string(),
+        }];
+
+        let rendered = render_cause_list(&causes);
+
+        assert!(rendered.contains("COMMON CAUSES"));
+        assert!(rendered.contains("undersized resource budget"));
+        assert!(rendered.contains("high"));
+    }
+
+    #[test]
     fn render_context_table_with_arguments() {
         let context = TransactionContext {
             tx_hash: "abc123".to_string(),
@@ -478,10 +571,12 @@ mod tests {
             function_name: Some("transfer".to_string()),
             arguments: vec!["GABC".to_string(), "100".to_string()],
             fee: FeeBreakdown {
+                total_charged_fee: 150,
                 inclusion_fee: 100,
                 resource_fee: 50,
                 refundable_fee: 25,
                 non_refundable_fee: 25,
+                bid_fee: Some(150),
             },
             resources: ResourceSummary {
                 cpu_instructions_used: 1000,
@@ -497,5 +592,21 @@ mod tests {
         assert!(output.contains("Function: transfer"));
         assert!(output.contains("Arguments:"));
         assert!(output.contains("GABC"));
+    }
+
+    #[test]
+    fn render_fee_breakdown_works() {
+        let fee = FeeBreakdown {
+            total_charged_fee: 150,
+            inclusion_fee: 100,
+            resource_fee: 50,
+            refundable_fee: 25,
+            non_refundable_fee: 25,
+            bid_fee: Some(150),
+        };
+        let output = render_fee_breakdown(&fee);
+        assert!(output.contains("FEE BREAKDOWN"));
+        assert!(output.contains("Total Charged Fee:"));
+        assert!(output.contains("150 stroops"));
     }
 }

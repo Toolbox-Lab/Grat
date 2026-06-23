@@ -40,3 +40,127 @@ requires_upgrade = false
 
 related_errors = ["host.storage.missing_key"]
 source_file = "soroban-env-host/src/storage.rs"
+
+[[errors]]
+id = "host.storage.entry_not_found"
+category = "storage"
+code = 1
+name = "EntryNotFound"
+severity = "Error"
+since_protocol = 20
+summary = "The contract attempted to read a ledger key that does not exist or has been archived."
+detailed_explanation = """
+The host could not load the requested ledger entry. The key may never have been written, may have
+expired from live state, or may need restoration before the contract can access it.
+"""
+related_errors = ["host.storage.access_denied"]
+source_file = "soroban-env-host/src/storage.rs"
+
+[[errors.common_causes]]
+description = "The contract read a key before any transaction created it"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "The ledger entry expired or was archived before this transaction ran"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Create or initialize the missing ledger entry before reading it"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Restore archived contract data before submitting the transaction"
+difficulty = "medium"
+requires_upgrade = false
+
+[[errors]]
+id = "host.storage.exceeded_limit"
+category = "storage"
+code = 2
+name = "ExceededLimit"
+severity = "Error"
+since_protocol = 20
+summary = "The operation attempted to exceed resource or size limits for ledger data."
+detailed_explanation = """
+The storage operation would exceed a protocol limit for ledger data, such as entry size, footprint
+size, or the amount of data read or written by the transaction.
+"""
+related_errors = ["host.budget.exceeded_limit"]
+source_file = "soroban-env-host/src/storage.rs"
+
+[[errors.common_causes]]
+description = "The contract attempted to write a ledger entry larger than the protocol allows"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "The transaction touched more ledger entries than its footprint or limits allowed"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Reduce the size of stored values or split the data across smaller entries"
+difficulty = "medium"
+requires_upgrade = true
+
+[[errors.suggested_fixes]]
+description = "Break the storage update into multiple smaller transactions"
+difficulty = "medium"
+requires_upgrade = true
+
+[[errors]]
+id = "host.storage.internal_error"
+category = "storage"
+code = 3
+name = "InternalError"
+severity = "Error"
+since_protocol = 20
+summary = "An internal storage failure occurred while accessing contract data."
+detailed_explanation = """
+The storage layer reported an unexpected internal failure. This code alone is not enough to identify
+the root issue; diagnostic events and transaction context usually provide the next clue.
+"""
+related_errors = []
+source_file = "soroban-env-host/src/storage.rs"
+
+[[errors.common_causes]]
+description = "The host encountered an unexpected storage state while loading or writing ledger data"
+likelihood = "medium"
+
+[[errors.common_causes]]
+description = "The transaction hit a storage edge case that needs diagnostic events to identify"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Inspect diagnostic events for the ledger key or storage operation that failed"
+difficulty = "medium"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Retry on a fresh ledger state or report the transaction if the failure is reproducible"
+difficulty = "medium"
+requires_upgrade = false
+id = "host.storage.near_expiry"
+category = "storage"
+code = 4
+name = "NearExpiry"
+severity = "Warning"
+since_protocol = 20
+summary = "The accessed ledger entry is approaching its expiration ledger and will soon become read-only unless extended."
+detailed_explanation = """
+Soroban ledger entries have a time-to-live measured in ledgers. This warning indicates that a \
+contract read or written an entry that is close to expiring. The operation succeeded, but the \
+entry must be extended with extendTTL before it archives or future transactions will fail with \
+EntryNotFound. This is not a blocking error — it is a signal to act before the entry is lost.
+"""
+
+[[errors.common_causes]]
+description = "Contract data was created or last extended many ledgers ago and TTL refresh was missed"
+likelihood = "high"
+
+[[errors.suggested_fixes]]
+description = "Call extendTTL on the entry to push the expiration ledger further into the future"
+difficulty = "easy"
+requires_upgrade = false
+
+related_errors = ["host.storage.entry_not_found"]
+source_file = "soroban-env-host/src/storage.rs"

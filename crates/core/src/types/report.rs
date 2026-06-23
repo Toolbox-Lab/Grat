@@ -58,6 +58,8 @@ pub struct TransactionContext {
 
     pub arguments: Vec<String>,
 
+    pub return_value: Option<String>,
+
     pub fee: FeeBreakdown,
 
     pub resources: ResourceSummary,
@@ -65,10 +67,12 @@ pub struct TransactionContext {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FeeBreakdown {
+    pub total_charged_fee: i64,
     pub inclusion_fee: i64,
     pub resource_fee: i64,
     pub refundable_fee: i64,
     pub non_refundable_fee: i64,
+    pub bid_fee: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

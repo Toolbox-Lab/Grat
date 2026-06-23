@@ -11,9 +11,6 @@ pub struct InspectArgs {
 
     #[arg(long)]
     pub op_index: Option<usize>,
-
-    #[arg(long)]
-    pub fee_stats: bool,
 }
 
 pub async fn run(
@@ -26,7 +23,7 @@ pub async fn run(
     spinner.set_message("Fetching and decoding transaction...");
     spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-    let report = prism_core::decode::decode_transaction_with_op_filter(
+    let reports = prism_core::decode::decode_transaction_with_op_filter(
         &args.tx_hash,
         network,
         args.op_index,
@@ -35,50 +32,16 @@ pub async fn run(
 
     spinner.finish_and_clear();
 
-    crate::output::print_diagnostic_report(&report, output_format)?;
-
-    if args.fee_stats
-        && matches!(
-            crate::output::OutputMode::parse(output_format),
-            crate::output::OutputMode::Human
-        )
-    {
-        let fee_context = report.transaction_context.as_ref().map(|ctx| &ctx.fee);
-
-        let bid_fee: Option<i64> = None;
-        let resource_fee = fee_context.map(|fee| fee.resource_fee);
-        let total_charged_fee =
-            fee_context.and_then(|fee| fee.inclusion_fee.checked_add(fee.resource_fee));
-        let inclusion_fee = match (total_charged_fee, resource_fee) {
-            (Some(charged), Some(resource)) => charged.checked_sub(resource),
-            _ => None,
-        };
-        let surge = match (total_charged_fee, bid_fee) {
-            (Some(charged), Some(bid)) => Some(charged > bid),
-            _ => None,
-        };
-
-        let format_fee = |value: Option<i64>| match value {
-            Some(v) => format!("{v} stroops"),
-            None => "N/A".to_string(),
-        };
-        let format_surge = |value: Option<bool>| match value {
-            Some(true) => "Yes",
-            Some(false) => "No",
-            None => "N/A",
-        };
-
-        println!();
-        println!("FEE BREAKDOWN");
-        println!("Bid Fee: {}", format_fee(bid_fee));
-        println!("Total Charged Fee: {}", format_fee(total_charged_fee));
-        println!("Resource Fee: {}", format_fee(resource_fee));
-        println!("Inclusion Fee: {}", format_fee(inclusion_fee));
-        println!("Surge: {}", format_surge(surge));
+    // Print each report with operation index label
+    for (i, report) in reports.iter().enumerate() {
+        if reports.len() > 1 {
+            println!("\n=== Operation {} ===", i + 1);
+        }
+        crate::output::print_diagnostic_report(report, output_format)?;
     }
 
     if let Some(path) = save {
-        let json = serde_json::to_string_pretty(&report)?;
+        let json = serde_json::to_string_pretty(&reports)?;
         std::fs::write(path, &json)
             .map_err(|e| anyhow::anyhow!("Failed to write save file '{path}': {e}"))?;
         eprintln!("Saved report to {path}");

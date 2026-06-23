@@ -7,6 +7,39 @@ description = "Errors triggered by invalid execution context, such as calling ho
 source_module = "soroban-env-host/src/host.rs"
 
 [[errors]]
+id = "host.context.unknown_error"
+category = "context"
+code = 0
+name = "UnknownError"
+severity = "Error"
+since_protocol = 20
+summary = "An unexpected Soroban runtime error occurred."
+detailed_explanation = """
+The host returned a context error that does not map to a more specific execution-context failure.
+This can indicate malformed transaction data, an unsupported host state, or a platform issue.
+"""
+related_errors = ["host.context.internal_error"]
+source_file = "soroban-env-host/src/host.rs"
+
+[[errors.common_causes]]
+description = "The transaction reached a host state that Prism cannot classify more specifically"
+likelihood = "medium"
+
+[[errors.common_causes]]
+description = "Malformed or unsupported transaction data triggered a generic context failure"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Check diagnostic events and transaction metadata for the host operation that failed"
+difficulty = "medium"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Reproduce the transaction on the same network and report it if the error persists"
+difficulty = "medium"
+requires_upgrade = false
+
+[[errors]]
 id = "host.context.invalid_action"
 category = "context"
 code = 6

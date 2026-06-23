@@ -10,7 +10,7 @@ source_module = "soroban-env-host/src/budget.rs"
 id = "host.budget.limit_exceeded.cpu"
 category = "budget"
 code = 0
-name = "LimitExceeded"
+name = "CPUExceeded"
 severity = "Error"
 since_protocol = 20
 summary = "The transaction exceeded its CPU instruction budget."
@@ -54,3 +54,134 @@ requires_upgrade = true
 related_errors = ["host.budget.limit_exceeded.memory"]
 source_file = "soroban-env-host/src/budget.rs"
 documentation_url = "https://soroban.stellar.org/docs/fundamentals/fees-and-metering"
+
+[[errors]]
+id = "host.budget.insufficient_instructions"
+category = "budget"
+code = 1
+name = "InsufficientInstructions"
+severity = "Error"
+since_protocol = 20
+summary = "The transaction did not have enough CPU instructions allocated."
+detailed_explanation = """
+The transaction's resource declaration did not reserve enough CPU instructions for the contract
+invocation to complete. This usually happens when submitted limits are stale, manually edited, or
+lower than the values returned by simulation.
+"""
+related_errors = ["host.budget.limit_exceeded.cpu"]
+source_file = "soroban-env-host/src/budget.rs"
+documentation_url = "https://soroban.stellar.org/docs/fundamentals/fees-and-metering"
+
+[[errors.common_causes]]
+description = "The transaction was submitted with CPU limits lower than the simulated requirement"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "Contract logic became more expensive after the transaction was prepared"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Re-run simulation and submit the transaction with the updated CPU instruction limit"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Reduce the amount of work performed by the contract invocation"
+difficulty = "medium"
+requires_upgrade = true
+
+[[errors]]
+id = "host.budget.insufficient_memory"
+category = "budget"
+code = 2
+name = "InsufficientMemory"
+severity = "Error"
+since_protocol = 20
+summary = "The transaction did not have enough memory allocated."
+detailed_explanation = """
+The transaction's resource declaration did not reserve enough memory for the host objects, contract
+data, or intermediate values created during execution.
+"""
+related_errors = ["host.budget.limit_exceeded.cpu"]
+source_file = "soroban-env-host/src/budget.rs"
+documentation_url = "https://soroban.stellar.org/docs/fundamentals/fees-and-metering"
+
+[[errors.common_causes]]
+description = "The invocation builds large vectors, maps, bytes, or strings in memory"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "A cross-contract call returned more data than the caller budgeted for"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Re-run simulation and submit the transaction with the updated memory limit"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Split large inputs or outputs into smaller contract calls"
+difficulty = "medium"
+requires_upgrade = true
+
+[[errors]]
+id = "host.budget.exceeded_limit"
+category = "budget"
+code = 8
+name = "ExceededLimit"
+severity = "Error"
+since_protocol = 20
+summary = "The transaction exceeded an allocated resource limit."
+detailed_explanation = """
+The host stopped execution because one of the metered resource limits was exceeded. The exact
+resource may depend on the diagnostic events and the resource profile for the transaction.
+"""
+related_errors = [
+    "host.budget.limit_exceeded.cpu",
+    "host.budget.insufficient_instructions",
+    "host.budget.insufficient_memory",
+]
+source_file = "soroban-env-host/src/budget.rs"
+documentation_url = "https://soroban.stellar.org/docs/fundamentals/fees-and-metering"
+
+[[errors.common_causes]]
+description = "The transaction used more CPU, memory, or ledger I/O than its declared resource limits allowed"
+likelihood = "high"
+
+[[errors.common_causes]]
+description = "The resource footprint was estimated before inputs or contract state changed"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Simulate the transaction again and submit it with the returned resource limits"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Inspect the resource profile to identify the expensive contract call"
+difficulty = "medium"
+requires_upgrade = false
+id = "host.budget.approaching_limit"
+category = "budget"
+code = 3
+name = "ApproachingLimit"
+severity = "Info"
+since_protocol = 20
+summary = "The transaction is approaching its resource budget limit."
+detailed_explanation = """
+This is a diagnostic signal, not a failure. The execution consumed a high fraction of the \
+allocated budget but did not exceed it. Use this to identify contracts that are close to the \
+limit and may fail under slightly heavier load.
+"""
+
+[[errors.common_causes]]
+description = "Contract logic that scales with input size, approaching the declared limit"
+likelihood = "medium"
+
+[[errors.suggested_fixes]]
+description = "Profile the contract and reduce unnecessary computation before it becomes a hard failure"
+difficulty = "medium"
+requires_upgrade = true
+
+related_errors = ["host.budget.limit_exceeded.cpu"]
+source_file = "soroban-env-host/src/budget.rs"

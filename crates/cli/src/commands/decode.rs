@@ -21,8 +21,10 @@ pub async fn run(
 ) -> anyhow::Result<()> {
     let effective_output = if args.short { "short" } else { output_format };
 
-    let report = if args.raw {
-        build_raw_xdr_report(&args.tx_hash)?
+    // Decode transaction, handling possible multiple operations
+    let reports = if args.raw {
+        // Raw XDR decoding yields a single report
+        vec![build_raw_xdr_report(&args.tx_hash)?]
     } else {
         let spinner = indicatif::ProgressBar::new_spinner();
         spinner.set_message(format!(
@@ -31,15 +33,26 @@ pub async fn run(
         ));
         spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-        let report = prism_core::decode::decode_transaction(&args.tx_hash, network).await?;
+        let reports = prism_core::decode::decode_transaction_with_op_filter(
+            &args.tx_hash,
+            network,
+            None,
+        )
+        .await?;
         spinner.finish_and_clear();
-        report
+        reports
     };
 
-    crate::output::print_diagnostic_report(&report, effective_output)?;
+    // Print each report; include operation index header when multiple reports
+    for (i, report) in reports.iter().enumerate() {
+        if reports.len() > 1 {
+            println!("\n=== Operation {} ===", i + 1);
+        }
+        crate::output::print_diagnostic_report(report, effective_output)?;
+    }
 
     if let Some(path) = save {
-        let json = serde_json::to_string_pretty(&report)?;
+        let json = serde_json::to_string_pretty(&reports)?;
         std::fs::write(path, &json)
             .map_err(|e| anyhow::anyhow!("Failed to write save file '{path}': {e}"))?;
         eprintln!("Saved report to {path}");
