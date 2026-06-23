@@ -1,4 +1,5 @@
 
+pub mod auth_signature;
 pub mod context;
 pub mod contract_error;
 pub mod cross_contract;

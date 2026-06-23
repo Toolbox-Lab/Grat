@@ -1,5 +1,6 @@
 
 
+use crate::decode::auth_signature::decode_auth_entry_signatures;
 use crate::error::PrismResult;
 use crate::types::report::{DiagnosticReport, FeeBreakdown, ResourceSummary, TransactionContext};
 
@@ -26,6 +27,10 @@ pub fn enrich_report(
     };
 
     report.transaction_context = Some(context);
+
+    // Decode ed25519 signatures from auth entries embedded in the transaction envelope.
+    report.auth_signatures = extract_auth_signatures(tx_data);
+
     Ok(())
 }
 
@@ -135,6 +140,25 @@ fn extract_resource_summary(_tx_data: &serde_json::Value) -> ResourceSummary {
         read_bytes: 0,
         write_bytes: 0,
     }
+}
+
+/// Extract and decode ed25519 signatures from auth entries in the transaction envelope.
+/// Auth entries are base64 XDR strings found under `tx.operations[*].body.invoke_host_function_op.auth`
+/// or directly in the `auth` field of an RPC simulate response stored in tx_data.
+fn extract_auth_signatures(tx_data: &serde_json::Value) -> Vec<String> {
+    let mut signatures = Vec::new();
+
+    // Auth entries may appear directly as a top-level "auth" array (simulate response shape)
+    // or nested inside envelopeXdr operations.
+    if let Some(auth_array) = tx_data.get("auth").and_then(|a| a.as_array()) {
+        for entry in auth_array {
+            if let Some(xdr_b64) = entry.as_str() {
+                signatures.extend(decode_auth_entry_signatures(xdr_b64));
+            }
+        }
+    }
+
+    signatures
 }
 
 #[cfg(test)]

@@ -126,6 +126,11 @@ pub struct DiagnosticReport {
     /// Present when a cross-contract call chain was detected and the failure
     /// was attributed to a specific sub-contract, not the top-level invoker.
     pub cross_contract_attribution: Option<FailureAttribution>,
+
+    /// Decoded hex strings for ed25519 signatures found in auth entries.
+    /// Malformed or empty byte sequences produce a human-readable error label.
+    #[serde(skip_serializing_if = "Vec::is_empty", default)]
+    pub auth_signatures: Vec<String>,
 }
 
 impl DiagnosticReport {
@@ -144,6 +149,7 @@ impl DiagnosticReport {
             transaction_context: None,
             related_errors: Vec::new(),
             cross_contract_attribution: None,
+            auth_signatures: Vec::new(),
         }
     }
 }
