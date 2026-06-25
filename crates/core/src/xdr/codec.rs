@@ -4,7 +4,7 @@ use crate::error::{PrismError, PrismResult};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use stellar_xdr::curr::{
     ContractEvent, DiagnosticEvent, LedgerEntry, LedgerKey, Limits, ReadXdr, ScAddress, ScBytes,
-    ScMap, ScString, ScSymbol, ScVal, ScVec, TransactionEnvelope, TransactionMeta,
+    ScMap, ScMapEntry, ScString, ScSymbol, ScVal, ScVec, TransactionEnvelope, TransactionMeta,
     TransactionResult, WriteXdr,
 };
 
@@ -264,6 +264,25 @@ impl XdrCodec for ScMap {
 
     fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
         ScMap::from_xdr(bytes, Limits::none()).map_err(|e| {
+            PrismError::XdrDecodingFailed {
+                type_name: Self::TYPE_NAME,
+                reason: e.to_string(),
+            }
+        })
+    }
+
+    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+        self.to_xdr(Limits::none()).map_err(|e| {
+            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+        })
+    }
+}
+
+impl XdrCodec for ScMapEntry {
+    const TYPE_NAME: &'static str = "ScMapEntry";
+
+    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+        ScMapEntry::from_xdr(bytes, Limits::none()).map_err(|e| {
             PrismError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
