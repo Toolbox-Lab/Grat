@@ -2,6 +2,7 @@
 
 use clap::Args;
 use prism_core::types::config::NetworkConfig;
+use prism_core::{DecodeContextBuilder, OutputFormat};
 
 #[derive(Args)]
 pub struct InspectArgs {
@@ -19,13 +20,17 @@ pub async fn run(
     output_format: &str,
     save: Option<&str>,
 ) -> anyhow::Result<()> {
+    let ctx = DecodeContextBuilder::from(network)
+        .output_format(OutputFormat::from_str(output_format))
+        .build();
+
     let spinner = indicatif::ProgressBar::new_spinner();
     spinner.set_message("Fetching and decoding transaction...");
     spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
     let reports = prism_core::decode::decode_transaction_with_op_filter(
         &args.tx_hash,
-        network,
+        &ctx,
         args.op_index,
     )
     .await?;
