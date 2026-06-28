@@ -95,9 +95,15 @@ impl HostError {
                     format!("Object error (code {code}): an operation on a host object (vector, map, bytes) failed.")
                 }
             },
-            Self::Crypto { code } => match code {
-                0 => "Invalid cryptographic input: a public key, signature, or hash input has the wrong length or format.".to_string(),
-                _ => format!("Crypto error (code {code}): a cryptographic operation failed due to invalid input."),
+            Self::Crypto { code } => {
+                if let Some(detail) = crate::decode::mappings::crypto::lookup(*code) {
+                    detail.summary.to_string()
+                } else {
+                    format!(
+                        "Crypto error (code {code}): a cryptographic operation failed."
+                    )
+                }
+            }
             },
             Self::Contract { code } => match code {
                0 => "Contract error: the contract's own logic rejected this call — run with --resolve to map the code to its name.".to_string(),
