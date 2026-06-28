@@ -2,7 +2,7 @@
 
 use crate::output::theme::ColorPalette;
 use colored::Colorize;
-use prism_core::types::report::{DiagnosticReport, RootCause, TransactionContext, FeeBreakdown};
+use prism_core::types::report::{DiagnosticReport, FeeBreakdown, RootCause, TransactionContext};
 use prism_core::types::trace::ResourceProfile;
 use tabled::{Table, Tabled};
 
@@ -584,7 +584,9 @@ mod tests {
                 memory_bytes_used: 5000,
                 memory_bytes_limit: 50000,
                 read_bytes: 1000,
+                read_bytes_limit: 2000,
                 write_bytes: 500,
+                write_bytes_limit: 1000,
             },
         };
 
