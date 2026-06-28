@@ -1,5 +1,3 @@
-
-
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -13,7 +11,6 @@ pub enum Severity {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RootCause {
-
     pub description: String,
 
     pub likelihood: String,
@@ -21,7 +18,6 @@ pub struct RootCause {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SuggestedFix {
-
     pub description: String,
 
     pub difficulty: String,
@@ -37,7 +33,6 @@ pub struct SuggestedFix {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContractErrorInfo {
-
     pub contract_id: String,
 
     pub error_code: u32,
@@ -51,7 +46,6 @@ pub struct ContractErrorInfo {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionContext {
-
     pub tx_hash: String,
 
     pub ledger_sequence: u32,
@@ -84,7 +78,9 @@ pub struct ResourceSummary {
     pub memory_bytes_used: u64,
     pub memory_bytes_limit: u64,
     pub read_bytes: u64,
+    pub read_bytes_limit: u64,
     pub write_bytes: u64,
+    pub write_bytes_limit: u64,
 }
 
 /// Pinpoints the exact contract and function where a cross-contract call chain failed.
@@ -102,7 +98,6 @@ pub struct FailureAttribution {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiagnosticReport {
-
     pub error_category: String,
 
     pub error_code: u32,
@@ -138,7 +133,6 @@ pub struct DiagnosticReport {
 }
 
 impl DiagnosticReport {
-
     pub fn new(category: &str, code: u32, name: &str, summary: &str) -> Self {
         Self {
             error_category: category.to_string(),

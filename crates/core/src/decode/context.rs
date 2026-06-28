@@ -1,8 +1,8 @@
-
-
 use crate::decode::auth_signature::decode_auth_entry_signatures;
 use crate::error::PrismResult;
 use crate::types::report::{DiagnosticReport, FeeBreakdown, ResourceSummary, TransactionContext};
+use crate::xdr::codec::XdrCodec;
+use stellar_xdr::curr::{Limits, SorobanTransactionData, TransactionEnvelope, TransactionExt};
 
 pub fn enrich_report(
     report: &mut DiagnosticReport,
@@ -14,7 +14,10 @@ pub fn enrich_report(
         .unwrap_or("unknown")
         .to_string();
 
-    let ledger_sequence = tx_data.get("ledger").and_then(serde_json::Value::as_u64).unwrap_or(0) as u32;
+    let ledger_sequence = tx_data
+        .get("ledger")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(0) as u32;
 
     let context = TransactionContext {
         tx_hash,
@@ -57,8 +60,7 @@ fn extract_return_value(tx_data: &serde_json::Value) -> Option<String> {
 }
 
 fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
-    use crate::xdr::codec::XdrCodec;
-    use stellar_xdr::curr::{TransactionEnvelope, TransactionResult, TransactionMeta};
+    use stellar_xdr::curr::{TransactionMeta, TransactionResult};
 
     // 1. Get total fee from resultXdr
     let mut total_fee = 0;
@@ -149,6 +151,88 @@ fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
 }
 
 fn extract_resource_summary(tx_data: &serde_json::Value) -> ResourceSummary {
+
+    let (cpu_limit, read_bytes_limit, write_bytes_limit) =
+        extract_declared_soroban_resources(tx_data).unwrap_or_else(|| {
+            (
+                json_u64(tx_data, &["resources", "cpuInstructionsLimit"])
+                    .or_else(|| json_u64(tx_data, &["resources", "instructions"]))
+                    .unwrap_or(0),
+                json_u64(tx_data, &["resources", "readBytesLimit"])
+                    .or_else(|| json_u64(tx_data, &["resources", "readBytes"]))
+                    .unwrap_or(0),
+                json_u64(tx_data, &["resources", "writeBytesLimit"])
+                    .or_else(|| json_u64(tx_data, &["resources", "writeBytes"]))
+                    .unwrap_or(0),
+            )
+        });
+
+    let read_bytes = json_u64(tx_data, &["resourceUsage", "readBytes"])
+        .or_else(|| json_u64(tx_data, &["resources", "readBytesUsed"]))
+        .or_else(|| json_u64(tx_data, &["readBytes"]))
+        // RPC/XDR exposes the transaction's declared ledger read-byte budget. Use it as the
+        // best available value when metadata does not include a separate consumed-byte field.
+        .unwrap_or(read_bytes_limit);
+
+    ResourceSummary {
+        cpu_instructions_used: json_u64(tx_data, &["resourceUsage", "cpuInsns"])
+            .or_else(|| json_u64(tx_data, &["cost", "cpuInsns"]))
+            .unwrap_or(0),
+        cpu_instructions_limit: cpu_limit,
+        memory_bytes_used: json_u64(tx_data, &["resourceUsage", "memBytes"])
+            .or_else(|| json_u64(tx_data, &["cost", "memBytes"]))
+            .unwrap_or(0),
+        memory_bytes_limit: 0,
+        read_bytes,
+        read_bytes_limit,
+        write_bytes: json_u64(tx_data, &["resourceUsage", "writeBytes"])
+            .or_else(|| json_u64(tx_data, &["resources", "writeBytesUsed"]))
+            .unwrap_or(0),
+        write_bytes_limit,
+    }
+}
+
+fn extract_declared_soroban_resources(tx_data: &serde_json::Value) -> Option<(u64, u64, u64)> {
+    if let Some(data_xdr) = tx_data
+        .get("transactionData")
+        .or_else(|| tx_data.get("sorobanData"))
+        .and_then(|v| v.as_str())
+    {
+        if let Ok(bytes) = crate::xdr::codec::decode_xdr_base64(data_xdr) {
+            if let Ok(data) = <SorobanTransactionData as stellar_xdr::curr::ReadXdr>::from_xdr(
+                bytes,
+                Limits::none(),
+            ) {
+                return Some((
+                    data.resources.instructions as u64,
+                    data.resources.read_bytes as u64,
+                    data.resources.write_bytes as u64,
+                ));
+            }
+        }
+    }
+
+    if let Some(envelope_xdr) = tx_data.get("envelopeXdr").and_then(|v| v.as_str()) {
+        if let Ok(TransactionEnvelope::Tx(v1)) = TransactionEnvelope::from_xdr_base64(envelope_xdr)
+        {
+            if let TransactionExt::V1(data) = v1.tx.ext {
+                return Some((
+                    data.resources.instructions as u64,
+                    data.resources.read_bytes as u64,
+                    data.resources.write_bytes as u64,
+                ));
+            }
+        }
+    }
+
+    None
+}
+
+fn json_u64(value: &serde_json::Value, path: &[&str]) -> Option<u64> {
+    let mut current = value;
+    for key in path {
+        current = current.get(*key)?;
+
     let mut cpu_used = 0;
     let mut cpu_limit = 0;
     let mut mem_used = 0;
@@ -181,7 +265,11 @@ fn extract_resource_summary(tx_data: &serde_json::Value) -> ResourceSummary {
         memory_bytes_limit: mem_limit,
         read_bytes: 0,
         write_bytes: 0,
+
     }
+    current
+        .as_u64()
+        .or_else(|| current.as_str().and_then(|s| s.parse::<u64>().ok()))
 }
 
 /// Extract and decode ed25519 signatures from auth entries in the transaction envelope.
@@ -208,10 +296,10 @@ mod tests {
     use super::*;
     use crate::xdr::codec::XdrCodec;
     use stellar_xdr::curr::{
-        Memo, MuxedAccount, Preconditions, SequenceNumber, Transaction, TransactionEnvelope,
-        TransactionExt, TransactionResult, TransactionResultResult, TransactionV1Envelope, Uint256,
-        TransactionMeta, TransactionMetaV3, SorobanTransactionMeta, SorobanTransactionMetaExt,
-        SorobanTransactionMetaExtV1, ExtensionPoint,
+        ExtensionPoint, Memo, MuxedAccount, Preconditions, SequenceNumber, SorobanTransactionMeta,
+        SorobanTransactionMetaExt, SorobanTransactionMetaExtV1, Transaction, TransactionEnvelope,
+        TransactionExt, TransactionMeta, TransactionMetaV3, TransactionResult,
+        TransactionResultResult, TransactionV1Envelope, Uint256,
     };
 
     #[test]
