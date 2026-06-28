@@ -6,6 +6,7 @@ pub mod context;
 pub mod object;
 pub mod storage;
 pub mod value;
+pub mod wasm;
 
 #[cfg(test)]
 mod severity_tests;
