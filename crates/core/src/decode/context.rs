@@ -148,12 +148,37 @@ fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
     }
 }
 
-fn extract_resource_summary(_tx_data: &serde_json::Value) -> ResourceSummary {
+fn extract_resource_summary(tx_data: &serde_json::Value) -> ResourceSummary {
+    let mut cpu_used = 0;
+    let mut cpu_limit = 0;
+    let mut mem_used = 0;
+    let mut mem_limit = 0;
+
+    if let Some(events) = tx_data.get("diagnosticEvents").and_then(|e| e.as_array()) {
+        for event in events {
+            if event.get("type").and_then(|t| t.as_str()) == Some("budget") {
+                if let Some(data) = event.get("data") {
+                    let category = data.get("category").and_then(|c| c.as_str()).unwrap_or("");
+                    let used = data.get("used").and_then(|u| u.as_u64()).unwrap_or(0);
+                    let limit = data.get("limit").and_then(|l| l.as_u64()).unwrap_or(0);
+
+                    if category == "cpu" {
+                        cpu_used = used;
+                        cpu_limit = limit;
+                    } else if category == "memory" {
+                        mem_used = used;
+                        mem_limit = limit;
+                    }
+                }
+            }
+        }
+    }
+
     ResourceSummary {
-        cpu_instructions_used: 0,
-        cpu_instructions_limit: 0,
-        memory_bytes_used: 0,
-        memory_bytes_limit: 0,
+        cpu_instructions_used: cpu_used,
+        cpu_instructions_limit: cpu_limit,
+        memory_bytes_used: mem_used,
+        memory_bytes_limit: mem_limit,
         read_bytes: 0,
         write_bytes: 0,
     }
