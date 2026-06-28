@@ -223,6 +223,13 @@ mod tests {
                     .map(|detail| (detail.code, detail.name))
                     .collect::<Vec<_>>(),
             ),
+            (
+                ErrorCategory::Wasm,
+                crate::decode::mappings::wasm::WASM_ERROR_DETAILS
+                    .iter()
+                    .map(|detail| (detail.code, detail.name))
+                    .collect::<Vec<_>>(),
+            ),
         ];
 
         for (category, details) in expected_codes {

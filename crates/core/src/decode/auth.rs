@@ -147,7 +147,7 @@ fn parse_function(function: &SorobanAuthorizedFunction, depth: usize) -> AuthInv
 }
 
 /// Render an `ScAddress` as a strkey (`G...` for accounts, `C...` for contracts).
-fn scaddress_to_strkey(address: &ScAddress) -> String {
+pub(crate) fn scaddress_to_strkey(address: &ScAddress) -> String {
     match address {
         ScAddress::Account(AccountId(PublicKey::PublicKeyTypeEd25519(Uint256(bytes)))) => {
             stellar_strkey::ed25519::PublicKey(*bytes).to_string()

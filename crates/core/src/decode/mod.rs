@@ -1,7 +1,8 @@
 
 pub mod auth;
+pub mod auth_address_nonce;
 pub mod auth_signature;
-pub mod context;
+pub mod decode_context;
 pub mod contract_error;
 pub mod cross_contract;
 pub mod diagnostic;
@@ -13,6 +14,7 @@ pub mod walker;
 pub use auth::{
     AddressCredential, AuthChain, AuthCredential, AuthFunctionKind, AuthInvocation,
 };
+pub use auth_address_nonce::AddressWithNonce;
 pub use walker::{
     walk_diagnostic_events, DiagnosticEventKind, DiagnosticEventWalker,
     StructuredDiagnosticEvent,
@@ -29,16 +31,23 @@ use stellar_xdr::curr::{ScVal, SorobanTransactionMetaExt, TransactionMeta, Trans
 ///
 /// Also extracts `fee_charged` from `resultXdr` so fee details are not lost.
 fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> PrismResult<()> {
-    // Inject fee_charged from TransactionResult regardless of V3.
+    // Derive the inclusion fee from the transaction result and, when available,
+    // subtract the Soroban resource fee components from the total charged fee.
+    let mut total_fee = None;
     if let Some(result_b64) = tx_data.get("resultXdr").and_then(|r| r.as_str()) {
         if let Ok(tx_result) = TransactionResult::from_xdr_base64(result_b64) {
-            tx_data["inclusionFee"] = serde_json::json!(tx_result.fee_charged);
+            total_fee = Some(tx_result.fee_charged);
         }
     }
 
     let meta_b64 = match tx_data.get("resultMetaXdr").and_then(|r| r.as_str()) {
         Some(s) => s.to_string(),
-        None => return Ok(()),
+        None => {
+            if let Some(total_fee) = total_fee {
+                tx_data["inclusionFee"] = serde_json::json!(total_fee);
+            }
+            return Ok(());
+        }
     };
 
     let meta = TransactionMeta::from_xdr_base64(&meta_b64).map_err(|e| {
@@ -48,10 +57,17 @@ fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> PrismResult<()> {
         }
     })?;
 
+    let mut resource_fee = 0;
+
     if let TransactionMeta::V3(v3) = meta {
         let soroban_meta = match v3.soroban_meta {
             Some(s) => s,
-            None => return Ok(()),
+            None => {
+                if let Some(total_fee) = total_fee {
+                    tx_data["inclusionFee"] = serde_json::json!(total_fee);
+                }
+                return Ok(());
+            }
         };
 
         // Inject contract events as base64 XDR strings.
@@ -85,12 +101,24 @@ fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> PrismResult<()> {
 
         // Extract resource fee and refundable fee from SorobanTransactionMetaExtV1.
         if let SorobanTransactionMetaExt::V1(v1) = &soroban_meta.ext {
+            resource_fee = v1.total_non_refundable_resource_fee_charged
+                + v1.total_refundable_resource_fee_charged
+                + v1.rent_fee_charged;
             tx_data["resourceFee"] = serde_json::json!({
                 "totalNonRefundableResourceFeeCharged": v1.total_non_refundable_resource_fee_charged,
                 "totalRefundableResourceFeeCharged": v1.total_refundable_resource_fee_charged,
                 "rentFeeCharged": v1.rent_fee_charged,
             });
         }
+    }
+
+    if let Some(total_fee) = total_fee {
+        let inclusion_fee = if resource_fee > 0 {
+            total_fee - resource_fee
+        } else {
+            total_fee
+        };
+        tx_data["inclusionFee"] = serde_json::json!(inclusion_fee);
     }
 
     Ok(())
@@ -173,6 +201,7 @@ pub async fn decode_transaction_with_op_filter(
         None => (0..num_ops).collect(),
     };
 
+let ctx = decode_context::DecodeContextBuilder::new(network.clone()).build();
     for i in indices {
         let mut tx_data = base_tx_data.clone();
         filter_transaction_by_operation(&mut tx_data, i)?;
@@ -193,7 +222,7 @@ pub async fn decode_transaction_with_op_filter(
         }
 
         diagnostic::enrich_report(&mut report, &tx_data)?;
-        context::enrich_report(&mut report, &tx_data)?;
+        decode_context::enrich_report(&mut report, &tx_data)?;
         cross_contract::attribute_failure(&mut report, &tx_data)?;
         reports.push(report);
     }
@@ -339,7 +368,7 @@ mod tests {
         let result = parse_v3_metadata(&mut data);
         assert!(result.is_ok());
 
-        assert_eq!(data["inclusionFee"], serde_json::json!(999));
+        assert_eq!(data["inclusionFee"], serde_json::json!(99));
 
         let fee = data["resourceFee"].as_object().expect("resourceFee");
         assert_eq!(fee["totalNonRefundableResourceFeeCharged"], 500);

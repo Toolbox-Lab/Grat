@@ -48,7 +48,8 @@ async fn resolve_with_network(
         error_code,
         error_name: error_entry.map(|e| e.name.clone()),
         doc_comment: error_entry.and_then(|e| e.doc.clone()),
-    })
+        learn_more: "https://developers.stellar.org/docs/learn/smart-contracts/errors#contract-specific-errors".to_string(), 
+   })
 }
 
 async fn fetch_contract_wasm(contract_id: &str, network: &NetworkConfig) -> PrismResult<Vec<u8>> {

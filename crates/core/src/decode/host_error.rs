@@ -95,17 +95,26 @@ impl HostError {
                     format!("Object error (code {code}): an operation on a host object (vector, map, bytes) failed.")
                 }
             },
-            Self::Crypto { code } => match code {
-                0 => "Invalid cryptographic input: a public key, signature, or hash input has the wrong length or format.".to_string(),
-                _ => format!("Crypto error (code {code}): a cryptographic operation failed due to invalid input."),
+            Self::Crypto { code } => {
+                if let Some(detail) = crate::decode::mappings::crypto::lookup(*code) {
+                    detail.summary.to_string()
+                } else {
+                    format!(
+                        "Crypto error (code {code}): a cryptographic operation failed."
+                    )
+                }
+            }
             },
             Self::Contract { code } => match code {
                0 => "Contract error: the contract's own logic rejected this call — run with --resolve to map the code to its name.".to_string(),
                 _ => format!("Contract error (code {code}): the contract returned a non-zero error code — run with --resolve to identify it."),
             },
-            Self::Wasm { code } => match code {
-               0 => "Invalid WASM module: the contract bytecode failed validation — recompile with a compatible Soroban SDK version.".to_string(),
-                _ => format!("WASM error (code {code}): the contract's WASM module could not be loaded or executed."),
+            Self::Wasm { code } => {
+                if let Some(detail) = crate::decode::mappings::wasm::lookup(*code) {
+                    detail.summary.to_string()
+                } else {
+                    format!("WASM error (code {code}): the contract's WASM module could not be loaded or executed.")
+                }
             },
             Self::Events { code } => match code {
                 0 => "Event size limit exceeded: the transaction emitted more event data than the protocol allows in a single execution.".to_string(),
