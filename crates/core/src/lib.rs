@@ -19,8 +19,9 @@ pub use types::config::NetworkConfig;
 pub use error::{PrismError, PrismResult};
 pub use types::report::DiagnosticReport;
 pub use decode::{
-    walk_diagnostic_events, AddressCredential, AuthChain, AuthCredential, AuthFunctionKind,
-    AuthInvocation, DiagnosticEventKind, DiagnosticEventWalker, StructuredDiagnosticEvent,
+    walk_diagnostic_events, AddressCredential, AddressWithNonce, AuthChain, AuthCredential,
+    AuthFunctionKind, AuthInvocation, DiagnosticEventKind, DiagnosticEventWalker,
+    StructuredDiagnosticEvent,
 };
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
