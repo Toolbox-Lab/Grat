@@ -105,9 +105,12 @@ impl HostError {
                 }
             }
             },
-            Self::Contract { code } => match code {
-               0 => "Contract error: the contract's own logic rejected this call — run with --resolve to map the code to its name.".to_string(),
-                _ => format!("Contract error (code {code}): the contract returned a non-zero error code — run with --resolve to identify it."),
+            Self::Contract { code } => {
+                if let Some(detail) = crate::decode::mappings::contract::lookup(*code) {
+                    detail.summary.to_string()
+                } else {
+                    format!("Contract error (code {code}): the contract returned a non-zero error code — run with --resolve to identify it.")
+                }
             },
             Self::Wasm { code } => {
                 if let Some(detail) = crate::decode::mappings::wasm::lookup(*code) {
@@ -342,6 +345,14 @@ mod tests {
         assert_eq!(
             HostError::Contract { code: 0 }.summary(),
             "Contract error: the contract's own logic rejected this call — run with --resolve to map the code to its name."
+        );
+        assert_eq!(
+            HostError::Contract { code: 1 }.summary(),
+            "An internal protocol implementation error occurred (e.g. invalid ledger state)."
+        );
+        assert_eq!(
+            HostError::Contract { code: 2 }.summary(),
+            "The operation is not supported (e.g. calling clawback on an asset without clawback enabled)."
         );
         assert_eq!(
             HostError::Wasm { code: 0 }.summary(),

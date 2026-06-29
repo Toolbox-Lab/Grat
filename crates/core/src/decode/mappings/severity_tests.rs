@@ -277,6 +277,17 @@ mod tests {
                 entry.code,
                 entry.severity
             );
+    #[test]
+    fn all_contract_entries_have_valid_severity() {
+        use crate::decode::mappings::contract::CONTRACT_ERROR_DETAILS;
+
+        for entry in CONTRACT_ERROR_DETAILS {
+            assert!(
+                matches!(entry.severity, Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info),
+                "Unexpected severity for contract code {}: {:?}",
+                entry.code,
+                entry.severity
+            );
         }
     }
 }

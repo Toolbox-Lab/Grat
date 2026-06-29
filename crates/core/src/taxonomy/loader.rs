@@ -230,6 +230,13 @@ mod tests {
                     .map(|detail| (detail.code, detail.name))
                     .collect::<Vec<_>>(),
             ),
+            (
+                ErrorCategory::Contract,
+                crate::decode::mappings::contract::CONTRACT_ERROR_DETAILS
+                    .iter()
+                    .map(|detail| (detail.code, detail.name))
+                    .collect::<Vec<_>>(),
+            ),
         ];
 
         for (category, details) in expected_codes {
