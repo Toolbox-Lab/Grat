@@ -22,7 +22,7 @@ pub async fn replay_transaction(
 
     let state_diff = differ::compute_diff(&ledger_state, &raw_trace)?;
 
-    let profile = profiler::generate_profile(&raw_trace)?;
+    let profile = profiler::generate_profile(&raw_trace, &state_diff)?;
 
     Ok(ExecutionTrace {
         tx_hash: tx_hash.to_string(),

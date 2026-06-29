@@ -84,7 +84,9 @@ pub struct ResourceSummary {
     pub memory_bytes_used: u64,
     pub memory_bytes_limit: u64,
     pub read_bytes: u64,
+    pub read_limit: u64,
     pub write_bytes: u64,
+    pub write_limit: u64,
 }
 
 /// Pinpoints the exact contract and function where a cross-contract call chain failed.
