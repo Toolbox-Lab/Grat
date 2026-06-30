@@ -20,8 +20,8 @@ pub use error::{PrismError, PrismResult};
 pub use types::report::DiagnosticReport;
 pub use decode::{
     walk_diagnostic_events, AddressCredential, AddressWithNonce, AuthChain, AuthCredential,
-    AuthFunctionKind, AuthInvocation, DiagnosticEventKind, DiagnosticEventWalker,
-    StructuredDiagnosticEvent,
+    AuthFunctionKind, AuthInvocation, AuthSignatureInfo, DiagnosticEventKind,
+    DiagnosticEventWalker, SignatureKind, StructuredDiagnosticEvent,
 };
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

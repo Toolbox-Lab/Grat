@@ -499,6 +499,88 @@ pub fn render_fee_breakdown(fee: &FeeBreakdown) -> String {
     out
 }
 
+/// Render a human-readable summary of an [`AuthCredential`], distinguishing
+/// Ed25519 accounts from Smart Wallet contracts.
+///
+/// * **Ed25519** — shows the label, public key, and any decoded signature hexes.
+/// * **Smart Wallet** — shows the label and the contract ID.
+/// * **SourceAccount** — shows a brief note that the transaction source account authorized it.
+pub fn render_auth_credential(
+    credential: &prism_core::AuthCredential,
+    signatures: &[String],
+) -> String {
+    use prism_core::AuthCredential;
+    use prism_core::SignatureKind;
+
+    let palette = ColorPalette::default();
+    let mut out = String::new();
+
+    match credential {
+        AuthCredential::SourceAccount => {
+            out.push_str(&palette.metadata_text("Authorization Type: SourceAccount"));
+            out.push('\n');
+            out.push_str("  (Authorized by the transaction source account — no separate signature)\n");
+        }
+        AuthCredential::Address(addr_cred) => {
+            let kind = addr_cred.signature_kind();
+            let type_label = kind.label();
+
+            out.push_str(&palette.accent_text(&format!("Authorization Type: {type_label}")));
+            out.push('\n');
+
+            match kind {
+                SignatureKind::Ed25519 => {
+                    out.push_str(&format!(
+                        "  Public Key:   {}\n",
+                        palette.success_text(&addr_cred.address)
+                    ));
+                    if signatures.is_empty() {
+                        out.push_str(&format!(
+                            "  Signature:    {}\n",
+                            palette.muted_text("(none)")
+                        ));
+                    } else {
+                        for sig in signatures {
+                            out.push_str(&format!(
+                                "  Signature:    {}\n",
+                                palette.metadata_text(sig)
+                            ));
+                        }
+                    }
+                }
+                SignatureKind::SmartWallet => {
+                    out.push_str(&format!(
+                        "  Contract ID:  {}\n",
+                        palette.warning_text(&addr_cred.address)
+                    ));
+                    if !signatures.is_empty() {
+                        for sig in signatures {
+                            out.push_str(&format!(
+                                "  Auth Data:    {}\n",
+                                palette.metadata_text(sig)
+                            ));
+                        }
+                    }
+                }
+                SignatureKind::Unknown => {
+                    out.push_str(&format!(
+                        "  Address:      {}\n",
+                        palette.error_text(&addr_cred.address)
+                    ));
+                }
+            }
+
+            out.push_str(&format!("  Nonce:        {}\n", addr_cred.nonce));
+            out.push_str(&format!(
+                "  Expires:      ledger {}\n",
+                addr_cred.signature_expiration_ledger
+            ));
+        }
+    }
+
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

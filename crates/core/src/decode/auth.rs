@@ -10,6 +10,7 @@
 
 use crate::error::PrismResult;
 use crate::xdr::codec::XdrCodec;
+use crate::decode::auth_signature::SignatureKind;
 use serde::{Deserialize, Serialize};
 use stellar_xdr::curr::{
     AccountId, Hash, PublicKey, ScAddress, ScVal, SorobanAddressCredentials,
@@ -39,6 +40,18 @@ pub struct AddressCredential {
     pub signature_expiration_ledger: u32,
     /// Whether a non-void signature payload is present.
     pub signed: bool,
+}
+
+impl AddressCredential {
+    /// Detect whether this credential is an Ed25519 account or a Smart Wallet
+    /// contract by inspecting the address strkey prefix.
+    ///
+    /// * `G...` → [`SignatureKind::Ed25519`]
+    /// * `C...` → [`SignatureKind::SmartWallet`]
+    /// * anything else → [`SignatureKind::Unknown`]
+    pub fn signature_kind(&self) -> SignatureKind {
+        SignatureKind::from_address(&self.address)
+    }
 }
 
 /// The kind of host function a single invocation step authorizes.
@@ -420,5 +433,57 @@ mod tests {
     #[test]
     fn invalid_base64_is_an_error() {
         assert!(AuthChain::from_xdr_base64("!!!not-valid!!!").is_err());
+    }
+
+    // --- Issue #271: signature_kind() on AddressCredential ---
+
+    #[test]
+    fn address_credential_ed25519_kind_from_account_address() {
+        use crate::decode::auth_signature::SignatureKind;
+        let entry = SorobanAuthorizationEntry {
+            credentials: SorobanCredentials::Address(SorobanAddressCredentials {
+                address: account_address(1),
+                nonce: 0,
+                signature_expiration_ledger: 0,
+                signature: ScVal::Void,
+            }),
+            root_invocation: invocation(
+                contract_fn(contract_address(2), "fn", vec![]),
+                empty_subs(),
+            ),
+        };
+        let chain = AuthChain::from_entry(&entry);
+        match chain.credential {
+            AuthCredential::Address(cred) => {
+                assert_eq!(cred.signature_kind(), SignatureKind::Ed25519);
+                assert!(cred.address.starts_with('G'));
+            }
+            other => panic!("expected Address credential, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn address_credential_smart_wallet_kind_from_contract_address() {
+        use crate::decode::auth_signature::SignatureKind;
+        let entry = SorobanAuthorizationEntry {
+            credentials: SorobanCredentials::Address(SorobanAddressCredentials {
+                address: contract_address(5),
+                nonce: 0,
+                signature_expiration_ledger: 0,
+                signature: ScVal::Void,
+            }),
+            root_invocation: invocation(
+                contract_fn(contract_address(6), "fn", vec![]),
+                empty_subs(),
+            ),
+        };
+        let chain = AuthChain::from_entry(&entry);
+        match chain.credential {
+            AuthCredential::Address(cred) => {
+                assert_eq!(cred.signature_kind(), SignatureKind::SmartWallet);
+                assert!(cred.address.starts_with('C'));
+            }
+            other => panic!("expected Address credential, got {other:?}"),
+        }
     }
 }
