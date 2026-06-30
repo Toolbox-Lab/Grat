@@ -1,4 +1,4 @@
-use crate::network::config::{Network, NetworkConfig};
+use crate::network::config::NetworkConfig;
 
 /// Output format for diagnostic reports.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

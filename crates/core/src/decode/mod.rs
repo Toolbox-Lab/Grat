@@ -2,6 +2,7 @@
 pub mod auth;
 pub mod auth_address_nonce;
 pub mod auth_signature;
+pub mod context;
 pub mod decode_context;
 pub mod contract_error;
 pub mod cross_contract;
@@ -24,7 +25,7 @@ pub use walker::{
 use crate::error::{PrismError, PrismResult};
 use crate::types::report::DiagnosticReport;
 use crate::xdr::codec::XdrCodec;
-use stellar_xdr::curr::{ScVal, SorobanTransactionMetaExt, TransactionMeta, TransactionResult, TransactionEnvelope, FeeBumpTransactionInnerTx};
+use stellar_xdr::curr::{ScVal, SorobanTransactionMetaExt, TransactionMeta, TransactionResult};
 
 /// Decode `resultMetaXdr` as `TransactionMeta` and, if it is V3, inject the
 /// Soroban contract events, diagnostic events, and return value into the JSON
@@ -202,7 +203,7 @@ pub async fn decode_transaction_with_op_filter(
         None => (0..num_ops).collect(),
     };
 
-let ctx = decode_context::DecodeContextBuilder::new(network.clone()).build();
+let _ctx = decode_context::DecodeContextBuilder::from(network).build();
     for i in indices {
         let mut tx_data = base_tx_data.clone();
         filter_transaction_by_operation(&mut tx_data, i)?;
@@ -226,7 +227,7 @@ let ctx = decode_context::DecodeContextBuilder::new(network.clone()).build();
         }
 
         diagnostic::enrich_report(&mut report, &tx_data)?;
-        decode_context::enrich_report(&mut report, &tx_data)?;
+        context::enrich_report(&mut report, &tx_data)?;
         cross_contract::attribute_failure(&mut report, &tx_data)?;
         reports.push(report);
     }

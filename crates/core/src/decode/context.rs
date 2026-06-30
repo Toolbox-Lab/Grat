@@ -1,6 +1,6 @@
 
 
-use crate::decode::auth::{AuthChain, AuthCredential, AuthorizationType};
+use crate::decode::auth::{AuthChain, AuthCredential};
 use crate::decode::auth_signature::decode_auth_entry_signatures;
 use crate::error::PrismResult;
 use crate::types::report::{AuthEntryInfo, DiagnosticReport, FeeBreakdown, ResourceSummary, TransactionContext};
@@ -101,15 +101,15 @@ fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
     if let Some(resource_fee_obj) = tx_data.get("resourceFee").and_then(|v| v.as_object()) {
         non_refundable_fee = resource_fee_obj
             .get("totalNonRefundableResourceFeeCharged")
-            .and_then(|v| v.as_i64)
+            .and_then(|v| v.as_i64())
             .unwrap_or(0);
         refundable_fee = resource_fee_obj
             .get("totalRefundableResourceFeeCharged")
-            .and_then(|v| v.as_i64)
+            .and_then(|v| v.as_i64())
             .unwrap_or(0);
         rent_fee = resource_fee_obj
             .get("rentFeeCharged")
-            .and_then(|v| v.as_i64)
+            .and_then(|v| v.as_i64())
             .unwrap_or(0);
         has_soroban_meta = true;
     } else if let Some(meta_xdr_b64) = tx_data.get("resultMetaXdr").and_then(|v| v.as_str()) {
@@ -141,7 +141,7 @@ fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
 
     let inclusion_fee = tx_data
         .get("inclusionFee")
-        .and_then(|v| v.as_i64)
+        .and_then(|v| v.as_i64())
         .unwrap_or(total_fee - resource_fee);
 
     FeeBreakdown {
@@ -190,18 +190,18 @@ fn extract_resource_summary(tx_data: &serde_json::Value) -> ResourceSummary {
                 for op in v3.operations.iter() {
                     for change in op.changes.iter() {
                         match change {
-                            LedgerEntryChange::LedgerEntryCreated(entry) => {
+                            LedgerEntryChange::Created(entry) => {
                                 write_bytes += entry_size(entry);
                             }
-                            LedgerEntryChange::LedgerEntryUpdated(entry) => {
+                            LedgerEntryChange::Updated(entry) => {
                                 write_bytes += entry_size(entry);
                             }
-                            LedgerEntryChange::LedgerEntryRemoved(key) => {
+                            LedgerEntryChange::Removed(key) => {
                                 if let Ok(key_bytes) = XdrCodec::to_xdr_bytes(key) {
                                     read_bytes += key_bytes.len() as u64;
                                 }
                             }
-                            LedgerEntryChange::LedgerEntryState(entry) => {
+                            LedgerEntryChange::State(entry) => {
                                 read_bytes += entry_size(entry);
                             }
                         }
@@ -219,10 +219,11 @@ fn extract_resource_summary(tx_data: &serde_json::Value) -> ResourceSummary {
     // Extract read/write limits from the transaction envelope's SorobanTransactionData
     if let Some(envelope_xdr_b64) = tx_data.get("envelopeXdr").and_then(|v| v.as_str()) {
         if let Ok(tx_envelope) = TransactionEnvelope::from_xdr_base64(envelope_xdr_b64) {
-            let inner_tx = inner_transaction(&tx_envelope);
-            if let TransactionExt::V1(soroban_data) = &inner_tx.ext {
-                summary.read_limit = soroban_data.resources.read_bytes as u64;
-                summary.write_limit = soroban_data.resources.write_bytes as u64;
+            if let Some(inner_tx) = inner_transaction(&tx_envelope) {
+                if let TransactionExt::V1(soroban_data) = &inner_tx.ext {
+                    summary.read_limit = soroban_data.resources.read_bytes as u64;
+                    summary.write_limit = soroban_data.resources.write_bytes as u64;
+                }
             }
         }
     }
@@ -230,13 +231,13 @@ fn extract_resource_summary(tx_data: &serde_json::Value) -> ResourceSummary {
     summary
 }
 
-/// Extract the inner Transaction from any envelope variant.
-fn inner_transaction(envelope: &TransactionEnvelope) -> &Transaction {
+/// Extract the inner Transaction from envelope variants that can carry Soroban data.
+fn inner_transaction(envelope: &TransactionEnvelope) -> Option<&Transaction> {
     match envelope {
-        TransactionEnvelope::TxV0(v0) => &v0.tx,
-        TransactionEnvelope::Tx(v1) => &v1.tx,
+        TransactionEnvelope::TxV0(_) => None,
+        TransactionEnvelope::Tx(v1) => Some(&v1.tx),
         TransactionEnvelope::TxFeeBump(fb) => match &fb.tx.inner_tx {
-            FeeBumpTransactionInnerTx::Tx(v1) => &v1.tx,
+            FeeBumpTransactionInnerTx::Tx(v1) => Some(&v1.tx),
         },
     }
 }
@@ -244,9 +245,9 @@ fn inner_transaction(envelope: &TransactionEnvelope) -> &Transaction {
 /// Extract a LedgerEntry from any LedgerEntryChange if the variant carries one.
 fn ledger_entry_from_change(change: &LedgerEntryChange) -> Result<stellar_xdr::curr::LedgerEntry, ()> {
     match change {
-        LedgerEntryChange::LedgerEntryCreated(entry)
-        | LedgerEntryChange::LedgerEntryUpdated(entry)
-        | LedgerEntryChange::LedgerEntryState(entry) => Ok(entry.clone()),
+        LedgerEntryChange::Created(entry)
+        | LedgerEntryChange::Updated(entry)
+        | LedgerEntryChange::State(entry) => Ok(entry.clone()),
         _ => Err(()),
     }
 }

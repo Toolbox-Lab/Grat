@@ -103,7 +103,6 @@ impl HostError {
                         "Crypto error (code {code}): a cryptographic operation failed."
                     )
                 }
-            }
             },
             Self::Contract { code } => match code {
                0 => "Contract error: the contract's own logic rejected this call — run with --resolve to map the code to its name.".to_string(),
