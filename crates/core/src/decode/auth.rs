@@ -17,6 +17,29 @@ use stellar_xdr::curr::{
     SorobanCredentials, Uint256,
 };
 
+/// The type of authorization credential used in a Soroban auth entry.
+///
+/// - `Ed25519`: a classic Stellar account (`G...` strkey) signing with its ed25519 key.
+/// - `SmartWallet`: a deployed contract (`C...` strkey) that implements custom
+///   signature verification logic (e.g., multi-sig, passkeys).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AuthorizationType {
+    /// Standard Ed25519 account authorization (G... address).
+    Ed25519,
+    /// Smart Wallet contract authorization (C... address).
+    SmartWallet,
+}
+
+impl std::fmt::Display for AuthorizationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AuthorizationType::Ed25519 => write!(f, "Ed25519"),
+            AuthorizationType::SmartWallet => write!(f, "Smart Wallet"),
+        }
+    }
+}
+
 /// The credential that authorizes an [`AuthChain`].
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case", tag = "kind")]
@@ -33,6 +56,12 @@ pub enum AuthCredential {
 pub struct AddressCredential {
     /// The authorizing address as a strkey (`G...` account or `C...` contract).
     pub address: String,
+    /// Whether this credential uses Ed25519 (G... account) or Smart Wallet (C... contract).
+    pub auth_type: AuthorizationType,
+    /// For Smart Wallet credentials, the contract ID in strkey form (`C...`).
+    /// `None` for Ed25519 accounts.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub contract_id: Option<String>,
     /// Replay-protection nonce chosen by the signer.
     pub nonce: i64,
     /// Ledger sequence at which this signature stops being valid.
@@ -111,8 +140,15 @@ fn parse_credential(credentials: &SorobanCredentials) -> AuthCredential {
 }
 
 fn parse_address_credential(creds: &SorobanAddressCredentials) -> AddressCredential {
+    let address = scaddress_to_strkey(&creds.address);
+    let (auth_type, contract_id) = match &creds.address {
+        ScAddress::Account(_) => (AuthorizationType::Ed25519, None),
+        ScAddress::Contract(_) => (AuthorizationType::SmartWallet, Some(address.clone())),
+    };
     AddressCredential {
-        address: scaddress_to_strkey(&creds.address),
+        address,
+        auth_type,
+        contract_id,
         nonce: creds.nonce,
         signature_expiration_ledger: creds.signature_expiration_ledger,
         signed: creds.signature != ScVal::Void,
@@ -303,6 +339,95 @@ mod tests {
             }
             other => panic!("expected address credential, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn ed25519_account_credential_has_correct_auth_type() {
+        let entry = SorobanAuthorizationEntry {
+            credentials: SorobanCredentials::Address(SorobanAddressCredentials {
+                address: account_address(3),
+                nonce: 1,
+                signature_expiration_ledger: 100,
+                signature: ScVal::Void,
+            }),
+            root_invocation: invocation(
+                contract_fn(contract_address(9), "transfer", vec![]),
+                empty_subs(),
+            ),
+        };
+
+        let chain = AuthChain::from_entry(&entry);
+        match chain.credential {
+            AuthCredential::Address(creds) => {
+                assert_eq!(creds.auth_type, AuthorizationType::Ed25519);
+                assert!(creds.address.starts_with('G'));
+                assert!(creds.contract_id.is_none(), "Ed25519 should have no contract_id");
+                assert_eq!(creds.auth_type.to_string(), "Ed25519");
+            }
+            other => panic!("expected address credential, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn smart_wallet_contract_credential_has_correct_auth_type() {
+        let entry = SorobanAuthorizationEntry {
+            credentials: SorobanCredentials::Address(SorobanAddressCredentials {
+                address: contract_address(5),
+                nonce: 99,
+                signature_expiration_ledger: 200,
+                signature: ScVal::Void,
+            }),
+            root_invocation: invocation(
+                contract_fn(contract_address(8), "invoke", vec![]),
+                empty_subs(),
+            ),
+        };
+
+        let chain = AuthChain::from_entry(&entry);
+        match chain.credential {
+            AuthCredential::Address(creds) => {
+                assert_eq!(creds.auth_type, AuthorizationType::SmartWallet);
+                assert!(creds.address.starts_with('C'));
+                // contract_id must equal address for smart wallet entries
+                let contract_id = creds.contract_id.as_deref().expect("smart wallet must have contract_id");
+                assert_eq!(contract_id, creds.address);
+                assert!(contract_id.starts_with('C'));
+                assert_eq!(creds.auth_type.to_string(), "Smart Wallet");
+            }
+            other => panic!("expected address credential, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn smart_wallet_contract_id_matches_address() {
+        // Verify contract_id is exactly equal to address for a contract credential.
+        let seed = 42u8;
+        let addr = contract_address(seed);
+        let entry = SorobanAuthorizationEntry {
+            credentials: SorobanCredentials::Address(SorobanAddressCredentials {
+                address: addr.clone(),
+                nonce: 0,
+                signature_expiration_ledger: 0,
+                signature: ScVal::Void,
+            }),
+            root_invocation: invocation(
+                contract_fn(contract_address(1), "fn", vec![]),
+                empty_subs(),
+            ),
+        };
+
+        let chain = AuthChain::from_entry(&entry);
+        if let AuthCredential::Address(creds) = chain.credential {
+            assert_eq!(creds.contract_id.as_deref(), Some(creds.address.as_str()));
+        } else {
+            panic!("expected address credential");
+        }
+    }
+
+    #[test]
+    fn authorization_type_display_labels() {
+        assert_eq!(AuthorizationType::Ed25519.to_string(), "Ed25519");
+        assert_eq!(AuthorizationType::SmartWallet.to_string(), "Smart Wallet");
     }
 
     #[test]

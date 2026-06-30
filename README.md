@@ -17,6 +17,7 @@
 - **Resource Profiling**: Identifies budget hotspots and expensive host function calls.
 - **Time-Travel Debugging**: Supports breakpoints, step-through execution, and "what-if" re-simulation.
 - **Multi-Interface Support**: Available via Rust CLI, VS Code Extension, and a Web Application.
+- **Authorization Type Detection**: Distinguishes Ed25519 account signatures from Smart Wallet (contract) authorizations and surfaces the relevant address or contract ID.
 
 ## Architecture
 
@@ -94,6 +95,48 @@ Profile contract execution to identify expensive storage reads or CPU-heavy host
 ### Regression Testing
 
 Export failed transactions as standalone test cases to ensure bugs are permanently resolved.
+
+## Authorization Type Detection
+
+Prism automatically identifies the kind of authorization used in each Soroban transaction and includes this information in every diagnostic report.
+
+### Supported Types
+
+| Type | Address Prefix | Description |
+|------|----------------|-------------|
+| **Ed25519** | `G...` | Classic Stellar account signing with its ed25519 key pair. |
+| **Smart Wallet** | `C...` | Deployed contract implementing custom signature verification (e.g., multi-sig, passkeys). |
+
+### Detection Logic
+
+Detection is based on the `ScAddress` variant inside each `SorobanAddressCredentials` entry:
+
+- `ScAddress::Account(...)` → **Ed25519** — a standard Stellar account.
+- `ScAddress::Contract(...)` → **Smart Wallet** — a deployed contract acting as an authorizer.
+
+`SourceAccount` credentials (where the transaction's own source account implicitly authorizes the entry) are not typed because they carry no separate address.
+
+### Report Fields
+
+Each decoded `DiagnosticReport` includes an `auth_entries` array with one entry per authorization found in the transaction:
+
+```json
+{
+  "auth_entries": [
+    {
+      "auth_type": "Ed25519",
+      "address": "GABC...XYZ"
+    },
+    {
+      "auth_type": "Smart Wallet",
+      "address": "CABC...XYZ",
+      "contract_id": "CABC...XYZ"
+    }
+  ]
+}
+```
+
+The existing `auth_signatures` field (hex-encoded ed25519 signature bytes) is preserved unchanged for backward compatibility.
 
 ## Contributing
 

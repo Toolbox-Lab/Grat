@@ -541,6 +541,11 @@ mod tests {
             }),
             transaction_context: None,
             related_errors: Vec::new(),
+            cross_contract_attribution: None,
+            auth_signatures: Vec::new(),
+            auth_entries: Vec::new(),
+            failing_contract_id: None,
+            learn_more: "https://developers.stellar.org/docs/learn/smart-contracts/errors".to_string(),
         }
     }
 

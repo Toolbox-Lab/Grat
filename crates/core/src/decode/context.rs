@@ -1,8 +1,9 @@
 
 
+use crate::decode::auth::{AuthChain, AuthCredential, AuthorizationType};
 use crate::decode::auth_signature::decode_auth_entry_signatures;
 use crate::error::PrismResult;
-use crate::types::report::{DiagnosticReport, FeeBreakdown, ResourceSummary, TransactionContext};
+use crate::types::report::{AuthEntryInfo, DiagnosticReport, FeeBreakdown, ResourceSummary, TransactionContext};
 use crate::xdr::codec::XdrCodec;
 use stellar_xdr::curr::{
     FeeBumpTransactionInnerTx, LedgerEntryChange, Transaction, TransactionEnvelope, TransactionExt,
@@ -35,6 +36,9 @@ pub fn enrich_report(
 
     // Decode ed25519 signatures from auth entries embedded in the transaction envelope.
     report.auth_signatures = extract_auth_signatures(tx_data);
+
+    // Build typed auth entry summaries (Ed25519 vs Smart Wallet).
+    report.auth_entries = extract_auth_entries(tx_data);
 
     Ok(())
 }
@@ -266,6 +270,42 @@ fn extract_auth_signatures(tx_data: &serde_json::Value) -> Vec<String> {
     signatures
 }
 
+/// Build typed summaries for each auth entry found in the transaction.
+///
+/// For each entry, an [`AuthEntryInfo`] is produced that labels it as either
+/// Ed25519 or Smart Wallet and surfaces the relevant address / contract ID.
+/// Entries that cannot be decoded are silently skipped to remain non-breaking.
+fn extract_auth_entries(tx_data: &serde_json::Value) -> Vec<AuthEntryInfo> {
+    let mut entries = Vec::new();
+
+    if let Some(auth_array) = tx_data.get("auth").and_then(|a| a.as_array()) {
+        for entry in auth_array {
+            if let Some(xdr_b64) = entry.as_str() {
+                if let Ok(chain) = AuthChain::from_xdr_base64(xdr_b64) {
+                    if let Some(info) = auth_entry_info_from_chain(&chain) {
+                        entries.push(info);
+                    }
+                }
+            }
+        }
+    }
+
+    entries
+}
+
+/// Convert an [`AuthChain`] credential into an [`AuthEntryInfo`] label.
+/// Returns `None` for `SourceAccount` credentials, which carry no address info.
+fn auth_entry_info_from_chain(chain: &AuthChain) -> Option<AuthEntryInfo> {
+    match &chain.credential {
+        AuthCredential::SourceAccount => None,
+        AuthCredential::Address(cred) => Some(AuthEntryInfo {
+            auth_type: cred.auth_type.to_string(),
+            address: cred.address.clone(),
+            contract_id: cred.contract_id.clone(),
+        }),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -371,5 +411,121 @@ mod tests {
         assert_eq!(breakdown.inclusion_fee, 100); // 450 - 350
         assert_eq!(breakdown.refundable_fee, 250); // 200 + 50
         assert_eq!(breakdown.non_refundable_resource_fee, 100);
+    }
+
+    // ── auth_entries extraction tests ──────────────────────────────────────────
+
+    /// Helper: build an auth entry XDR base64 for an account (Ed25519) credential.
+    fn ed25519_auth_entry_b64(nonce: i64) -> String {
+        use stellar_xdr::curr::{
+            AccountId, Hash, InvokeContractArgs, PublicKey, ScAddress, ScSymbol, ScVal,
+            SorobanAddressCredentials, SorobanAuthorizationEntry, SorobanAuthorizedFunction,
+            SorobanAuthorizedInvocation, SorobanCredentials, Uint256,
+        };
+        let entry = SorobanAuthorizationEntry {
+            credentials: SorobanCredentials::Address(SorobanAddressCredentials {
+                address: ScAddress::Account(AccountId(PublicKey::PublicKeyTypeEd25519(Uint256(
+                    [3u8; 32],
+                )))),
+                nonce,
+                signature_expiration_ledger: 100,
+                signature: ScVal::Void,
+            }),
+            root_invocation: SorobanAuthorizedInvocation {
+                function: SorobanAuthorizedFunction::ContractFn(InvokeContractArgs {
+                    contract_address: ScAddress::Contract(Hash([9u8; 32])),
+                    function_name: ScSymbol("transfer".try_into().unwrap()),
+                    args: vec![].try_into().unwrap(),
+                }),
+                sub_invocations: vec![].try_into().unwrap(),
+            },
+        };
+        XdrCodec::to_xdr_base64(&entry).expect("encode")
+    }
+
+    /// Helper: build an auth entry XDR base64 for a contract (Smart Wallet) credential.
+    fn smart_wallet_auth_entry_b64(nonce: i64) -> String {
+        use stellar_xdr::curr::{
+            Hash, InvokeContractArgs, ScAddress, ScSymbol, ScVal, SorobanAddressCredentials,
+            SorobanAuthorizationEntry, SorobanAuthorizedFunction, SorobanAuthorizedInvocation,
+            SorobanCredentials,
+        };
+        let entry = SorobanAuthorizationEntry {
+            credentials: SorobanCredentials::Address(SorobanAddressCredentials {
+                address: ScAddress::Contract(Hash([5u8; 32])),
+                nonce,
+                signature_expiration_ledger: 200,
+                signature: ScVal::Void,
+            }),
+            root_invocation: SorobanAuthorizedInvocation {
+                function: SorobanAuthorizedFunction::ContractFn(InvokeContractArgs {
+                    contract_address: ScAddress::Contract(Hash([8u8; 32])),
+                    function_name: ScSymbol("invoke".try_into().unwrap()),
+                    args: vec![].try_into().unwrap(),
+                }),
+                sub_invocations: vec![].try_into().unwrap(),
+            },
+        };
+        XdrCodec::to_xdr_base64(&entry).expect("encode")
+    }
+
+    #[test]
+    fn extract_auth_entries_detects_ed25519() {
+        let b64 = ed25519_auth_entry_b64(42);
+        let tx_data = serde_json::json!({ "auth": [b64] });
+        let entries = extract_auth_entries(&tx_data);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].auth_type, "Ed25519");
+        assert!(entries[0].address.starts_with('G'));
+        assert!(entries[0].contract_id.is_none());
+    }
+
+    #[test]
+    fn extract_auth_entries_detects_smart_wallet() {
+        let b64 = smart_wallet_auth_entry_b64(99);
+        let tx_data = serde_json::json!({ "auth": [b64] });
+        let entries = extract_auth_entries(&tx_data);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0].auth_type, "Smart Wallet");
+        assert!(entries[0].address.starts_with('C'));
+        let contract_id = entries[0].contract_id.as_deref().expect("smart wallet must have contract_id");
+        assert_eq!(contract_id, entries[0].address);
+    }
+
+    #[test]
+    fn extract_auth_entries_handles_multiple_entries() {
+        let b64_ed = ed25519_auth_entry_b64(1);
+        let b64_sw = smart_wallet_auth_entry_b64(2);
+        let tx_data = serde_json::json!({ "auth": [b64_ed, b64_sw] });
+        let entries = extract_auth_entries(&tx_data);
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].auth_type, "Ed25519");
+        assert_eq!(entries[1].auth_type, "Smart Wallet");
+    }
+
+    #[test]
+    fn extract_auth_entries_skips_invalid_payloads() {
+        let tx_data = serde_json::json!({ "auth": ["!!!not-valid-xdr!!!"] });
+        let entries = extract_auth_entries(&tx_data);
+        // Invalid entries are silently skipped; no panic.
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn extract_auth_entries_empty_when_no_auth_field() {
+        let tx_data = serde_json::json!({ "hash": "abc123" });
+        let entries = extract_auth_entries(&tx_data);
+        assert!(entries.is_empty());
+    }
+
+    #[test]
+    fn existing_ed25519_decoding_unchanged() {
+        // Existing auth_signatures behavior must be preserved for Ed25519 entries.
+        let b64 = ed25519_auth_entry_b64(7);
+        let tx_data = serde_json::json!({ "auth": [b64] });
+        // extract_auth_signatures should still return an empty vec
+        // because the entry has ScVal::Void (no signature bytes).
+        let sigs = extract_auth_signatures(&tx_data);
+        assert!(sigs.is_empty(), "no signature bytes in void-signed entry");
     }
 }

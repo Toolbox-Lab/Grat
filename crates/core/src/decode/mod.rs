@@ -5,7 +5,6 @@ pub mod auth_signature;
 pub mod decode_context;
 pub mod contract_error;
 pub mod cross_contract;
-pub mod decode_context;
 pub mod diagnostic;
 pub mod host_error;
 pub mod mappings;
@@ -14,6 +13,7 @@ pub mod walker;
 
 pub use auth::{
     AddressCredential, AuthChain, AuthCredential, AuthFunctionKind, AuthInvocation,
+    AuthorizationType,
 };
 pub use auth_address_nonce::AddressWithNonce;
 pub use walker::{
