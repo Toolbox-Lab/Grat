@@ -44,6 +44,8 @@ pub fn build_report(error: &ClassifiedError) -> PrismResult<DiagnosticReport> {
             related_errors: entry.related_errors.clone(),
             cross_contract_attribution: None,
             auth_signatures: Vec::new(),
+            auth_entries: Vec::new(),
+            failing_contract_id: None,
             learn_more: "https://developers.stellar.org/docs/learn/smart-contracts/errors".to_string(),
         };
 

@@ -14,6 +14,7 @@ pub mod walker;
 
 pub use auth::{
     AddressCredential, AuthChain, AuthCredential, AuthFunctionKind, AuthInvocation,
+    AuthorizationType,
 };
 pub use auth_address_nonce::AddressWithNonce;
 pub use walker::{
@@ -24,7 +25,7 @@ pub use walker::{
 use crate::error::{PrismError, PrismResult};
 use crate::types::report::DiagnosticReport;
 use crate::xdr::codec::XdrCodec;
-use stellar_xdr::curr::{ScVal, SorobanTransactionMetaExt, TransactionMeta, TransactionResult, TransactionEnvelope, FeeBumpTransactionInnerTx};
+use stellar_xdr::curr::{ScVal, SorobanTransactionMetaExt, TransactionMeta, TransactionResult};
 
 /// Decode `resultMetaXdr` as `TransactionMeta` and, if it is V3, inject the
 /// Soroban contract events, diagnostic events, and return value into the JSON
@@ -202,7 +203,7 @@ pub async fn decode_transaction_with_op_filter(
         None => (0..num_ops).collect(),
     };
 
-let ctx = decode_context::DecodeContextBuilder::from(network).build();
+let _ctx = decode_context::DecodeContextBuilder::from(network).build();
     for i in indices {
         let mut tx_data = base_tx_data.clone();
         filter_transaction_by_operation(&mut tx_data, i)?;
@@ -211,6 +212,9 @@ let ctx = decode_context::DecodeContextBuilder::from(network).build();
         let mut report = report::build_report(&error_info)?;
 
         if error_info.is_contract_error {
+            let ctx = crate::decode::decode_context::DecodeContext::builder()
+                .network(network.clone())
+                .build();
             if let Ok(contract_info) = contract_error::resolve(
                 &error_info.contract_id.unwrap_or_default(),
                 error_info.error_code,

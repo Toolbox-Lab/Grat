@@ -2,7 +2,7 @@
 
 use clap::Args;
 use prism_core::types::config::NetworkConfig;
-use prism_core::{DecodeContextBuilder, OutputFormat};
+use prism_core::decode::decode_context::{DecodeContextBuilder, OutputFormat};
 
 #[derive(Args)]
 pub struct InspectArgs {
@@ -30,7 +30,7 @@ pub async fn run(
 
     let reports = prism_core::decode::decode_transaction_with_op_filter(
         &args.tx_hash,
-        &ctx,
+        &ctx.network,
         args.op_index,
     )
     .await?;

@@ -10,6 +10,7 @@ export interface DiagnosticReport {
   suggested_fixes: SuggestedFix[];
   contract_error?: ContractErrorInfo;
   transaction_context?: TransactionContext;
+  failing_contract_id?: string;
 }
 
 export interface RootCause {
@@ -36,6 +37,18 @@ export interface TransactionContext {
   ledger_sequence: number;
   function_name?: string;
   arguments: string[];
+  resources?: ResourceSummary;
+}
+
+export interface ResourceSummary {
+  cpu_instructions_used: number;
+  cpu_instructions_limit: number;
+  memory_bytes_used: number;
+  memory_bytes_limit: number;
+  read_bytes: number;
+  read_limit: number;
+  write_bytes: number;
+  write_limit: number;
 }
 
 export type Network = "mainnet" | "testnet" | "futurenet" | "custom";

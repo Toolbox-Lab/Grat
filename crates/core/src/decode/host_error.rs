@@ -115,9 +115,12 @@ impl HostError {
                     format!("WASM error (code {code}): the contract's WASM module could not be loaded or executed.")
                 }
             },
-            Self::Events { code } => match code {
-                0 => "Event size limit exceeded: the transaction emitted more event data than the protocol allows in a single execution.".to_string(),
-                _ => format!("Events error (code {code}): an error occurred during event emission."),
+            Self::Events { code } => {
+                if let Some(detail) = crate::decode::mappings::events::lookup(*code) {
+                    detail.summary.to_string()
+                } else {
+                    format!("Events error (code {code}): an error occurred during event emission.")
+                }
             },
             Self::ContractSpecific { contract_id, code } => {
                 let contract = contract_id
@@ -348,7 +351,7 @@ mod tests {
         );
         assert_eq!(
             HostError::Events { code: 0 }.summary(),
-            "Event size limit exceeded: the transaction emitted more event data than the protocol allows in a single execution."
+            "Event emission failed: an arithmetic overflow occurred while constructing the event payload."
         );
     }
 

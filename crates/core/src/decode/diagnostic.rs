@@ -2,6 +2,7 @@ use crate::error::PrismResult;
 use crate::types::report::{DiagnosticReport, RootCause, SuggestedFix};
 use crate::xdr::codec::XdrCodec;
 use stellar_xdr::curr::{ContractEventBody, DiagnosticEvent, ScVal};
+use crate::decode::walker::DiagnosticEventWalker;
 
 pub fn enrich_report(
     report: &mut DiagnosticReport,
@@ -25,6 +26,8 @@ pub fn enrich_report(
         if let Some(root_cause_event) = deepest_error_event(&diagnostic_events) {
             add_deepest_error_root_cause(report, &root_cause_event);
         }
+
+        report.failing_contract_id = DiagnosticEventWalker::find_failing_contract(&diagnostic_events);
     }
 
     Ok(())

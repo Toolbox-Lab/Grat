@@ -98,6 +98,10 @@ pub struct ResourceProfile {
 
     pub total_write_bytes: u64,
 
+    pub read_limit: u64,
+
+    pub write_limit: u64,
+
     pub hotspots: Vec<ResourceHotspot>,
 
     pub warnings: Vec<String>,

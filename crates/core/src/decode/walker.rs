@@ -215,6 +215,26 @@ impl DiagnosticEventWalker {
         }
     }
 
+    /// Given a slice of diagnostic events, returns the ContractId (as a
+    /// strkey-encoded `C…` string) of the contract that emitted the final
+    /// failure event.
+    ///
+    /// A "failure event" is one where `in_successful_contract_call` is `false`
+    /// **and** the event carries a `contract_id`. Events are walked in reverse
+    /// order so the last-emitted failure is found first.
+    ///
+    /// Returns `None` when no such event exists.
+    pub fn find_failing_contract(events: &[DiagnosticEvent]) -> Option<String> {
+        for event in events.iter().rev() {
+            if !event.in_successful_contract_call {
+                if let Some(ref hash) = event.event.contract_id {
+                    return Some(Self::hash_to_strkey(hash));
+                }
+            }
+        }
+        None
+    }
+
     /// Encode a raw 32-byte [`Hash`] as a Stellar contract strkey (`C…`).
     fn hash_to_strkey(hash: &Hash) -> String {
         StrkeyContract(hash.0).to_string()
@@ -677,5 +697,76 @@ mod tests {
         assert_eq!(DiagnosticEventKind::System.to_string(), "System");
         assert_eq!(DiagnosticEventKind::Debug.to_string(), "Debug");
         assert_eq!(DiagnosticEventKind::Unknown.to_string(), "Unknown");
+    }
+
+    // -----------------------------------------------------------------------
+    // find_failing_contract
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn find_failing_contract_returns_last_failed_event_contract() {
+        let hash_a = contract_hash(1);
+        let hash_b = contract_hash(2);
+        let expected = StrkeyContract(hash_b.0).to_string();
+
+        let events = vec![
+            make_event(ContractEventType::Contract, Some(hash_a), vec![sym("transfer")], ScVal::Void, true),
+            make_event(ContractEventType::Contract, Some(hash_b), vec![sym("error")], ScVal::Void, false),
+        ];
+
+        let result = DiagnosticEventWalker::find_failing_contract(&events);
+        assert_eq!(result.as_deref(), Some(expected.as_str()));
+    }
+
+    #[test]
+    fn find_failing_contract_returns_none_when_no_events() {
+        assert_eq!(DiagnosticEventWalker::find_failing_contract(&[]), None);
+    }
+
+    #[test]
+    fn find_failing_contract_returns_none_when_all_succeeded() {
+        let events = vec![
+            make_event(ContractEventType::Contract, Some(contract_hash(1)), vec![], ScVal::Void, true),
+            make_event(ContractEventType::System, None, vec![], ScVal::Void, true),
+        ];
+        assert_eq!(DiagnosticEventWalker::find_failing_contract(&events), None);
+    }
+
+    #[test]
+    fn find_failing_contract_returns_none_when_failed_event_has_no_contract_id() {
+        let events = vec![
+            make_event(ContractEventType::System, None, vec![sym("error")], ScVal::Void, false),
+        ];
+        assert_eq!(DiagnosticEventWalker::find_failing_contract(&events), None);
+    }
+
+    #[test]
+    fn find_failing_contract_prefers_last_emitted_failure() {
+        let hash_a = contract_hash(10);
+        let hash_b = contract_hash(20);
+        let expected_b = StrkeyContract(hash_b.0).to_string();
+
+        let events = vec![
+            make_event(ContractEventType::Contract, Some(hash_a), vec![sym("error")], ScVal::Void, false),
+            make_event(ContractEventType::Contract, Some(hash_b), vec![sym("error")], ScVal::Void, false),
+        ];
+
+        let result = DiagnosticEventWalker::find_failing_contract(&events);
+        assert_eq!(result.as_deref(), Some(expected_b.as_str()));
+    }
+
+    #[test]
+    fn find_failing_contract_skips_successful_events_in_reverse() {
+        let hash_fail = contract_hash(42);
+        let expected = StrkeyContract(hash_fail.0).to_string();
+
+        let events = vec![
+            make_event(ContractEventType::Contract, Some(contract_hash(1)), vec![], ScVal::Void, true),
+            make_event(ContractEventType::Contract, Some(hash_fail), vec![sym("error")], ScVal::Void, false),
+            make_event(ContractEventType::System, None, vec![], ScVal::Void, true),
+        ];
+
+        let result = DiagnosticEventWalker::find_failing_contract(&events);
+        assert_eq!(result.as_deref(), Some(expected.as_str()));
     }
 }

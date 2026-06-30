@@ -455,7 +455,7 @@ pub fn render_fee_breakdown(fee: &FeeBreakdown) -> String {
 
     if fee.resource_fee > 0 {
         out.push_str(&format!(
-            "    Refundable:       {}\n",
+            "    Refundable Resource Fee:     {}\n",
             palette.muted_text(&format_fee(fee.refundable_fee))
         ));
         out.push_str(&format!(
@@ -483,6 +483,8 @@ mod tests {
             memory_limit: 1_000_000,
             total_read_bytes: 0,
             total_write_bytes: 0,
+            read_limit: 0,
+            write_limit: 0,
             hotspots,
             warnings: vec![],
         }
@@ -507,6 +509,11 @@ mod tests {
             }),
             transaction_context: None,
             related_errors: Vec::new(),
+            cross_contract_attribution: None,
+            auth_signatures: Vec::new(),
+            auth_entries: Vec::new(),
+            failing_contract_id: None,
+            learn_more: "https://developers.stellar.org/docs/learn/smart-contracts/errors".to_string(),
         }
     }
 
