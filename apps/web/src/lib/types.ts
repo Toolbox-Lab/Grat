@@ -32,12 +32,20 @@ export interface ContractErrorInfo {
   doc_comment?: string;
 }
 
-export interface TransactionContext {
-  tx_hash: string;
-  ledger_sequence: number;
-  function_name?: string;
-  arguments: string[];
-  resources?: ResourceSummary;
+export interface FeeBreakdown {
+  total_charged_fee: number;
+  inclusion_fee: number;
+  resource_fee: number;
+  /**
+   * The refundable portion of the resource fee
+   * (`total_refundable_resource_fee_charged` from SorobanTransactionMetaExtV1).
+   * This may be partially returned if unused resources are reclaimed after execution.
+   */
+  refundable_resource_fee: number;
+  /** refundable_resource_fee + rent_fee_charged. Kept for backwards compatibility. */
+  refundable_fee: number;
+  non_refundable_fee: number;
+  bid_fee?: number;
 }
 
 export interface ResourceSummary {
@@ -49,6 +57,16 @@ export interface ResourceSummary {
   read_limit: number;
   write_bytes: number;
   write_limit: number;
+}
+
+export interface TransactionContext {
+  tx_hash: string;
+  ledger_sequence: number;
+  function_name?: string;
+  arguments: string[];
+  return_value?: string;
+  fee: FeeBreakdown;
+  resources: ResourceSummary;
 }
 
 export type Network = "mainnet" | "testnet" | "futurenet" | "custom";

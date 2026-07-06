@@ -84,7 +84,14 @@ pub struct TransactionContext {
 pub struct FeeBreakdown {
     pub total_charged_fee: i64,
     pub inclusion_fee: i64,
+    /// Total resource fee: non_refundable + refundable_resource_fee + rent_fee_charged.
     pub resource_fee: i64,
+    /// The refundable portion of the resource fee charged
+    /// (`total_refundable_resource_fee_charged` from `SorobanTransactionMetaExtV1`).
+    /// This amount may be partially returned to the submitter if resources are unused.
+    pub refundable_resource_fee: i64,
+    /// `total_refundable_resource_fee_charged + rent_fee_charged`.
+    /// Kept for backwards compatibility with existing callers.
     pub refundable_fee: i64,
     pub non_refundable_fee: i64,
     pub bid_fee: Option<i64>,
