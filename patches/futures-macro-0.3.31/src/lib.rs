@@ -1,4 +1,4 @@
-//! The futures-rs procedural macro implementations.
+___RUST_DOC_MOD___
 
 #![doc(test(
     no_crate_inject,
@@ -15,25 +15,25 @@ mod join;
 mod select;
 mod stream_select;
 
-/// The `join!` macro.
+___RUST_DOC_COMMENT___
 #[proc_macro]
 pub fn join_internal(input: TokenStream) -> TokenStream {
     crate::join::join(input)
 }
 
-/// The `try_join!` macro.
+___RUST_DOC_COMMENT___
 #[proc_macro]
 pub fn try_join_internal(input: TokenStream) -> TokenStream {
     crate::join::try_join(input)
 }
 
-/// The `select!` macro.
+___RUST_DOC_COMMENT___
 #[proc_macro]
 pub fn select_internal(input: TokenStream) -> TokenStream {
     crate::select::select(input)
 }
 
-/// The `select_biased!` macro.
+___RUST_DOC_COMMENT___
 #[proc_macro]
 pub fn select_biased_internal(input: TokenStream) -> TokenStream {
     crate::select::select_biased(input)
@@ -44,7 +44,7 @@ pub fn test_internal(input: TokenStream, item: TokenStream) -> TokenStream {
     crate::executor::test(input, item)
 }
 
-/// The `stream_select!` macro.
+___RUST_DOC_COMMENT___
 #[proc_macro]
 pub fn stream_select_internal(input: TokenStream) -> TokenStream {
     crate::stream_select::stream_select(input.into())

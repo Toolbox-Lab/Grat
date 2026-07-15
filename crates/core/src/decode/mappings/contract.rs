@@ -1,6 +1,6 @@
 use crate::types::report::Severity;
 
-/// A developer-friendly description of a standard `HostError::Contract` error code.
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ContractErrorDetail {
     pub code: u32,

@@ -1,11 +1,11 @@
 use crate::types::report::Severity;
 
-/// A developer-friendly description of a single `HostError::Events` error code.
-///
-/// `HostError::Events` codes surface failures that occur during contract event
-/// emission. Each code corresponds to an `SCErrorCode` value paired with the
-/// `SCE_EVENTS` error type, and describes a specific reason why a contract's
-/// call to `env.events().publish(...)` was rejected by the host.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EventsErrorDetail {
     pub code: u32,

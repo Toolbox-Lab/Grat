@@ -1,34 +1,34 @@
-//! `DiagnosticEventWalker` — zero-copy traversal and structured classification
-//! of raw Soroban [`DiagnosticEvent`] values.
-//!
-//! # Design
-//!
-//! The walker consumes an iterator of XDR [`DiagnosticEvent`] records and maps
-//! each one to a [`StructuredDiagnosticEvent`] that carries:
-//!
-//! - A strongly-typed [`DiagnosticEventKind`] derived from
-//!   [`ContractEventType`] (the authoritative protocol discriminant).
-//! - An optional strkey-encoded contract address.
-//! - The full extracted topic vector.
-//! - The payload [`ScVal`] from the event body.
-//! - The `in_successful_contract_call` success flag.
-//!
-//! Every input item — even malformed ones — produces an output record.
-//! Malformed envelopes are represented by [`DiagnosticEventKind::Unknown`]
-//! with the original XDR bytes preserved in the `raw_xdr` field, so no data
-//! from the original execution story is dropped.
-//!
-//! # Example
-//!
-//! ```rust,ignore
-//! use prism_core::decode::walker::DiagnosticEventWalker;
-//!
-//! let events: Vec<stellar_xdr::curr::DiagnosticEvent> = /* ... */;
-//! let structured = DiagnosticEventWalker::new().walk(events.iter());
-//! for event in &structured {
-//!     println!("{:?} — contract: {:?}", event.kind, event.contract_id);
-//! }
-//! ```
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
 
 use serde::{Deserialize, Serialize};
 use stellar_strkey::Contract as StrkeyContract;
@@ -36,36 +36,32 @@ use stellar_xdr::curr::{
     ContractEventBody, ContractEventType, DiagnosticEvent, Hash, ScVal,
 };
 
-// ---------------------------------------------------------------------------
-// Public types
-// ---------------------------------------------------------------------------
-
-/// Functional category of a Soroban diagnostic event.
-///
-/// Derived directly from [`ContractEventType`] which is the canonical
-/// protocol-level discriminant embedded in every [`ContractEvent`].
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum DiagnosticEventKind {
-    /// An event explicitly emitted by user-contract execution
-    /// (e.g. `env.events().publish(...)`).
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     Contract,
 
-    /// A core host or VM-level operational event (e.g. call frame push/pop,
-    /// ledger footprint access, budget checkpoints).
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     System,
 
-    /// A log message, trace string, or developer-inserted diagnostic hook
-    /// emitted by the host while `SOROBAN_DIAGNOSTIC_EVENTS` is enabled.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     Debug,
 
-    /// Catch-all for any future `ContractEventType` variant added by a
-    /// protocol upgrade that this version of Prism does not yet recognise.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     Unknown,
 }
 
 impl DiagnosticEventKind {
-    /// Derive the kind from the raw XDR [`ContractEventType`] discriminant.
+___RUST_DOC_COMMENT___    
     fn from_contract_event_type(t: &ContractEventType) -> Self {
         match t {
             ContractEventType::Contract => Self::Contract,
@@ -415,10 +411,6 @@ mod tests {
         assert!(result[0].contract_id.is_none());
     }
 
-    // -----------------------------------------------------------------------
-    // System event — VM/host state transitions
-    // -----------------------------------------------------------------------
-
     #[test]
     fn system_event_has_no_contract_id_and_correct_topics() {
         let event = make_event(
@@ -436,10 +428,6 @@ mod tests {
         assert_eq!(out.topics.len(), 2);
         assert_eq!(out.data, ScVal::Bool(true));
     }
-
-    // -----------------------------------------------------------------------
-    // Debug event — log messages and trace strings
-    // -----------------------------------------------------------------------
 
     #[test]
     fn debug_event_parses_log_message_cleanly() {
@@ -460,10 +448,6 @@ mod tests {
         assert!(!out.in_successful_call);
         assert!(out.parse_error.is_none());
     }
-
-    // -----------------------------------------------------------------------
-    // Success/failure status metadata
-    // -----------------------------------------------------------------------
 
     #[test]
     fn in_successful_call_false_is_preserved() {
@@ -517,10 +501,6 @@ mod tests {
         assert!(!result[0].is_healthy());
     }
 
-    // -----------------------------------------------------------------------
-    // Empty topics / void data
-    // -----------------------------------------------------------------------
-
     #[test]
     fn event_with_empty_topics_is_accepted() {
         let event = make_event(
@@ -534,10 +514,6 @@ mod tests {
         assert_eq!(result[0].topics.len(), 0);
         assert_eq!(result[0].data, ScVal::Void);
     }
-
-    // -----------------------------------------------------------------------
-    // Zero data-loss guarantee
-    // -----------------------------------------------------------------------
 
     #[test]
     fn output_count_equals_input_count_for_uniform_batch() {
@@ -596,10 +572,6 @@ mod tests {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Ordering preservation
-    // -----------------------------------------------------------------------
-
     #[test]
     fn output_ordering_mirrors_input_ordering() {
         let events = vec![
@@ -614,10 +586,6 @@ mod tests {
         assert_eq!(result[1].kind, DiagnosticEventKind::System);
         assert_eq!(result[2].kind, DiagnosticEventKind::Debug);
     }
-
-    // -----------------------------------------------------------------------
-    // Classification matrix — every kind variant covered
-    // -----------------------------------------------------------------------
 
     #[test]
     fn all_kind_variants_are_reachable_from_xdr_type() {
@@ -634,13 +602,9 @@ mod tests {
         assert!(kinds.contains(&&DiagnosticEventKind::Debug));
     }
 
-    // -----------------------------------------------------------------------
-    // Data shape integrity for complex ScVal payloads
-    // -----------------------------------------------------------------------
-
     #[test]
     fn complex_scval_data_survives_round_trip() {
-        // Build a Vec<ScVal> payload carried in an i64
+        
         let data = ScVal::I64(-9_999_999_999_i64);
         let event = make_event(
             ContractEventType::Contract,
@@ -674,10 +638,6 @@ mod tests {
         }
     }
 
-    // -----------------------------------------------------------------------
-    // Default impl
-    // -----------------------------------------------------------------------
-
     #[test]
     fn default_walker_behaves_identically_to_new() {
         let event = make_event(ContractEventType::Contract, Some(contract_hash(99)), vec![sym("x")], ScVal::Void, true);
@@ -687,10 +647,6 @@ mod tests {
         assert_eq!(a[0].contract_id, b[0].contract_id);
     }
 
-    // -----------------------------------------------------------------------
-    // DiagnosticEventKind display
-    // -----------------------------------------------------------------------
-
     #[test]
     fn kind_display_strings_are_correct() {
         assert_eq!(DiagnosticEventKind::Contract.to_string(), "Contract");
@@ -698,10 +654,6 @@ mod tests {
         assert_eq!(DiagnosticEventKind::Debug.to_string(), "Debug");
         assert_eq!(DiagnosticEventKind::Unknown.to_string(), "Unknown");
     }
-
-    // -----------------------------------------------------------------------
-    // find_failing_contract
-    // -----------------------------------------------------------------------
 
     #[test]
     fn find_failing_contract_returns_last_failed_event_contract() {

@@ -1,4 +1,4 @@
-//! Prism WASM — browser-compatible Tier 1 decode via WebAssembly.
+___RUST_DOC_MOD___
 
 use prism_core::decode::report::build_report;
 use prism_core::decode::host_error::ClassifiedError;
@@ -7,15 +7,15 @@ use prism_core::types::report::DiagnosticReport;
 use prism_core::xdr::codec::XdrCodec;
 use wasm_bindgen::prelude::*;
 
-/// Initialize the WASM module (call once on page load).
+___RUST_DOC_COMMENT___
 #[wasm_bindgen(start)]
 pub fn init() {
 }
 
-/// Decode a transaction error from a JSON payload and return a JSON diagnostic
-/// report. The input JSON must contain at least `errorType` and `errorCode`;
-/// `diagnosticEventsXdr`, `rootCauses`, and `suggestedFixes` are optional
-/// enrichment payloads matching the shape produced by the JS client.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 #[wasm_bindgen]
 pub fn decode_error(tx_result_json: &str) -> Result<JsValue, JsValue> {
     let report = decode_report_inner(tx_result_json)
@@ -214,7 +214,7 @@ fn classify(parsed: &serde_json::Value) -> Result<ClassifiedError, String> {
     })
 }
 
-/// Resolve a contract-specific error code given WASM bytes.
+___RUST_DOC_COMMENT___
 #[wasm_bindgen]
 pub fn resolve_contract_error(wasm_bytes: &[u8], error_code: u32) -> Result<JsValue, JsValue> {
     let _ = (wasm_bytes, error_code);
@@ -222,7 +222,7 @@ pub fn resolve_contract_error(wasm_bytes: &[u8], error_code: u32) -> Result<JsVa
     serde_wasm_bindgen::to_value(&result).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
-/// Get the Prism library version.
+___RUST_DOC_COMMENT___
 #[wasm_bindgen]
 pub fn version() -> String {
     env!("CARGO_PKG_VERSION").to_string()

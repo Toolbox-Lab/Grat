@@ -12,7 +12,6 @@ export default function DecodeForm({ onDecode }: DecodeFormProps) {
   const [code, setCode] = useState<string>("0");
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Client-side mapping of standard errors for instant UI response and verification
   const mockDecode = (cat: string, codeVal: number): DiagnosticReport => {
     switch (cat.toLowerCase()) {
       case "contract":

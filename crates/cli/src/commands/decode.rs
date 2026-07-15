@@ -21,9 +21,8 @@ pub async fn run(
 ) -> anyhow::Result<()> {
     let effective_output = if args.short { "short" } else { output_format };
 
-    // Decode transaction, handling possible multiple operations
     let reports = if args.raw {
-        // Raw XDR decoding yields a single report
+        
         vec![build_raw_xdr_report(&args.tx_hash)?]
     } else {
         let spinner = indicatif::ProgressBar::new_spinner();
@@ -43,7 +42,6 @@ pub async fn run(
         reports
     };
 
-    // Print each report; include operation index header when multiple reports
     for (i, report) in reports.iter().enumerate() {
         if reports.len() > 1 {
             println!("\n=== Operation {} ===", i + 1);

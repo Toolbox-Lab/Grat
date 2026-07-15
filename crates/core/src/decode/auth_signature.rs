@@ -4,8 +4,8 @@ use stellar_xdr::curr::{
     SorobanCredentials,
 };
 
-/// Decode a single raw signature bytes value into a hex string.
-/// Returns an error label string if bytes are empty or not a valid 64-byte ed25519 signature.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 pub fn decode_signature_bytes(bytes: &[u8]) -> String {
     if bytes.is_empty() {
         return "<invalid: empty signature>".to_string();
@@ -16,9 +16,9 @@ pub fn decode_signature_bytes(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-/// Extract signature hex strings from a `SorobanAuthorizationEntry` XDR base64 string.
-/// For each signature found in the entry's credentials, decodes raw bytes to hex.
-/// Returns a list of hex strings (or error labels for malformed signatures).
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 pub fn decode_auth_entry_signatures(auth_entry_b64: &str) -> Vec<String> {
     let bytes = match STANDARD.decode(auth_entry_b64) {
         Ok(b) => b,
@@ -38,15 +38,13 @@ pub fn decode_auth_entry_signatures(auth_entry_b64: &str) -> Vec<String> {
     }
 }
 
-/// Recursively extract signature hex strings from a ScVal.
-/// Handles both a single ScBytes (direct signature) and a ScMap / ScVec of signatures.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 fn extract_signatures_from_scval(val: &ScVal) -> Vec<String> {
     match val {
-        // Direct bytes — treat as a raw signature
+        
         ScVal::Bytes(sc_bytes) => vec![decode_signature_bytes(sc_bytes.as_ref())],
 
-        // Map entries: standard ed25519 account signature has { public_key: bytes, signature: bytes }
-        // Only extract from "signature" keyed entries to avoid decoding public_key bytes.
         ScVal::Map(Some(ScMap(entries))) => {
             let mut results = Vec::new();
             for entry in entries.iter() {
@@ -62,7 +60,6 @@ fn extract_signatures_from_scval(val: &ScVal) -> Vec<String> {
             results
         }
 
-        // Vec of signature entries (e.g., multiple account signatures)
         ScVal::Vec(Some(vec)) => vec
             .iter()
             .flat_map(|v| extract_signatures_from_scval(v))
@@ -105,7 +102,7 @@ mod tests {
 
     #[test]
     fn decode_invalid_xdr_returns_error_label() {
-        // Valid base64 but not a valid SorobanAuthorizationEntry
+        
         let result = decode_auth_entry_signatures("AAAA");
         assert_eq!(result, vec!["<invalid: xdr decode failed>"]);
     }

@@ -4,7 +4,6 @@ interface Props {
   context: TransactionContext;
 }
 
-/** Formats a stroop value as a human-readable string. */
 function formatFee(stroops: number): string {
   return `${stroops.toLocaleString()} stroops`;
 }
@@ -186,7 +185,7 @@ function ResourcePanel({ context }: { context: TransactionContext }) {
 export default function ContextSummary({ context }: Props) {
   return (
     <div className="rounded-lg border border-gray-700 bg-gray-900 p-4 space-y-6 text-sm">
-      {/* Transaction metadata */}
+      {}
       <section aria-labelledby="tx-summary-heading">
         <h3
           id="tx-summary-heading"

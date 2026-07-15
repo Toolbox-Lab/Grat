@@ -37,7 +37,6 @@ pub async fn run(
 
     spinner.finish_and_clear();
 
-    // Print each report with operation index label
     for (i, report) in reports.iter().enumerate() {
         if reports.len() > 1 {
             println!("\n=== Operation {} ===", i + 1);

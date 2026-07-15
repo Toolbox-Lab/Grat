@@ -1,11 +1,11 @@
 use crate::types::report::Severity;
 
-/// A developer-friendly description of a single `HostError::Wasm` error code.
-///
-/// `HostError::Wasm` codes surface low-level WebAssembly execution failures —
-/// module validation errors and runtime traps such as out-of-bounds memory
-/// access. The raw codes are opaque, so this table maps each one to a short,
-/// human-readable summary of what actually went wrong inside the VM.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WasmErrorDetail {
     pub code: u32,

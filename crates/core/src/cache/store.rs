@@ -26,17 +26,17 @@ impl CacheCategory {
     }
 }
 
-/// Local disk cache backed by redb.
+___RUST_DOC_COMMENT___
 pub struct CacheStore {
-    /// Path to the cache directory.
+___RUST_DOC_COMMENT___    
     cache_dir: PathBuf,
-    /// Maximum cache size in bytes.
+___RUST_DOC_COMMENT___    
     #[allow(dead_code)]
     max_size: u64,
 }
 
 impl CacheStore {
-    /// Create a new cache store at the given directory.
+___RUST_DOC_COMMENT___    
     pub fn new(cache_dir: PathBuf, max_size_mb: u64) -> PrismResult<Self> {
         std::fs::create_dir_all(&cache_dir)
             .map_err(|e| PrismError::CacheError(format!("Failed to create cache dir: {e}")))?;
@@ -47,7 +47,7 @@ impl CacheStore {
         })
     }
 
-    /// Create a cache store using platform-appropriate default directories.
+___RUST_DOC_COMMENT___    
     pub fn default_location() -> PrismResult<Self> {
         let project_dirs =
             directories::ProjectDirs::from("dev", "prism", "prism").ok_or_else(|| {
@@ -57,7 +57,7 @@ impl CacheStore {
         Self::new(project_dirs.cache_dir().to_path_buf(), 512)
     }
 
-    /// Store a value in the cache with a content-addressed key.
+___RUST_DOC_COMMENT___    
     pub fn put(&self, category: CacheCategory, key: &str, value: &[u8]) -> PrismResult<()> {
         if value.len() as u64 > self.max_size {
             return Err(PrismError::CacheError(format!(
@@ -76,7 +76,7 @@ impl CacheStore {
         Ok(())
     }
 
-    /// Retrieve a value from the cache.
+___RUST_DOC_COMMENT___    
     pub fn get(&self, category: CacheCategory, key: &str) -> PrismResult<Option<Vec<u8>>> {
         let path = self.entry_path(category, key);
         if path.exists() {
@@ -88,12 +88,12 @@ impl CacheStore {
         }
     }
 
-    /// Check if a key exists in the cache.
+___RUST_DOC_COMMENT___    
     pub fn contains(&self, category: CacheCategory, key: &str) -> bool {
         self.entry_path(category, key).exists()
     }
 
-    /// Remove a specific cache entry.
+___RUST_DOC_COMMENT___    
     pub fn remove(&self, category: CacheCategory, key: &str) -> PrismResult<()> {
         let path = self.entry_path(category, key);
         if path.exists() {
@@ -104,7 +104,7 @@ impl CacheStore {
         Ok(())
     }
 
-    /// Clear all cache entries.
+___RUST_DOC_COMMENT___    
     pub fn clear(&self) -> PrismResult<()> {
         if self.cache_dir.exists() {
             std::fs::remove_dir_all(&self.cache_dir)
@@ -116,7 +116,7 @@ impl CacheStore {
         Ok(())
     }
 
-    /// Build the file path for a cache entry.
+___RUST_DOC_COMMENT___    
     fn entry_path(&self, category: CacheCategory, key: &str) -> PathBuf {
         self.cache_dir.join(category.as_str()).join(key)
     }

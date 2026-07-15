@@ -1,8 +1,8 @@
-//! Cross-contract call failure attribution.
-//!
-//! Walks the diagnostic event stream to find the deepest contract in the call
-//! chain that emitted a failure event, attributing the error to that contract
-//! rather than the top-level invoker.
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
 
 use stellar_xdr::curr::{
     ContractEventBody, ContractEventType, DiagnosticEvent, Hash, ScVal,
@@ -12,7 +12,7 @@ use crate::error::PrismResult;
 use crate::types::report::{DiagnosticReport, FailureAttribution};
 use crate::xdr::codec::XdrCodec;
 
-/// A lightweight record of one call-frame seen in the event stream.
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone)]
 struct CallFrame {
     contract_address: String,
@@ -20,8 +20,8 @@ struct CallFrame {
     depth: usize,
 }
 
-/// Analyse the `diagnosticEventsXdr` array in `tx_data` and, if a
-/// cross-contract failure is found, populate `report.cross_contract_attribution`.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 pub fn attribute_failure(
     report: &mut DiagnosticReport,
     tx_data: &serde_json::Value,
@@ -50,8 +50,6 @@ pub fn attribute_failure(
         process_event(&event, &mut call_stack, &mut failure);
     }
 
-    // Only surface an attribution when the failure is deeper than depth 0,
-    // i.e., a sub-contract caused it, not the top-level invoker.
     if let Some(frame) = failure {
         if frame.depth > 0 {
             report.cross_contract_attribution = Some(FailureAttribution {
@@ -71,8 +69,7 @@ fn process_event(
     call_stack: &mut Vec<CallFrame>,
     failure: &mut Option<CallFrame>,
 ) {
-    // Only care about system-emitted diagnostic events (in_successful_contract_call == false
-    // means the surrounding call failed, but we want the frame itself).
+
     let v0 = match &event.event.body {
         ContractEventBody::V0(v) => v,
     };
@@ -99,24 +96,21 @@ fn process_event(
         "fn_return" => {
             call_stack.pop();
         }
-        // Any explicit "error" or "panic" topic while inside a call frame
-        // marks that frame as the origin.
+
         "error" | "panic" => {
-            // Prefer the deepest frame on the stack; fall back to the event's
-            // own contract address.
+
             let frame = call_stack.last().cloned().unwrap_or(CallFrame {
                 contract_address,
                 function_name: topics.get(1).cloned(),
                 depth: call_stack.len(),
             });
-            // Keep only the first (deepest) failure seen.
+            
             if failure.is_none() {
                 *failure = Some(frame);
             }
         }
         _ => {
-            // For non-system event types that arrive while in_successful_contract_call
-            // is false we treat the emitting contract as the failure origin.
+
             if event.event.type_ == ContractEventType::System
                 && !event.in_successful_contract_call
             {

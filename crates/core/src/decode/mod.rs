@@ -27,14 +27,13 @@ use crate::types::report::DiagnosticReport;
 use crate::xdr::codec::XdrCodec;
 use stellar_xdr::curr::{ScVal, SorobanTransactionMetaExt, TransactionMeta, TransactionResult};
 
-/// Decode `resultMetaXdr` as `TransactionMeta` and, if it is V3, inject the
-/// Soroban contract events, diagnostic events, and return value into the JSON
-/// payload so downstream enrichment code sees the same shape it does for V1/V2.
-///
-/// Also extracts `fee_charged` from `resultXdr` so fee details are not lost.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> PrismResult<()> {
-    // Derive the inclusion fee from the transaction result and, when available,
-    // subtract the Soroban resource fee components from the total charged fee.
+
     let mut total_fee = None;
     if let Some(result_b64) = tx_data.get("resultXdr").and_then(|r| r.as_str()) {
         if let Ok(tx_result) = TransactionResult::from_xdr_base64(result_b64) {
@@ -72,7 +71,6 @@ fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> PrismResult<()> {
             }
         };
 
-        // Inject contract events as base64 XDR strings.
         if !soroban_meta.events.is_empty() {
             let contract_events: Vec<String> = soroban_meta
                 .events
@@ -84,7 +82,6 @@ fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> PrismResult<()> {
             });
         }
 
-        // Inject diagnostic events as base64 XDR strings.
         if !soroban_meta.diagnostic_events.is_empty() {
             let diagnostic_events: Vec<String> = soroban_meta
                 .diagnostic_events
@@ -94,14 +91,12 @@ fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> PrismResult<()> {
             tx_data["diagnosticEventsXdr"] = serde_json::json!(diagnostic_events);
         }
 
-        // Encode the return value as a base64 XDR string.
         if soroban_meta.return_value != ScVal::Void {
             if let Ok(b64) = XdrCodec::to_xdr_base64(&soroban_meta.return_value) {
                 tx_data["returnValue"] = serde_json::json!(b64);
             }
         }
 
-        // Extract resource fee and refundable fee from SorobanTransactionMetaExtV1.
         if let SorobanTransactionMetaExt::V1(v1) = &soroban_meta.ext {
             resource_fee = v1.total_non_refundable_resource_fee_charged
                 + v1.total_refundable_resource_fee_charged
@@ -174,26 +169,24 @@ pub async fn decode_transaction_with_op_filter(
     let mut base_tx_data = serde_json::to_value(tx_data)
         .map_err(|e| crate::error::PrismError::Internal(e.to_string()))?;
 
-    // Parse V3 metadata and inject events/returnValue/fees into the base transaction JSON.
     parse_v3_metadata(&mut base_tx_data)?;
 
-    // Decode the envelope XDR to determine the number of operations in the transaction.
     let num_ops = if let Some(envelope_str) = base_tx_data.get("envelopeXdr").and_then(|v| v.as_str()) {
-        // Use the XDR codec to parse the envelope.
+        
         let envelope = <stellar_xdr::curr::TransactionEnvelope as crate::xdr::codec::XdrCodec>::from_xdr_base64(envelope_str)
             .map_err(|e| crate::error::PrismError::Internal(format!("Failed to decode envelope XDR: {}", e)))?;
         match envelope {
             stellar_xdr::curr::TransactionEnvelope::TxV0(v0) => v0.tx.operations.len(),
             stellar_xdr::curr::TransactionEnvelope::Tx(v1) => v1.tx.operations.len(),
             stellar_xdr::curr::TransactionEnvelope::TxFeeBump(fb) => {
-                // Fee bump transaction contains an inner transaction with its own operations.
+                
                 match &fb.tx.inner_tx {
                     stellar_xdr::curr::FeeBumpTransactionInnerTx::Tx(v1) => v1.tx.operations.len(),
                 }
             }
         }
     } else {
-        // Fallback to a single operation if envelope missing
+        
         1
     };
 
@@ -323,7 +316,7 @@ mod tests {
     #[test]
     fn test_corrupt_meta_xdr_returns_error() {
         let mut data = serde_json::json!({
-            "resultMetaXdr": "AAAA",  // valid base64 but not valid XDR
+            "resultMetaXdr": "AAAA",  
         });
         let result = parse_v3_metadata(&mut data);
         assert!(result.is_err());
@@ -468,7 +461,7 @@ mod tests {
 
     #[test]
     fn test_invalid_result_xdr_does_not_fail() {
-        // Even with bad resultXdr, valid meta should succeed
+        
         let meta = make_v3_meta_with_v1_ext(100, 50, 25);
         let meta_b64 = XdrCodec::to_xdr_base64(&meta).unwrap();
 
@@ -480,10 +473,8 @@ mod tests {
         let result = parse_v3_metadata(&mut data);
         assert!(result.is_ok());
 
-        // inclusionFee should not be present since resultXdr was bad
         assert!(data.get("inclusionFee").is_none());
 
-        // But resource fee should still be extracted
         assert!(data.get("resourceFee").is_some());
     }
 }

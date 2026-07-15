@@ -335,19 +335,19 @@ impl XdrCodec for LedgerKey {
     }
 }
 
-/// Decode a base64-encoded XDR string to raw bytes.
+___RUST_DOC_COMMENT___
 pub fn decode_xdr_base64(xdr_base64: &str) -> PrismResult<Vec<u8>> {
     STANDARD.decode(xdr_base64).map_err(|e| {
         PrismError::XdrError(format!("Base64 decode failed: {e}"))
     })
 }
 
-/// Encode raw bytes to a base64 XDR string.
+___RUST_DOC_COMMENT___
 pub fn encode_xdr_base64(bytes: &[u8]) -> String {
     STANDARD.encode(bytes)
 }
 
-/// Decode a transaction hash from hex string.
+___RUST_DOC_COMMENT___
 pub fn decode_tx_hash(hash_hex: &str) -> PrismResult<[u8; 32]> {
     let bytes = hex_decode(hash_hex)
         .map_err(|e| PrismError::XdrError(format!("Invalid tx hash hex: {e}")))?;
@@ -724,12 +724,11 @@ mod tests {
             key: ScVal::U32(1),
             val: ScVal::Bool(true),
         };
-        // ScMapEntry round-trip
+        
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&entry).expect("encode");
         let decoded_entry = <ScMapEntry as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
         assert_eq!(entry, decoded_entry);
 
-        // ScMap with single entry
         let map = ScMap::sorted_from_entries(vec![ScMapEntry {
             key: ScVal::U32(1),
             val: ScVal::Bool(true),
@@ -744,7 +743,7 @@ mod tests {
 
     #[test]
     fn test_scmap_multi_entry_round_trip() {
-        // Entries inserted out of order — sorted_from_entries must sort them by key.
+        
         let entries = vec![
             ScMapEntry { key: ScVal::U32(3), val: ScVal::Bool(false) },
             ScMapEntry { key: ScVal::U32(1), val: ScVal::Void },
@@ -755,7 +754,7 @@ mod tests {
         let decoded = <ScMap as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
         assert_eq!(map, decoded);
         assert_eq!(decoded.0.len(), 3);
-        // Keys must be in ascending order after sorting.
+        
         assert_eq!(decoded.0[0].key, ScVal::U32(1));
         assert_eq!(decoded.0[1].key, ScVal::U32(2));
         assert_eq!(decoded.0[2].key, ScVal::U32(3));

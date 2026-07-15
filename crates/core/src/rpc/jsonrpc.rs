@@ -147,7 +147,6 @@ impl JsonRpcTransport {
                         "RPC response received"
                     );
 
-                    // Retry on 429 Too Many Requests.
                     if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
                         crate::rpc::record_rpc_duration(method, duration_secs, false);
                         tracing::warn!(method, attempt, "rate limited by RPC endpoint, will retry");
@@ -155,7 +154,6 @@ impl JsonRpcTransport {
                         continue;
                     }
 
-                    // Retry on any 5xx Server Error.
                     if status.is_server_error() {
                         crate::rpc::record_rpc_duration(method, duration_secs, false);
                         tracing::warn!(

@@ -163,7 +163,7 @@ impl<'a> CauseList<'a> {
     }
 }
 
-/// Renders a colored budget utilization bar for Soroban resource usage.
+___RUST_DOC_COMMENT___
 pub struct BudgetBar {
     label: &'static str,
     used: u64,
@@ -233,7 +233,7 @@ fn heat_cell(intensity: f64) -> String {
     }
 }
 
-/// Render a resource heatmap grid from a `ResourceProfile`.
+___RUST_DOC_COMMENT___
 pub fn render_heatmap(profile: &ResourceProfile) -> String {
     if profile.hotspots.is_empty() {
         let palette = ColorPalette::default();
@@ -334,7 +334,7 @@ struct ArgumentRow {
     value: String,
 }
 
-/// Renders decoded contract arguments as a clean table.
+___RUST_DOC_COMMENT___
 pub fn render_context_table(context: &TransactionContext) -> String {
     if context.arguments.is_empty() {
         return String::new();
@@ -374,7 +374,7 @@ struct DiffRow {
     new_value: String,
 }
 
-/// Renders a detailed state diff table.
+___RUST_DOC_COMMENT___
 pub struct StateDiffTable<'a> {
     diff: &'a prism_core::types::trace::StateDiff,
 }

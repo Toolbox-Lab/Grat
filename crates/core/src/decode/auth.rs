@@ -1,12 +1,12 @@
-//! Parse Soroban authorization entries into a readable auth chain.
-//!
-//! Auth failures are among the most confusing Soroban errors because the raw
-//! `SorobanAuthorizationEntry` XDR hides *who* authorized *what* behind nested
-//! credentials and a recursively nested invocation tree. This analyzer flattens
-//! that structure: it surfaces the credential (source-account vs. a specific
-//! address with its nonce and signature expiry) and walks the
-//! `SorobanAuthorizedInvocation` tree into a depth-ordered list of steps, so a
-//! reader can see every invocation and where the authorization actually applies.
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
 
 use crate::error::PrismResult;
 use crate::xdr::codec::XdrCodec;
@@ -17,17 +17,17 @@ use stellar_xdr::curr::{
     SorobanCredentials, Uint256,
 };
 
-/// The type of authorization credential used in a Soroban auth entry.
-///
-/// - `Ed25519`: a classic Stellar account (`G...` strkey) signing with its ed25519 key.
-/// - `SmartWallet`: a deployed contract (`C...` strkey) that implements custom
-///   signature verification logic (e.g., multi-sig, passkeys).
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AuthorizationType {
-    /// Standard Ed25519 account authorization (G... address).
+___RUST_DOC_COMMENT___    
     Ed25519,
-    /// Smart Wallet contract authorization (C... address).
+___RUST_DOC_COMMENT___    
     SmartWallet,
 }
 
@@ -45,78 +45,78 @@ impl std::fmt::Display for AuthorizationType {
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum AuthCredential {
     /// Authorized implicitly by the transaction's source account — no nonce or
-    /// signature is carried in the entry itself.
+___RUST_DOC_COMMENT___    
     SourceAccount,
-    /// Authorized by a specific address, signed off-chain.
+___RUST_DOC_COMMENT___    
     Address(AddressCredential),
 }
 
-/// The address-based credential of an auth entry.
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AddressCredential {
-    /// The authorizing address as a strkey (`G...` account or `C...` contract).
+___RUST_DOC_COMMENT___    
     pub address: String,
-    /// Whether this credential uses Ed25519 (G... account) or Smart Wallet (C... contract).
+___RUST_DOC_COMMENT___    
     pub auth_type: AuthorizationType,
-    /// For Smart Wallet credentials, the contract ID in strkey form (`C...`).
-    /// `None` for Ed25519 accounts.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub contract_id: Option<String>,
-    /// Replay-protection nonce chosen by the signer.
+___RUST_DOC_COMMENT___    
     pub nonce: i64,
-    /// Ledger sequence at which this signature stops being valid.
+___RUST_DOC_COMMENT___    
     pub signature_expiration_ledger: u32,
-    /// Whether a non-void signature payload is present.
+___RUST_DOC_COMMENT___    
     pub signed: bool,
 }
 
-/// The kind of host function a single invocation step authorizes.
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AuthFunctionKind {
-    /// A contract function call (`ContractFn`).
+___RUST_DOC_COMMENT___    
     ContractFn,
-    /// A contract-creation host function (`CreateContractHostFn` and its v2 form).
+___RUST_DOC_COMMENT___    
     CreateContract,
 }
 
-/// A single, flattened step in the authorized-invocation tree.
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AuthInvocation {
-    /// Depth in the original tree; the root invocation is `0`.
+___RUST_DOC_COMMENT___    
     pub depth: usize,
-    /// What kind of host function this step authorizes.
+___RUST_DOC_COMMENT___    
     pub kind: AuthFunctionKind,
-    /// The invoked contract address as a strkey, when known (`ContractFn`).
+___RUST_DOC_COMMENT___    
     pub contract: Option<String>,
-    /// The invoked function name, when known (`ContractFn`).
+___RUST_DOC_COMMENT___    
     pub function: Option<String>,
-    /// Number of arguments passed to the invocation.
+___RUST_DOC_COMMENT___    
     pub arg_count: usize,
-    /// Human-readable argument values decoded from SCVal payloads.
+___RUST_DOC_COMMENT___    
     pub args: Vec<String>,
-    /// Compact human-readable description of the authorized target.
+___RUST_DOC_COMMENT___    
     pub target: String,
 }
 
-/// A readable authorization chain parsed from a raw auth entry: the credential
-/// state plus every invocation it covers, in depth-first order.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AuthChain {
-    /// Who authorized this chain and how.
+___RUST_DOC_COMMENT___    
     pub credential: AuthCredential,
-    /// Every authorized invocation, flattened depth-first from the root.
+___RUST_DOC_COMMENT___    
     pub invocations: Vec<AuthInvocation>,
 }
 
 impl AuthChain {
-    /// Parse an [`AuthChain`] from a base64-encoded `SorobanAuthorizationEntry`.
+___RUST_DOC_COMMENT___    
     pub fn from_xdr_base64(b64: &str) -> PrismResult<Self> {
         let entry = SorobanAuthorizationEntry::from_xdr_base64(b64)?;
         Ok(Self::from_entry(&entry))
     }
 
-    /// Parse an [`AuthChain`] from a decoded `SorobanAuthorizationEntry`.
+___RUST_DOC_COMMENT___    
     pub fn from_entry(entry: &SorobanAuthorizationEntry) -> Self {
         let credential = parse_credential(&entry.credentials);
         let mut invocations = Vec::new();
@@ -128,8 +128,8 @@ impl AuthChain {
     }
 }
 
-/// Extract the credential state (address + nonce, or source account) from the
-/// entry's `SorobanCredentials`.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 fn parse_credential(credentials: &SorobanCredentials) -> AuthCredential {
     match credentials {
         SorobanCredentials::SourceAccount => AuthCredential::SourceAccount,
@@ -155,7 +155,7 @@ fn parse_address_credential(creds: &SorobanAddressCredentials) -> AddressCredent
     }
 }
 
-/// Recursively flatten an `AuthorizedInvocation` tree into depth-ordered steps.
+___RUST_DOC_COMMENT___
 fn walk_invocation(
     invocation: &SorobanAuthorizedInvocation,
     depth: usize,
@@ -186,8 +186,7 @@ fn parse_function(function: &SorobanAuthorizedFunction, depth: usize) -> AuthInv
                 target,
             }
         }
-        // Both `CreateContractHostFn` and the v2 form authorize a contract
-        // creation; the contract address is not yet known at this point.
+
         _ => AuthInvocation {
             depth,
             kind: AuthFunctionKind::CreateContract,
@@ -200,7 +199,7 @@ fn parse_function(function: &SorobanAuthorizedFunction, depth: usize) -> AuthInv
     }
 }
 
-/// Render an `ScVal` argument in a compact form suitable for auth summaries.
+___RUST_DOC_COMMENT___
 pub fn scval_to_readable_string(val: &ScVal) -> String {
     match val {
         ScVal::Void => "void".to_string(),
@@ -244,7 +243,7 @@ pub fn scval_to_readable_string(val: &ScVal) -> String {
     }
 }
 
-/// Render an `ScAddress` as a strkey (`G...` for accounts, `C...` for contracts).
+___RUST_DOC_COMMENT___
 pub(crate) fn scaddress_to_strkey(address: &ScAddress) -> String {
     match address {
         ScAddress::Account(AccountId(PublicKey::PublicKeyTypeEd25519(Uint256(bytes)))) => {
@@ -388,7 +387,7 @@ mod tests {
             AuthCredential::Address(creds) => {
                 assert_eq!(creds.auth_type, AuthorizationType::SmartWallet);
                 assert!(creds.address.starts_with('C'));
-                // contract_id must equal address for smart wallet entries
+                
                 let contract_id = creds.contract_id.as_deref().expect("smart wallet must have contract_id");
                 assert_eq!(contract_id, creds.address);
                 assert!(contract_id.starts_with('C'));
@@ -400,7 +399,7 @@ mod tests {
 
     #[test]
     fn smart_wallet_contract_id_matches_address() {
-        // Verify contract_id is exactly equal to address for a contract credential.
+        
         let seed = 42u8;
         let addr = contract_address(seed);
         let entry = SorobanAuthorizationEntry {
@@ -454,7 +453,7 @@ mod tests {
 
     #[test]
     fn nested_invocations_are_flattened_depth_first() {
-        // root -> [child_a -> [grandchild], child_b]
+        
         let grandchild = invocation(
             contract_fn(contract_address(30), "gc", vec![]),
             empty_subs(),
@@ -486,7 +485,7 @@ mod tests {
             .collect();
 
         assert_eq!(steps, vec![(0, "root"), (1, "a"), (2, "gc"), (1, "b")]);
-        // Arg counts and readable argument values are preserved per step.
+        
         assert_eq!(chain.invocations[1].arg_count, 2);
         assert_eq!(chain.invocations[1].args, vec!["1", "2"]);
         assert!(chain.invocations[1].target.contains(".a(1, 2)"));

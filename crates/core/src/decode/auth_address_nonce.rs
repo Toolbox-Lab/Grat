@@ -1,11 +1,11 @@
-//! Decode the address-with-nonce credential from a Soroban authorization entry.
-//!
-//! Soroban auth entries carry a nonce that is bound to an authorizing address to
-//! prevent signature replay. In the raw XDR this pair lives inside
-//! `SorobanAddressCredentials` (historically named `SorobanAddressWithNonce`),
-//! nested under the entry's credentials and hard to read at a glance. This module
-//! pulls that pair out and formats it so a reader can clearly see *who* authorized
-//! the entry and the *specific nonce* that protects it.
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
+___RUST_DOC_MOD___
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -15,28 +15,28 @@ use crate::decode::auth::scaddress_to_strkey;
 use crate::error::PrismResult;
 use crate::xdr::codec::XdrCodec;
 
-/// An authorizing address paired with its replay-protection nonce, extracted from
-/// a `SorobanAddressCredentials` (a.k.a. `SorobanAddressWithNonce`).
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AddressWithNonce {
-    /// The authorizing address as a strkey (`G...` account or `C...` contract).
+___RUST_DOC_COMMENT___    
     pub address: String,
-    /// The replay-protection nonce bound to this address.
+___RUST_DOC_COMMENT___    
     pub nonce: i64,
 }
 
 impl AddressWithNonce {
-    /// Decode the address-with-nonce from a base64 `SorobanAuthorizationEntry`.
-    ///
-    /// Returns `Ok(None)` for source-account credentials, which carry no address
-    /// or nonce of their own — they reuse the transaction's source account.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     pub fn from_auth_entry_base64(b64: &str) -> PrismResult<Option<Self>> {
         let entry = SorobanAuthorizationEntry::from_xdr_base64(b64)?;
         Ok(Self::from_entry(&entry))
     }
 
-    /// Extract the address-with-nonce from a decoded auth entry, when it uses
-    /// address-based credentials.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     pub fn from_entry(entry: &SorobanAuthorizationEntry) -> Option<Self> {
         match &entry.credentials {
             SorobanCredentials::SourceAccount => None,
@@ -53,7 +53,7 @@ impl AddressWithNonce {
 }
 
 impl fmt::Display for AddressWithNonce {
-    /// Render the address and its nonce on separate, clearly labeled lines.
+___RUST_DOC_COMMENT___    
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "Address: {}", self.address)?;
         write!(f, "Nonce:   {}", self.nonce)
@@ -131,7 +131,7 @@ mod tests {
         let rendered = parsed.to_string();
         assert!(rendered.contains(&format!("Address: {}", parsed.address)));
         assert!(rendered.contains("Nonce:   1234"));
-        // Address and nonce land on separate lines.
+        
         assert_eq!(rendered.lines().count(), 2);
     }
 

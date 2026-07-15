@@ -25,7 +25,7 @@ export default function DecodePage() {
           </p>
         </div>
 
-        {/* Tab Navigation */}
+        {}
         <div className="flex justify-center border-b border-slate-800 mb-8 max-w-md mx-auto">
           <button
             onClick={() => setActiveTab("diagnose")}
@@ -49,7 +49,7 @@ export default function DecodePage() {
           </button>
         </div>
 
-        {/* Tab Content */}
+        {}
         <div className="transition-all duration-300">
           {activeTab === "diagnose" ? (
             <div className="space-y-6">

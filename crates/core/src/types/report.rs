@@ -2,15 +2,15 @@
 
 use serde::{Deserialize, Serialize};
 
-/// A summary of a decoded authorization entry, including its detected type.
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AuthEntryInfo {
-    /// Human-readable label: "Ed25519" or "Smart Wallet".
+___RUST_DOC_COMMENT___    
     pub auth_type: String,
-    /// The authorizing address as a strkey (`G...` for Ed25519, `C...` for Smart Wallet).
+___RUST_DOC_COMMENT___    
     pub address: String,
-    /// For Smart Wallet entries: the contract ID in strkey form (`C...`).
-    /// `None` for Ed25519 entries.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub contract_id: Option<String>,
 }
@@ -84,14 +84,14 @@ pub struct TransactionContext {
 pub struct FeeBreakdown {
     pub total_charged_fee: i64,
     pub inclusion_fee: i64,
-    /// Total resource fee: non_refundable + refundable_resource_fee + rent_fee_charged.
+___RUST_DOC_COMMENT___    
     pub resource_fee: i64,
-    /// The refundable portion of the resource fee charged
-    /// (`total_refundable_resource_fee_charged` from `SorobanTransactionMetaExtV1`).
-    /// This amount may be partially returned to the submitter if resources are unused.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     pub refundable_resource_fee: i64,
-    /// `total_refundable_resource_fee_charged + rent_fee_charged`.
-    /// Kept for backwards compatibility with existing callers.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     pub refundable_fee: i64,
     pub non_refundable_fee: i64,
     pub bid_fee: Option<i64>,
@@ -108,16 +108,16 @@ pub struct ResourceSummary {
     pub write_bytes: u64,
 }
 
-/// Pinpoints the exact contract and function where a cross-contract call chain failed.
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FailureAttribution {
-    /// The contract address that directly caused the failure.
+___RUST_DOC_COMMENT___    
     pub contract_address: String,
-    /// The function name at the point of failure, if determinable.
+___RUST_DOC_COMMENT___    
     pub function_name: Option<String>,
-    /// The call depth at which the failure occurred (0 = top-level invoker).
+___RUST_DOC_COMMENT___    
     pub call_depth: usize,
-    /// Human-readable description of where in the call chain the failure originated.
+___RUST_DOC_COMMENT___    
     pub origin_description: String,
 }
 
@@ -146,22 +146,22 @@ pub struct DiagnosticReport {
 
     pub related_errors: Vec<String>,
 
-    /// Present when a cross-contract call chain was detected and the failure
-    /// was attributed to a specific sub-contract, not the top-level invoker.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     pub cross_contract_attribution: Option<FailureAttribution>,
 
-    /// Decoded hex strings for ed25519 signatures found in auth entries.
-    /// Malformed or empty byte sequences produce a human-readable error label.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub auth_signatures: Vec<String>,
 
-    /// Typed summaries of each authorization entry found in the transaction,
-    /// labelled as Ed25519 or Smart Wallet with the relevant address/contract_id.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub auth_entries: Vec<AuthEntryInfo>,
 
-    /// The contract address most likely responsible for the failure, extracted
-    /// from diagnostic event traces.
+___RUST_DOC_COMMENT___    
+___RUST_DOC_COMMENT___    
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub failing_contract_id: Option<String>,
 

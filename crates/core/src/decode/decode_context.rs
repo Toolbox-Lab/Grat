@@ -1,6 +1,6 @@
 use crate::network::config::NetworkConfig;
 
-/// Output format for diagnostic reports.
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum OutputFormat {
     #[default]
@@ -30,9 +30,9 @@ impl OutputFormat {
     }
 }
 
-/// Runtime configuration threaded through the entire decode pipeline.
-///
-/// Build with [`DecodeContext::builder`] and pass by reference to every analyzer.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone)]
 pub struct DecodeContext {
     pub network: NetworkConfig,
@@ -41,13 +41,13 @@ pub struct DecodeContext {
 }
 
 impl DecodeContext {
-    /// Start building a [`DecodeContext`].
+___RUST_DOC_COMMENT___    
     pub fn builder() -> DecodeContextBuilder {
         DecodeContextBuilder::default()
     }
 }
 
-/// Builder for [`DecodeContext`].
+___RUST_DOC_COMMENT___
 #[derive(Debug, Default)]
 pub struct DecodeContextBuilder {
     network: Option<NetworkConfig>,

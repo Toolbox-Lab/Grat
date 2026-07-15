@@ -90,22 +90,22 @@ impl std::fmt::Display for ErrorCategory {
     }
 }
 
-/// A parsed TOML taxonomy file containing entries for a single category.
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TaxonomySchema {
-    /// Category metadata.
+___RUST_DOC_COMMENT___    
     pub category: CategoryMeta,
-    /// Error entries.
+___RUST_DOC_COMMENT___    
     pub errors: Vec<TaxonomyEntry>,
 }
 
-/// Category-level metadata in a taxonomy TOML file.
+___RUST_DOC_COMMENT___
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CategoryMeta {
-    /// Category name.
+___RUST_DOC_COMMENT___    
     pub name: String,
-    /// Category description.
+___RUST_DOC_COMMENT___    
     pub description: String,
-    /// Stellar Core source module.
+___RUST_DOC_COMMENT___    
     pub source_module: String,
 }

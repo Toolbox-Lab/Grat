@@ -31,10 +31,8 @@ pub fn enrich_report(
 
     report.transaction_context = Some(context);
 
-    // Decode ed25519 signatures from auth entries embedded in the transaction envelope.
     report.auth_signatures = extract_auth_signatures(tx_data);
 
-    // Build typed auth entry summaries (Ed25519 vs Smart Wallet).
     report.auth_entries = extract_auth_entries(tx_data);
 
     Ok(())
@@ -63,7 +61,7 @@ fn extract_return_value(tx_data: &serde_json::Value) -> Option<String> {
 }
 
 fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
-    // 1. Get total fee from resultXdr
+    
     let mut total_fee = 0;
     if let Some(result_xdr_b64) = tx_data.get("resultXdr").and_then(|v| v.as_str()) {
         if let Ok(tx_result) = TransactionResult::from_xdr_base64(result_xdr_b64) {
@@ -71,7 +69,6 @@ fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
         }
     }
 
-    // 2. Get bid fee from envelopeXdr
     let mut bid_fee = None;
     if let Some(envelope_xdr_b64) = tx_data.get("envelopeXdr").and_then(|v| v.as_str()) {
         if let Ok(tx_envelope) = TransactionEnvelope::from_xdr_base64(envelope_xdr_b64) {
@@ -89,7 +86,6 @@ fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
         }
     }
 
-    // 3. Get resource fee components from resultMetaXdr or the pre-parsed fee payload.
     let mut non_refundable_fee = 0;
     let mut refundable_fee = 0;
     let mut rent_fee = 0;
@@ -194,14 +190,12 @@ fn extract_resource_summary(tx_data: &serde_json::Value) -> ResourceSummary {
     }
 }
 
-/// Extract and decode ed25519 signatures from auth entries in the transaction envelope.
-/// Auth entries are base64 XDR strings found under `tx.operations[*].body.invoke_host_function_op.auth`
-/// or directly in the `auth` field of an RPC simulate response stored in tx_data.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 fn extract_auth_signatures(tx_data: &serde_json::Value) -> Vec<String> {
     let mut signatures = Vec::new();
 
-    // Auth entries may appear directly as a top-level "auth" array (simulate response shape)
-    // or nested inside envelopeXdr operations.
     if let Some(auth_array) = tx_data.get("auth").and_then(|a| a.as_array()) {
         for entry in auth_array {
             if let Some(xdr_b64) = entry.as_str() {
@@ -213,11 +207,11 @@ fn extract_auth_signatures(tx_data: &serde_json::Value) -> Vec<String> {
     signatures
 }
 
-/// Build typed summaries for each auth entry found in the transaction.
-///
-/// For each entry, an [`AuthEntryInfo`] is produced that labels it as either
-/// Ed25519 or Smart Wallet and surfaces the relevant address / contract ID.
-/// Entries that cannot be decoded are silently skipped to remain non-breaking.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 fn extract_auth_entries(tx_data: &serde_json::Value) -> Vec<AuthEntryInfo> {
     let mut entries = Vec::new();
 
@@ -236,8 +230,8 @@ fn extract_auth_entries(tx_data: &serde_json::Value) -> Vec<AuthEntryInfo> {
     entries
 }
 
-/// Convert an [`AuthChain`] credential into an [`AuthEntryInfo`] label.
-/// Returns `None` for `SourceAccount` credentials, which carry no address info.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 fn auth_entry_info_from_chain(chain: &AuthChain) -> Option<AuthEntryInfo> {
     match &chain.credential {
         AuthCredential::SourceAccount => None,
@@ -424,16 +418,14 @@ mod tests {
         let breakdown = extract_fee_breakdown(&tx_data);
         assert_eq!(breakdown.total_charged_fee, 450);
         assert_eq!(breakdown.bid_fee, Some(500));
-        assert_eq!(breakdown.resource_fee, 350); // 100 + 200 + 50
-        assert_eq!(breakdown.inclusion_fee, 100); // 450 - 350
-        assert_eq!(breakdown.refundable_resource_fee, 200); // total_refundable_resource_fee_charged only
-        assert_eq!(breakdown.refundable_fee, 250); // 200 + 50 (includes rent)
+        assert_eq!(breakdown.resource_fee, 350); 
+        assert_eq!(breakdown.inclusion_fee, 100); 
+        assert_eq!(breakdown.refundable_resource_fee, 200); 
+        assert_eq!(breakdown.refundable_fee, 250); 
         assert_eq!(breakdown.non_refundable_fee, 100);
     }
 
-    // ── auth_entries extraction tests ──────────────────────────────────────────
-
-    /// Helper: build an auth entry XDR base64 for an account (Ed25519) credential.
+___RUST_DOC_COMMENT___    
     fn ed25519_auth_entry_b64(nonce: i64) -> String {
         use stellar_xdr::curr::{
             AccountId, Hash, InvokeContractArgs, PublicKey, ScAddress, ScSymbol, ScVal,
@@ -461,7 +453,7 @@ mod tests {
         XdrCodec::to_xdr_base64(&entry).expect("encode")
     }
 
-    /// Helper: build an auth entry XDR base64 for a contract (Smart Wallet) credential.
+___RUST_DOC_COMMENT___    
     fn smart_wallet_auth_entry_b64(nonce: i64) -> String {
         use stellar_xdr::curr::{
             Hash, InvokeContractArgs, ScAddress, ScSymbol, ScVal, SorobanAddressCredentials,
@@ -525,7 +517,7 @@ mod tests {
     fn extract_auth_entries_skips_invalid_payloads() {
         let tx_data = serde_json::json!({ "auth": ["!!!not-valid-xdr!!!"] });
         let entries = extract_auth_entries(&tx_data);
-        // Invalid entries are silently skipped; no panic.
+        
         assert!(entries.is_empty());
     }
 
@@ -538,11 +530,10 @@ mod tests {
 
     #[test]
     fn existing_ed25519_decoding_unchanged() {
-        // Existing auth_signatures behavior must be preserved for Ed25519 entries.
+        
         let b64 = ed25519_auth_entry_b64(7);
         let tx_data = serde_json::json!({ "auth": [b64] });
-        // extract_auth_signatures should still return an empty vec
-        // because the entry has ScVal::Void (no signature bytes).
+
         let sigs = extract_auth_signatures(&tx_data);
         assert!(sigs.is_empty(), "no signature bytes in void-signed entry");
     }

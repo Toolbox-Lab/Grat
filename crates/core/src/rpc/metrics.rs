@@ -112,40 +112,40 @@ fn registry() -> &'static Mutex<RpcMetricsRegistry> {
     REGISTRY.get_or_init(|| Mutex::new(RpcMetricsRegistry::default()))
 }
 
-/// Record the duration of a single RPC round-trip in the global registry.
-///
-/// This function is called automatically by [`super::client::SorobanRpcClient`]
-/// after every HTTP attempt (including retried ones). Callers outside the RPC
-/// module generally do not need to call this directly.
-///
-/// # Arguments
-/// * `method`        — JSON-RPC method name, e.g. `"getTransaction"`.
-/// * `duration_secs` — Wall-clock time of the round-trip in seconds.
-/// * `success`       — `true` when the call returned a valid result; `false`
-///                     for any HTTP, network, parse, or RPC-level error.
-///
-/// # Panics
-/// Does not panic. If the global mutex is poisoned the observation is silently
-/// dropped to avoid crashing the caller.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 pub fn record_rpc_duration(method: &str, duration_secs: f64, success: bool) {
     if let Ok(mut reg) = registry().lock() {
         reg.record(method, duration_secs, success);
     }
 }
 
-/// Render a snapshot of all RPC metrics in Prometheus text exposition format.
-///
-/// The returned string contains `HELP`, `TYPE`, and per-bucket `histogram`
-/// lines and is suitable for serving directly from a `/metrics` HTTP endpoint.
-///
-/// # Example
-/// ```
-/// use prism_core::rpc::metrics;
-///
-/// // After some RPC activity …
-/// let payload = metrics::gather();
-/// assert!(payload.contains("rpc_request_duration_seconds"));
-/// ```
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 pub fn gather() -> String {
     registry()
         .lock()
@@ -185,7 +185,7 @@ mod tests {
         let idx_01   = 1;
         let idx_025  = 2;
         let idx_05   = 3;
-        let idx_01_s = 4; // 0.1
+        let idx_01_s = 4; 
 
         assert_eq!(h.bucket_counts[idx_005],  0);
         assert_eq!(h.bucket_counts[idx_01],   0);
@@ -197,14 +197,14 @@ mod tests {
     #[test]
     fn histogram_value_below_all_buckets_increments_first() {
         let mut h = Histogram::new();
-        h.observe(0.001); // less than 0.005 (first bucket)
+        h.observe(0.001); 
         assert_eq!(h.bucket_counts[0], 1);
     }
 
     #[test]
     fn histogram_value_above_all_buckets_not_in_finite_buckets() {
         let mut h = Histogram::new();
-        h.observe(100.0); // above 10.0 (last bucket)
+        h.observe(100.0); 
         assert!(
             h.bucket_counts.iter().all(|&c| c == 0),
             "value above all bounds should not increment any finite bucket"

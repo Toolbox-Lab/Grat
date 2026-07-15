@@ -1,16 +1,5 @@
 #!/usr/bin/env node
 
-/**
- * Example WebSocket client for testing Prism trace streaming
- * 
- * Usage:
- *   node examples/websocket-client.js <tx-hash>
- * 
- * Prerequisites:
- *   1. Start the Prism WebSocket server: prism serve --port 8080
- *   2. Run this script with a valid transaction hash
- */
-
 const WebSocket = require('ws');
 
 const TX_HASH = process.argv[2];

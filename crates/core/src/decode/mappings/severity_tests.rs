@@ -1,6 +1,6 @@
-/// Tests that verify each HostError variant maps to the correct `Severity` level.
-///
-/// Coverage: Fatal, Error, Warning, and Info are each exercised at least once.
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
+___RUST_DOC_COMMENT___
 #[cfg(test)]
 mod tests {
     use crate::decode::mappings::{budget, context, value};
@@ -8,13 +8,9 @@ mod tests {
     use crate::taxonomy::schema::ErrorCategory;
     use crate::types::report::Severity;
 
-    // ------------------------------------------------------------------
-    // ErrorSeverity → Severity conversion
-    // ------------------------------------------------------------------
-
     #[test]
     fn error_severity_critical_maps_to_fatal() {
-        // Budget code 0 (CPUExceeded) is ErrorSeverity::Critical → Severity::Fatal
+        
         let detail = budget::lookup(0).expect("budget code 0 exists");
         let severity: Severity = detail.severity.clone().into();
         assert_eq!(severity, Severity::Fatal);
@@ -22,7 +18,7 @@ mod tests {
 
     #[test]
     fn error_severity_error_maps_to_error() {
-        // Budget code 8 (ExceededLimit) is ErrorSeverity::Error → Severity::Error
+        
         let detail = budget::lookup(8).expect("budget code 8 exists");
         let severity: Severity = detail.severity.clone().into();
         assert_eq!(severity, Severity::Error);
@@ -42,13 +38,9 @@ mod tests {
         assert_eq!(severity, Severity::Info);
     }
 
-    // ------------------------------------------------------------------
-    // Value mapping severity checks
-    // ------------------------------------------------------------------
-
     #[test]
     fn value_internal_error_maps_to_fatal() {
-        // Value code 4 (InternalError) is ErrorSeverity::Critical → Fatal
+        
         let detail = value::lookup(4).expect("value code 4 exists");
         let severity: Severity = detail.severity.clone().into();
         assert_eq!(severity, Severity::Fatal);
@@ -60,10 +52,6 @@ mod tests {
         let severity: Severity = detail.severity.clone().into();
         assert_eq!(severity, Severity::Error);
     }
-
-    // ------------------------------------------------------------------
-    // Context mapping severity checks (uses Severity directly)
-    // ------------------------------------------------------------------
 
     #[test]
     fn context_internal_error_is_fatal() {
@@ -77,14 +65,10 @@ mod tests {
         assert_eq!(detail.severity, Severity::Error);
     }
 
-    // ------------------------------------------------------------------
-    // Warning severity — mapping table and build_report
-    // ------------------------------------------------------------------
-
     #[test]
     fn storage_near_expiry_maps_to_warning() {
         use crate::decode::mappings::storage;
-        // Storage code 4 (NearExpiry) is the canonical Warning entry.
+        
         let detail = storage::lookup(4).expect("storage code 4 exists");
         assert_eq!(detail.severity, Severity::Warning);
     }
@@ -97,10 +81,6 @@ mod tests {
             .expect("storage code 4 in taxonomy");
         assert_eq!(entry.severity, "Warning");
     }
-
-    // ------------------------------------------------------------------
-    // Taxonomy-driven build_report severity checks
-    // ------------------------------------------------------------------
 
     #[test]
     fn build_report_context_internal_error_is_fatal() {
@@ -182,10 +162,6 @@ mod tests {
         assert_eq!(report.severity, Severity::Error);
     }
 
-    // ------------------------------------------------------------------
-    // Taxonomy severity parsing
-    // ------------------------------------------------------------------
-
     #[test]
     fn taxonomy_fatal_severity_is_correctly_parsed() {
         let db = TaxonomyDatabase::load_embedded().expect("taxonomy loads");
@@ -203,10 +179,6 @@ mod tests {
             .expect("auth code 1 in taxonomy");
         assert_eq!(entry.severity, "Error");
     }
-
-    // ------------------------------------------------------------------
-    // Exhaustive: every mapping-table entry has a valid severity
-    // ------------------------------------------------------------------
 
     #[test]
     fn all_budget_entries_have_valid_severity() {

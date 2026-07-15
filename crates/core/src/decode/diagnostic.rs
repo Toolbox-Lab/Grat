@@ -456,21 +456,19 @@ mod tests {
 
     #[test]
     fn test_scval_to_string_large_integers() {
-        // U128 standard
+        
         let u128_val = ScVal::U128(UInt128Parts { hi: 1, lo: 0 });
         assert_eq!(
             scval_to_string(&u128_val),
             Some("18446744073709551616".to_string())
         );
 
-        // I128 standard
         let i128_val = ScVal::I128(Int128Parts { hi: -1i64, lo: 0 });
         assert_eq!(
             scval_to_string(&i128_val),
             Some("-18446744073709551616".to_string())
         );
 
-        // U128 Max: hi is u64::MAX (all 1s), lo is u64::MAX
         let u128_max = ScVal::U128(UInt128Parts {
             hi: u64::MAX,
             lo: u64::MAX,
@@ -480,11 +478,9 @@ mod tests {
             Some("340282366920938463463374607431768211455".to_string())
         );
 
-        // U128 Min: 0
         let u128_min = ScVal::U128(UInt128Parts { hi: 0, lo: 0 });
         assert_eq!(scval_to_string(&u128_min), Some("0".to_string()));
 
-        // I128 Max: hi is i64::MAX, lo is u64::MAX
         let i128_max = ScVal::I128(Int128Parts {
             hi: i64::MAX,
             lo: u64::MAX,
@@ -494,7 +490,6 @@ mod tests {
             Some("170141183460469231731687303715884105727".to_string())
         );
 
-        // I128 Min: hi is i64::MIN, lo is 0
         let i128_min = ScVal::I128(Int128Parts {
             hi: i64::MIN,
             lo: 0,

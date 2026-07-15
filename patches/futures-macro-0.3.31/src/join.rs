@@ -1,4 +1,4 @@
-//! The futures-rs `join!` macro implementation.
+___RUST_DOC_MOD___
 
 use proc_macro::TokenStream;
 use proc_macro2::{Span, TokenStream as TokenStream2};
@@ -82,7 +82,7 @@ pub(crate) fn join(input: TokenStream) -> TokenStream {
     } })
 }
 
-/// The `try_join!` macro.
+___RUST_DOC_COMMENT___
 pub(crate) fn try_join(input: TokenStream) -> TokenStream {
     let parsed = syn::parse_macro_input!(input as Join);
 

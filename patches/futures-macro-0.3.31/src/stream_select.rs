@@ -2,7 +2,7 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{parse::Parser, punctuated::Punctuated, Expr, Index, Token};
 
-/// The `stream_select!` macro.
+___RUST_DOC_COMMENT___
 pub(crate) fn stream_select(input: TokenStream) -> Result<TokenStream, syn::Error> {
     let args = Punctuated::<Expr, Token![,]>::parse_terminated.parse2(input)?;
     if args.len() < 2 {

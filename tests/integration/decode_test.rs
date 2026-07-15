@@ -1,4 +1,4 @@
-//! Integration tests for the decode pipeline.
+___RUST_DOC_MOD___
 
 #[cfg(test)]
 mod tests {
