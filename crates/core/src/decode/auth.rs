@@ -295,7 +295,9 @@ mod tests {
                 assert_eq!(creds.signature_expiration_ledger, 1000);
                 assert!(creds.signed);
             }
-            other @ AuthCredential::SourceAccount => panic!("expected address credential, got {other:?}"),
+            other @ AuthCredential::SourceAccount => {
+                panic!("expected address credential, got {other:?}")
+            }
         }
     }
 
@@ -325,7 +327,9 @@ mod tests {
                 );
                 assert_eq!(creds.auth_type.to_string(), "Ed25519");
             }
-            other @ AuthCredential::SourceAccount => panic!("expected address credential, got {other:?}"),
+            other @ AuthCredential::SourceAccount => {
+                panic!("expected address credential, got {other:?}")
+            }
         }
     }
 
@@ -358,7 +362,9 @@ mod tests {
                 assert!(contract_id.starts_with('C'));
                 assert_eq!(creds.auth_type.to_string(), "Smart Wallet");
             }
-            other @ AuthCredential::SourceAccount => panic!("expected address credential, got {other:?}"),
+            other @ AuthCredential::SourceAccount => {
+                panic!("expected address credential, got {other:?}")
+            }
         }
     }
 
@@ -411,7 +417,9 @@ mod tests {
         let chain = AuthChain::from_entry(&entry);
         match chain.credential {
             AuthCredential::Address(creds) => assert!(!creds.signed),
-            other @ AuthCredential::SourceAccount => panic!("expected address credential, got {other:?}"),
+            other @ AuthCredential::SourceAccount => {
+                panic!("expected address credential, got {other:?}")
+            }
         }
     }
 
