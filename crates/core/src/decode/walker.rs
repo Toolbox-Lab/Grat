@@ -647,7 +647,7 @@ mod tests {
             true,
         );
         let a = DiagnosticEventWalker::new().walk(std::iter::once(&event));
-        let b = DiagnosticEventWalker::default().walk(std::iter::once(&event));
+        let b = DiagnosticEventWalker.walk(std::iter::once(&event));
         assert_eq!(a[0].kind, b[0].kind);
         assert_eq!(a[0].contract_id, b[0].contract_id);
     }

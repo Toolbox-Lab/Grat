@@ -405,7 +405,7 @@ mod tests {
         }
         .summary();
         assert!(s.contains("CABC123"));
-        assert!(s.contains("3"));
+        assert!(s.contains('3'));
         assert!(s.contains("--resolve"));
     }
 
@@ -427,7 +427,7 @@ mod tests {
             sub_code: 42,
         }
         .summary();
-        assert!(s.contains("9"));
+        assert!(s.contains('9'));
         assert!(s.contains("42"));
         assert!(s.contains("not recognised"));
     }

@@ -399,7 +399,7 @@ mod tests {
     fn make_client(addr: std::net::SocketAddr) -> SorobanRpcClient {
         let config = NetworkConfig {
             network: crate::network::Network::Testnet,
-            rpc_url: format!("http://{}", addr),
+            rpc_url: format!("http://{addr}"),
             network_passphrase: "test".to_string(),
             archive_urls: vec![],
             api_key: None,
@@ -708,7 +708,7 @@ mod tests {
     async fn test_get_ledger_entries_empty_response() {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
-        let rpc_url = format!("http://{}", addr);
+        let rpc_url = format!("http://{addr}");
 
         let config = NetworkConfig {
             network: crate::network::Network::Testnet,
@@ -746,7 +746,7 @@ mod tests {
 
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
-        let rpc_url = format!("http://{}", addr);
+        let rpc_url = format!("http://{addr}");
 
         let config = NetworkConfig {
             network: crate::network::Network::Testnet,
@@ -779,7 +779,7 @@ mod tests {
     async fn test_client_respects_timeout() {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
-        let rpc_url = format!("http://{}", addr);
+        let rpc_url = format!("http://{addr}");
 
         let config = NetworkConfig {
             network: crate::network::Network::Testnet,
@@ -811,7 +811,7 @@ mod tests {
     async fn test_simulate_transaction_returns_rpc_error_on_failure() {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap();
-        let rpc_url = format!("http://{}", addr);
+        let rpc_url = format!("http://{addr}");
 
         let config = NetworkConfig {
             network: crate::network::Network::Testnet,
