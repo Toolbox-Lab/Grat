@@ -476,7 +476,7 @@ mod tests {
 
     #[test]
     fn output_count_equals_input_count_for_mixed_batch() {
-        let events = vec![
+        let events = [
             make_event(
                 ContractEventType::Contract,
                 Some(contract_hash(1)),
@@ -520,7 +520,7 @@ mod tests {
 
     #[test]
     fn walk_diagnostic_events_convenience_fn_matches_walker_output() {
-        let events = vec![
+        let events = [
             make_event(
                 ContractEventType::Contract,
                 Some(contract_hash(10)),
@@ -551,7 +551,7 @@ mod tests {
 
     #[test]
     fn output_ordering_mirrors_input_ordering() {
-        let events = vec![
+        let events = [
             make_event(
                 ContractEventType::Contract,
                 Some(contract_hash(10)),
@@ -600,7 +600,7 @@ mod tests {
             true,
         );
 
-        let events = vec![contract_event, system_event, debug_event];
+        let events = [contract_event, system_event, debug_event];
         let result = DiagnosticEventWalker::new().walk(events.iter());
 
         let kinds: Vec<&DiagnosticEventKind> = result.iter().map(|e| &e.kind).collect();
