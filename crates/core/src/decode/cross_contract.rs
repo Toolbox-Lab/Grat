@@ -1,8 +1,8 @@
-___RUST_DOC_MOD___
-___RUST_DOC_MOD___
-___RUST_DOC_MOD___
-___RUST_DOC_MOD___
-___RUST_DOC_MOD___
+
+
+
+
+
 
 use stellar_xdr::curr::{
     ContractEventBody, ContractEventType, DiagnosticEvent, Hash, ScVal,
