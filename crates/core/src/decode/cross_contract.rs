@@ -1,12 +1,4 @@
-
-
-
-
-
-
-use stellar_xdr::curr::{
-    ContractEventBody, ContractEventType, DiagnosticEvent, Hash, ScVal,
-};
+use stellar_xdr::curr::{ContractEventBody, ContractEventType, DiagnosticEvent, Hash, ScVal};
 
 use crate::error::GratResult;
 use crate::types::report::{DiagnosticReport, FailureAttribution};
@@ -69,7 +61,6 @@ fn process_event(
     call_stack: &mut Vec<CallFrame>,
     failure: &mut Option<CallFrame>,
 ) {
-
     let v0 = match &event.event.body {
         ContractEventBody::V0(v) => v,
     };
@@ -98,21 +89,18 @@ fn process_event(
         }
 
         "error" | "panic" => {
-
             let frame = call_stack.last().cloned().unwrap_or(CallFrame {
                 contract_address,
                 function_name: topics.get(1).cloned(),
                 depth: call_stack.len(),
             });
-            
+
             if failure.is_none() {
                 *failure = Some(frame);
             }
         }
         _ => {
-
-            if event.event.type_ == ContractEventType::System
-                && !event.in_successful_contract_call
+            if event.event.type_ == ContractEventType::System && !event.in_successful_contract_call
             {
                 let frame = call_stack.last().cloned().unwrap_or(CallFrame {
                     contract_address,

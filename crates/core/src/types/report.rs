@@ -1,16 +1,14 @@
-
-
 use serde::{Deserialize, Serialize};
 
 ///
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct AuthEntryInfo {
-///    
+    ///    
     pub auth_type: String,
-///    
+    ///    
     pub address: String,
-///    
-///    
+    ///    
+    ///    
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub contract_id: Option<String>,
 }
@@ -26,7 +24,6 @@ pub enum Severity {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RootCause {
-
     pub description: String,
 
     pub likelihood: String,
@@ -34,7 +31,6 @@ pub struct RootCause {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SuggestedFix {
-
     pub description: String,
 
     pub difficulty: String,
@@ -50,7 +46,6 @@ pub struct SuggestedFix {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContractErrorInfo {
-
     pub contract_id: String,
 
     pub error_code: u32,
@@ -58,13 +53,12 @@ pub struct ContractErrorInfo {
     pub error_name: Option<String>,
 
     pub doc_comment: Option<String>,
-    
+
     pub learn_more: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionContext {
-
     pub tx_hash: String,
 
     pub ledger_sequence: u32,
@@ -84,14 +78,14 @@ pub struct TransactionContext {
 pub struct FeeBreakdown {
     pub total_charged_fee: i64,
     pub inclusion_fee: i64,
-///    
+    ///    
     pub resource_fee: i64,
-///    
-///    
-///    
+    ///    
+    ///    
+    ///    
     pub refundable_resource_fee: i64,
-///    
-///    
+    ///    
+    ///    
     pub refundable_fee: i64,
     pub non_refundable_fee: i64,
     pub bid_fee: Option<i64>,
@@ -111,19 +105,18 @@ pub struct ResourceSummary {
 ///
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FailureAttribution {
-///    
+    ///    
     pub contract_address: String,
-///    
+    ///    
     pub function_name: Option<String>,
-///    
+    ///    
     pub call_depth: usize,
-///    
+    ///    
     pub origin_description: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DiagnosticReport {
-
     pub error_category: String,
 
     pub error_code: u32,
@@ -146,22 +139,22 @@ pub struct DiagnosticReport {
 
     pub related_errors: Vec<String>,
 
-///    
-///    
+    ///    
+    ///    
     pub cross_contract_attribution: Option<FailureAttribution>,
 
-///    
-///    
+    ///    
+    ///    
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub auth_signatures: Vec<String>,
 
-///    
-///    
+    ///    
+    ///    
     #[serde(skip_serializing_if = "Vec::is_empty", default)]
     pub auth_entries: Vec<AuthEntryInfo>,
 
-///    
-///    
+    ///    
+    ///    
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub failing_contract_id: Option<String>,
 
@@ -169,7 +162,6 @@ pub struct DiagnosticReport {
 }
 
 impl DiagnosticReport {
-
     pub fn new(category: &str, code: u32, name: &str, summary: &str) -> Self {
         Self {
             error_category: category.to_string(),
@@ -187,7 +179,8 @@ impl DiagnosticReport {
             auth_signatures: Vec::new(),
             auth_entries: Vec::new(),
             failing_contract_id: None,
-            learn_more: "https://developers.stellar.org/docs/learn/smart-contracts/errors".to_string(),  
-       }
+            learn_more: "https://developers.stellar.org/docs/learn/smart-contracts/errors"
+                .to_string(),
+        }
     }
 }

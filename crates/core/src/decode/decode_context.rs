@@ -41,7 +41,7 @@ pub struct DecodeContext {
 }
 
 impl DecodeContext {
-///    
+    ///    
     pub fn builder() -> DecodeContextBuilder {
         DecodeContextBuilder::default()
     }

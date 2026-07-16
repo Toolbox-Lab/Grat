@@ -1,5 +1,8 @@
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, Path, State},
+    extract::{
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        Path, State,
+    },
     response::{Html, IntoResponse},
     routing::get,
     Router,
@@ -14,7 +17,6 @@ use tower_http::trace::TraceLayer;
 
 #[derive(Args)]
 pub struct ServeArgs {
-
     #[arg(long, short, default_value = "8080")]
     pub port: u16,
 
@@ -67,8 +69,11 @@ pub async fn run(args: ServeArgs, network: &NetworkConfig) -> anyhow::Result<()>
         tracing::info!("Serving web app from {}", static_dir.display());
         ServeDir::new(static_dir)
     } else {
-        tracing::warn!("Web app assets not found at {}. Serving placeholder.", static_dir.display());
-        ServeDir::new(".") 
+        tracing::warn!(
+            "Web app assets not found at {}. Serving placeholder.",
+            static_dir.display()
+        );
+        ServeDir::new(".")
     };
 
     let app = Router::new()
@@ -92,7 +97,8 @@ pub async fn run(args: ServeArgs, network: &NetworkConfig) -> anyhow::Result<()>
 }
 
 async fn index_handler() -> Html<&'static str> {
-    Html(r#"
+    Html(
+        r#"
         <!DOCTYPE html>
         <html>
         <head>
@@ -110,7 +116,8 @@ async fn index_handler() -> Html<&'static str> {
             </div>
         </body>
         </html>
-    "#)
+    "#,
+    )
 }
 
 async fn get_trace_api(
@@ -122,7 +129,8 @@ async fn get_trace_api(
         Err(e) => (
             axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             format!("Trace failed: {e}"),
-        ).into_response(),
+        )
+            .into_response(),
     }
 }
 

@@ -1,13 +1,10 @@
+use crate::decode::walker::DiagnosticEventWalker;
 use crate::error::GratResult;
 use crate::types::report::{DiagnosticReport, RootCause, SuggestedFix};
 use crate::xdr::codec::XdrCodec;
 use stellar_xdr::curr::{ContractEventBody, DiagnosticEvent, ScVal};
-use crate::decode::walker::DiagnosticEventWalker;
 
-pub fn enrich_report(
-    report: &mut DiagnosticReport,
-    tx_data: &serde_json::Value,
-) -> GratResult<()> {
+pub fn enrich_report(report: &mut DiagnosticReport, tx_data: &serde_json::Value) -> GratResult<()> {
     if let Some(events_b64) = tx_data
         .get("diagnosticEventsXdr")
         .and_then(|e| e.as_array())
@@ -27,7 +24,8 @@ pub fn enrich_report(
             add_deepest_error_root_cause(report, &root_cause_event);
         }
 
-        report.failing_contract_id = DiagnosticEventWalker::find_failing_contract(&diagnostic_events);
+        report.failing_contract_id =
+            DiagnosticEventWalker::find_failing_contract(&diagnostic_events);
     }
 
     Ok(())
@@ -456,7 +454,6 @@ mod tests {
 
     #[test]
     fn test_scval_to_string_large_integers() {
-        
         let u128_val = ScVal::U128(UInt128Parts { hi: 1, lo: 0 });
         assert_eq!(
             scval_to_string(&u128_val),

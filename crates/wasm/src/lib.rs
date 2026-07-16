@@ -1,6 +1,5 @@
-
-use grat_core::decode::report::build_report;
 use grat_core::decode::host_error::ClassifiedError;
+use grat_core::decode::report::build_report;
 use grat_core::taxonomy::schema::ErrorCategory;
 use grat_core::types::report::DiagnosticReport;
 use grat_core::xdr::codec::XdrCodec;
@@ -8,8 +7,7 @@ use wasm_bindgen::prelude::*;
 
 ///
 #[wasm_bindgen(start)]
-pub fn init() {
-}
+pub fn init() {}
 
 ///
 ///
@@ -17,25 +15,20 @@ pub fn init() {
 ///
 #[wasm_bindgen]
 pub fn decode_error(tx_result_json: &str) -> Result<JsValue, JsValue> {
-    let report = decode_report_inner(tx_result_json)
-        .map_err(|e| JsValue::from_str(&e))?;
-    serde_wasm_bindgen::to_value(&report)
-        .map_err(|e| JsValue::from_str(&e.to_string()))
+    let report = decode_report_inner(tx_result_json).map_err(|e| JsValue::from_str(&e))?;
+    serde_wasm_bindgen::to_value(&report).map_err(|e| JsValue::from_str(&e.to_string()))
 }
 
 #[allow(clippy::too_many_lines)]
 fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String> {
-    let parsed: serde_json::Value = serde_json::from_str(tx_result_json)
-        .map_err(|e| format!("invalid JSON input: {e}"))?;
+    let parsed: serde_json::Value =
+        serde_json::from_str(tx_result_json).map_err(|e| format!("invalid JSON input: {e}"))?;
 
     let error_info = classify(&parsed)?;
 
     let mut report = build_report(&error_info).map_err(|e| format!("{e}"))?;
 
-    if let Some(events_b64) = parsed
-        .get("diagnosticEventsXdr")
-        .and_then(|e| e.as_array())
-    {
+    if let Some(events_b64) = parsed.get("diagnosticEventsXdr").and_then(|e| e.as_array()) {
         let mut events = Vec::new();
         for ev_b64 in events_b64 {
             if let Some(s) = ev_b64.as_str() {
@@ -45,9 +38,7 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
             }
         }
         report.failing_contract_id =
-            grat_core::decode::walker::DiagnosticEventWalker::find_failing_contract(
-                &events,
-            );
+            grat_core::decode::walker::DiagnosticEventWalker::find_failing_contract(&events);
     }
 
     if let Some(root_causes) = parsed.get("rootCauses").and_then(|v| v.as_array()) {
@@ -63,12 +54,12 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
                 .unwrap_or("medium")
                 .to_string();
             if !desc.is_empty() {
-                report.root_causes.push(
-                    grat_core::types::report::RootCause {
+                report
+                    .root_causes
+                    .push(grat_core::types::report::RootCause {
                         description: desc,
                         likelihood,
-                    },
-                );
+                    });
             }
         }
     }
@@ -103,16 +94,16 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
                 .and_then(|r| r.as_str())
                 .map(String::from);
             if !desc.is_empty() {
-                report.suggested_fixes.push(
-                    grat_core::types::report::SuggestedFix {
+                report
+                    .suggested_fixes
+                    .push(grat_core::types::report::SuggestedFix {
                         description: desc,
                         difficulty,
                         requires_upgrade,
                         example,
                         id,
                         remedy_code,
-                    },
-                );
+                    });
             }
         }
     }
@@ -125,42 +116,40 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
         if let Some(ref mut ctx) = report.transaction_context {
             ctx.tx_hash = tx_hash.to_string();
         } else {
-            report.transaction_context = Some(
-                grat_core::types::report::TransactionContext {
-                    tx_hash: tx_hash.to_string(),
-                    ledger_sequence: parsed
-                        .get("ledgerSequence")
-                        .and_then(serde_json::Value::as_i64)
-                        .unwrap_or(0) as u32,
-                    function_name: parsed
-                        .get("functionName")
-                        .and_then(|f| f.as_str())
-                        .map(String::from),
-                    arguments: Vec::new(),
-                    return_value: parsed
-                        .get("returnValue")
-                        .and_then(|r| r.as_str())
-                        .map(String::from),
-                    fee: grat_core::types::report::FeeBreakdown {
-                        total_charged_fee: 0,
-                        inclusion_fee: 0,
-                        resource_fee: 0,
-                        refundable_resource_fee: 0,
-                        refundable_fee: 0,
-                        non_refundable_fee: 0,
-                        bid_fee: None,
-                    },
-                    resources: grat_core::types::report::ResourceSummary {
-                        cpu_instructions_used: 0,
-                        cpu_instructions_limit: 0,
-                        memory_bytes_used: 0,
-                        memory_bytes_limit: 0,
-                        read_bytes: 0,
-                        read_bytes_limit: 0,
-                        write_bytes: 0,
-                    },
+            report.transaction_context = Some(grat_core::types::report::TransactionContext {
+                tx_hash: tx_hash.to_string(),
+                ledger_sequence: parsed
+                    .get("ledgerSequence")
+                    .and_then(serde_json::Value::as_i64)
+                    .unwrap_or(0) as u32,
+                function_name: parsed
+                    .get("functionName")
+                    .and_then(|f| f.as_str())
+                    .map(String::from),
+                arguments: Vec::new(),
+                return_value: parsed
+                    .get("returnValue")
+                    .and_then(|r| r.as_str())
+                    .map(String::from),
+                fee: grat_core::types::report::FeeBreakdown {
+                    total_charged_fee: 0,
+                    inclusion_fee: 0,
+                    resource_fee: 0,
+                    refundable_resource_fee: 0,
+                    refundable_fee: 0,
+                    non_refundable_fee: 0,
+                    bid_fee: None,
                 },
-            );
+                resources: grat_core::types::report::ResourceSummary {
+                    cpu_instructions_used: 0,
+                    cpu_instructions_limit: 0,
+                    memory_bytes_used: 0,
+                    memory_bytes_limit: 0,
+                    read_bytes: 0,
+                    read_bytes_limit: 0,
+                    write_bytes: 0,
+                },
+            });
         }
     }
 

@@ -1,8 +1,8 @@
 use grat_core::types::report::DiagnosticReport;
 
 use crate::output::renderers::{
-    render_cause_list, render_error_card, render_fix_list, render_section_header,
-    BudgetBar, render_fee_breakdown,
+    render_cause_list, render_error_card, render_fee_breakdown, render_fix_list,
+    render_section_header, BudgetBar,
 };
 
 pub fn print_report(report: &DiagnosticReport) -> anyhow::Result<()> {
@@ -62,7 +62,10 @@ pub fn print_report(report: &DiagnosticReport) -> anyhow::Result<()> {
 
     if let Some(attribution) = &report.cross_contract_attribution {
         println!();
-        println!("{}", render_section_header("Cross-Contract Failure Attribution"));
+        println!(
+            "{}",
+            render_section_header("Cross-Contract Failure Attribution")
+        );
         println!("Origin Contract : {}", attribution.contract_address);
         if let Some(fn_name) = &attribution.function_name {
             println!("Failed Function : {fn_name}");

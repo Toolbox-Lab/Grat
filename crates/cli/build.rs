@@ -18,7 +18,8 @@ fn git_hash() -> String {
         .output();
 
     match output {
-        Ok(output) if output.status.success() => String::from_utf8(output.stdout).map_or_else(|_| "unknown".to_owned(), |hash| hash.trim().to_owned()),
+        Ok(output) if output.status.success() => String::from_utf8(output.stdout)
+            .map_or_else(|_| "unknown".to_owned(), |hash| hash.trim().to_owned()),
         _ => "unknown".to_owned(),
     }
 }

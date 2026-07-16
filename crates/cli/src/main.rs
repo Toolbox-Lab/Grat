@@ -1,5 +1,3 @@
-
-
 mod commands;
 mod config;
 mod output;
@@ -17,7 +15,6 @@ const BUILD_HASH: &str = env!("GRAT_BUILD_HASH");
 #[command(name = "grat", version = env!("CARGO_PKG_VERSION"), about, long_about = None)]
 #[command(propagate_version = true)]
 struct Cli {
-
     #[command(subcommand)]
     command: Commands,
 
@@ -51,7 +48,6 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     #[command(next_help_heading = "Analysis Commands")]
-
     Decode(commands::decode::DecodeArgs),
 
     Inspect(commands::inspect::InspectArgs),
@@ -63,7 +59,6 @@ enum Commands {
     Diff(commands::diff::DiffArgs),
 
     #[command(next_help_heading = "Debug & TUI Commands")]
-
     Replay(commands::replay::ReplayArgs),
 
     Whatif(commands::whatif::WhatifArgs),
@@ -71,7 +66,6 @@ enum Commands {
     Export(commands::export::ExportArgs),
 
     #[command(next_help_heading = "System & Data Commands")]
-
     Db(commands::db::DbArgs),
 
     Clean(commands::clean::CleanArgs),
@@ -81,7 +75,6 @@ enum Commands {
     Diagnostic(commands::diagnostic::DiagnosticArgs),
 
     Completions {
-
         shell: clap_complete::Shell,
     },
 

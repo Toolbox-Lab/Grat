@@ -1,11 +1,10 @@
-
 pub mod auth;
 pub mod auth_address_nonce;
 pub mod auth_signature;
 pub mod context;
-pub mod decode_context;
 pub mod contract_error;
 pub mod cross_contract;
+pub mod decode_context;
 pub mod diagnostic;
 pub mod host_error;
 pub mod mappings;
@@ -18,8 +17,7 @@ pub use auth::{
 };
 pub use auth_address_nonce::AddressWithNonce;
 pub use walker::{
-    walk_diagnostic_events, DiagnosticEventKind, DiagnosticEventWalker,
-    StructuredDiagnosticEvent,
+    walk_diagnostic_events, DiagnosticEventKind, DiagnosticEventWalker, StructuredDiagnosticEvent,
 };
 
 use crate::error::{GratError, GratResult};
@@ -33,7 +31,6 @@ use stellar_xdr::curr::{ScVal, SorobanTransactionMetaExt, TransactionMeta, Trans
 ///
 ///
 fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> GratResult<()> {
-
     let mut total_fee = None;
     if let Some(result_b64) = tx_data.get("resultXdr").and_then(|r| r.as_str()) {
         if let Ok(tx_result) = TransactionResult::from_xdr_base64(result_b64) {
@@ -51,12 +48,11 @@ fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> GratResult<()> {
         }
     };
 
-    let meta = TransactionMeta::from_xdr_base64(&meta_b64).map_err(|e| {
-        GratError::XdrDecodingFailed {
+    let meta =
+        TransactionMeta::from_xdr_base64(&meta_b64).map_err(|e| GratError::XdrDecodingFailed {
             type_name: "TransactionMeta",
             reason: e.to_string(),
-        }
-    })?;
+        })?;
 
     let mut resource_fee = 0;
 
@@ -171,22 +167,19 @@ pub async fn decode_transaction_with_op_filter(
 
     parse_v3_metadata(&mut base_tx_data)?;
 
-    let num_ops = if let Some(envelope_str) = base_tx_data.get("envelopeXdr").and_then(|v| v.as_str()) {
-        
+    let num_ops = if let Some(envelope_str) =
+        base_tx_data.get("envelopeXdr").and_then(|v| v.as_str())
+    {
         let envelope = <stellar_xdr::curr::TransactionEnvelope as crate::xdr::codec::XdrCodec>::from_xdr_base64(envelope_str)
             .map_err(|e| crate::error::GratError::Internal(format!("Failed to decode envelope XDR: {}", e)))?;
         match envelope {
             stellar_xdr::curr::TransactionEnvelope::TxV0(v0) => v0.tx.operations.len(),
             stellar_xdr::curr::TransactionEnvelope::Tx(v1) => v1.tx.operations.len(),
-            stellar_xdr::curr::TransactionEnvelope::TxFeeBump(fb) => {
-                
-                match &fb.tx.inner_tx {
-                    stellar_xdr::curr::FeeBumpTransactionInnerTx::Tx(v1) => v1.tx.operations.len(),
-                }
-            }
+            stellar_xdr::curr::TransactionEnvelope::TxFeeBump(fb) => match &fb.tx.inner_tx {
+                stellar_xdr::curr::FeeBumpTransactionInnerTx::Tx(v1) => v1.tx.operations.len(),
+            },
         }
     } else {
-        
         1
     };
 
@@ -196,7 +189,7 @@ pub async fn decode_transaction_with_op_filter(
         None => (0..num_ops).collect(),
     };
 
-let _ctx = decode_context::DecodeContextBuilder::from(network).build();
+    let _ctx = decode_context::DecodeContextBuilder::from(network).build();
     for i in indices {
         let mut tx_data = base_tx_data.clone();
         filter_transaction_by_operation(&mut tx_data, i)?;
@@ -316,7 +309,7 @@ mod tests {
     #[test]
     fn test_corrupt_meta_xdr_returns_error() {
         let mut data = serde_json::json!({
-            "resultMetaXdr": "AAAA",  
+            "resultMetaXdr": "AAAA",
         });
         let result = parse_v3_metadata(&mut data);
         assert!(result.is_err());
@@ -461,7 +454,6 @@ mod tests {
 
     #[test]
     fn test_invalid_result_xdr_does_not_fail() {
-        
         let meta = make_v3_meta_with_v1_ext(100, 50, 25);
         let meta_b64 = XdrCodec::to_xdr_base64(&meta).unwrap();
 

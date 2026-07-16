@@ -1,5 +1,3 @@
-
-
 use clap::Args;
 use std::fs;
 use std::path::Path;
@@ -44,7 +42,10 @@ fn print_clean_result(total_bytes: u64, output_format: &str) -> anyhow::Result<(
         });
         println!("{}", serde_json::to_string_pretty(&payload)?);
     } else {
-        println!("Successfully cleared {}MB of cache data", format_mb(total_bytes));
+        println!(
+            "Successfully cleared {}MB of cache data",
+            format_mb(total_bytes)
+        );
     }
 
     Ok(())

@@ -1,7 +1,5 @@
-
-
-use crate::replay::sandbox::{SandboxResult, TraceEventType};
 use crate::error::GratResult;
+use crate::replay::sandbox::{SandboxResult, TraceEventType};
 use crate::types::trace::{ContractInvocation, HostFunctionCall};
 
 pub fn build_trace_tree(result: &SandboxResult) -> GratResult<Vec<ContractInvocation>> {
@@ -62,8 +60,7 @@ pub fn build_trace_tree(result: &SandboxResult) -> GratResult<Vec<ContractInvoca
                     current.host_calls.push(call);
                 }
             }
-            _ => {
-            }
+            _ => {}
         }
     }
 

@@ -2,7 +2,7 @@
 
 use crate::output::theme::ColorPalette;
 use colored::Colorize;
-use grat_core::types::report::{DiagnosticReport, RootCause, TransactionContext, FeeBreakdown};
+use grat_core::types::report::{DiagnosticReport, FeeBreakdown, RootCause, TransactionContext};
 use grat_core::types::trace::ResourceProfile;
 use tabled::{Table, Tabled};
 
@@ -513,7 +513,8 @@ mod tests {
             auth_signatures: Vec::new(),
             auth_entries: Vec::new(),
             failing_contract_id: None,
-            learn_more: "https://developers.stellar.org/docs/learn/smart-contracts/errors".to_string(),
+            learn_more: "https://developers.stellar.org/docs/learn/smart-contracts/errors"
+                .to_string(),
         }
     }
 

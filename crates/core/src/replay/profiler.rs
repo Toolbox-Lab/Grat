@@ -1,10 +1,11 @@
-
-
-use crate::replay::sandbox::SandboxResult;
 use crate::error::GratResult;
+use crate::replay::sandbox::SandboxResult;
 use crate::types::trace::{DiffChangeType, ResourceProfile, StateDiff};
 
-pub fn generate_profile(result: &SandboxResult, state_diff: &StateDiff) -> GratResult<ResourceProfile> {
+pub fn generate_profile(
+    result: &SandboxResult,
+    state_diff: &StateDiff,
+) -> GratResult<ResourceProfile> {
     let mut total_write_bytes: u64 = 0;
     let mut total_read_bytes: u64 = 0;
 
@@ -38,7 +39,7 @@ pub fn generate_profile(result: &SandboxResult, state_diff: &StateDiff) -> GratR
 
     let mut profile = ResourceProfile {
         total_cpu: result.total_cpu,
-        cpu_limit: 0, 
+        cpu_limit: 0,
         total_memory: result.total_memory,
         memory_limit: 0,
         total_read_bytes,

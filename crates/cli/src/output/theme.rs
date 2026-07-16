@@ -1,5 +1,3 @@
-
-
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use owo_colors::{OwoColorize, Style};

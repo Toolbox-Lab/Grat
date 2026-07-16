@@ -1,16 +1,13 @@
-
-
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use crate::output::theme::ColorPalette;
 use anyhow::Result;
 use directories::ProjectDirs;
-use crate::output::theme::ColorPalette;
 
 #[derive(clap::Args)]
 #[command(about = "Check binary health, network connectivity, and cache state.")]
 pub struct DiagnosticArgs {
-
     #[arg(long, short)]
     pub quiet: bool,
 }
@@ -89,10 +86,7 @@ fn check_binary_version() -> Check {
     }
 }
 
-async fn check_rpc(
-    label: &str,
-    network_config: &grat_core::types::config::NetworkConfig,
-) -> Check {
+async fn check_rpc(label: &str, network_config: &grat_core::types::config::NetworkConfig) -> Check {
     let start = Instant::now();
 
     let client = reqwest::Client::builder()

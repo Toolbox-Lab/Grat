@@ -44,7 +44,9 @@ pub const CONTRACT_ERROR_DETAILS: &[ContractErrorDetail] = &[
 ];
 
 pub fn lookup(code: u32) -> Option<&'static ContractErrorDetail> {
-    CONTRACT_ERROR_DETAILS.iter().find(|detail| detail.code == code)
+    CONTRACT_ERROR_DETAILS
+        .iter()
+        .find(|detail| detail.code == code)
 }
 
 #[cfg(test)]

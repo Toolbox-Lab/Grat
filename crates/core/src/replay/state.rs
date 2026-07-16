@@ -1,12 +1,9 @@
-
-
-use crate::types::config::NetworkConfig;
 use crate::error::{GratError, GratResult};
+use crate::types::config::NetworkConfig;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub struct LedgerState {
-
     pub ledger_sequence: u32,
 
     pub entries: HashMap<String, Vec<u8>>,
@@ -16,7 +13,6 @@ pub struct LedgerState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ReconstructionPath {
-
     HotPath,
 
     ColdPath,

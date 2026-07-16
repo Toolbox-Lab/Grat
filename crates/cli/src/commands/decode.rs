@@ -22,7 +22,6 @@ pub async fn run(
     let effective_output = if args.short { "short" } else { output_format };
 
     let reports = if args.raw {
-        
         vec![build_raw_xdr_report(&args.tx_hash)?]
     } else {
         let spinner = indicatif::ProgressBar::new_spinner();
@@ -32,12 +31,9 @@ pub async fn run(
         ));
         spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-        let reports = grat_core::decode::decode_transaction_with_op_filter(
-            &args.tx_hash,
-            network,
-            None,
-        )
-        .await?;
+        let reports =
+            grat_core::decode::decode_transaction_with_op_filter(&args.tx_hash, network, None)
+                .await?;
         spinner.finish_and_clear();
         reports
     };

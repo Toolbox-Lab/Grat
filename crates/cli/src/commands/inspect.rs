@@ -1,12 +1,9 @@
-
-
 use clap::Args;
-use grat_core::types::config::NetworkConfig;
 use grat_core::decode::decode_context::{DecodeContextBuilder, OutputFormat};
+use grat_core::types::config::NetworkConfig;
 
 #[derive(Args)]
 pub struct InspectArgs {
-
     #[arg(value_name = "TX_HASH")]
     pub tx_hash: String,
 

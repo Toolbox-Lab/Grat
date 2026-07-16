@@ -1,5 +1,3 @@
-
-
 #![allow(dead_code)]
 
 use grat_core::types::{

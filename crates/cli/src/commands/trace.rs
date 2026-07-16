@@ -1,11 +1,8 @@
-
-
 use clap::Args;
 use grat_core::types::config::NetworkConfig;
 
 #[derive(Args)]
 pub struct TraceArgs {
-
     #[arg(index = 1, value_name = "TX_HASH")]
     pub tx_hash: String,
 

@@ -1,15 +1,12 @@
-
-
 use crate::error::{GratError, GratResult};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use stellar_xdr::curr::{
     ContractEvent, DiagnosticEvent, LedgerEntry, LedgerKey, Limits, ReadXdr, ScAddress, ScBytes,
-    ScMap, ScMapEntry, ScString, ScSymbol, ScVal, ScVec, TransactionEnvelope, TransactionMeta,
-    TransactionResult, WriteXdr, SorobanAuthorizationEntry
+    ScMap, ScMapEntry, ScString, ScSymbol, ScVal, ScVec, SorobanAuthorizationEntry,
+    TransactionEnvelope, TransactionMeta, TransactionResult, WriteXdr,
 };
 
 pub trait XdrCodec: Sized {
-
     const TYPE_NAME: &'static str;
 
     /// Decode from XDR bytes.
@@ -35,11 +32,9 @@ impl XdrCodec for TransactionMeta {
     const TYPE_NAME: &'static str = "TransactionMeta";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        TransactionMeta::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        TransactionMeta::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -111,11 +106,9 @@ impl XdrCodec for LedgerEntry {
     const TYPE_NAME: &'static str = "LedgerEntry";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        LedgerEntry::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        LedgerEntry::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -130,11 +123,9 @@ impl XdrCodec for DiagnosticEvent {
     const TYPE_NAME: &'static str = "DiagnosticEvent";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        DiagnosticEvent::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        DiagnosticEvent::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -149,11 +140,9 @@ impl XdrCodec for ScVec {
     const TYPE_NAME: &'static str = "ScVec";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        ScVec::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        ScVec::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -168,11 +157,9 @@ impl XdrCodec for ContractEvent {
     const TYPE_NAME: &'static str = "ContractEvent";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        ContractEvent::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        ContractEvent::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -187,11 +174,9 @@ impl XdrCodec for ScVal {
     const TYPE_NAME: &'static str = "ScVal";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        ScVal::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        ScVal::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -206,11 +191,9 @@ impl XdrCodec for ScAddress {
     const TYPE_NAME: &'static str = "ScAddress";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        ScAddress::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        ScAddress::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -225,11 +208,9 @@ impl XdrCodec for ScSymbol {
     const TYPE_NAME: &'static str = "ScSymbol";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        ScSymbol::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        ScSymbol::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -244,11 +225,9 @@ impl XdrCodec for ScString {
     const TYPE_NAME: &'static str = "ScString";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        ScString::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        ScString::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -263,11 +242,9 @@ impl XdrCodec for ScBytes {
     const TYPE_NAME: &'static str = "ScBytes";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        ScBytes::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        ScBytes::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -282,11 +259,9 @@ impl XdrCodec for ScMap {
     const TYPE_NAME: &'static str = "ScMap";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        ScMap::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        ScMap::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -301,11 +276,9 @@ impl XdrCodec for ScMapEntry {
     const TYPE_NAME: &'static str = "ScMapEntry";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        ScMapEntry::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        ScMapEntry::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -320,11 +293,9 @@ impl XdrCodec for LedgerKey {
     const TYPE_NAME: &'static str = "LedgerKey";
 
     fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
-        LedgerKey::from_xdr(bytes, Limits::none()).map_err(|e| {
-            GratError::XdrDecodingFailed {
-                type_name: Self::TYPE_NAME,
-                reason: e.to_string(),
-            }
+        LedgerKey::from_xdr(bytes, Limits::none()).map_err(|e| GratError::XdrDecodingFailed {
+            type_name: Self::TYPE_NAME,
+            reason: e.to_string(),
         })
     }
 
@@ -337,9 +308,9 @@ impl XdrCodec for LedgerKey {
 
 ///
 pub fn decode_xdr_base64(xdr_base64: &str) -> GratResult<Vec<u8>> {
-    STANDARD.decode(xdr_base64).map_err(|e| {
-        GratError::XdrError(format!("Base64 decode failed: {e}"))
-    })
+    STANDARD
+        .decode(xdr_base64)
+        .map_err(|e| GratError::XdrError(format!("Base64 decode failed: {e}")))
 }
 
 ///
@@ -406,7 +377,8 @@ mod tests {
     fn test_xdr_codec_round_trip() {
         let envelope = make_test_envelope();
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&envelope).expect("encode");
-        let decoded = <TransactionEnvelope as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        let decoded = <TransactionEnvelope as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64)
+            .expect("decode");
         assert_eq!(envelope, decoded);
     }
 
@@ -427,18 +399,23 @@ mod tests {
                     ext: ExtensionPoint::V0,
                     contract_id: None,
                     type_: stellar_xdr::curr::ContractEventType::Contract,
-                    body: stellar_xdr::curr::ContractEventBody::V0(stellar_xdr::curr::ContractEventV0 {
-                        topics: vec![].try_into().unwrap(),
-                        data: stellar_xdr::curr::ScVal::Void,
-                    }),
-                }].try_into().unwrap(),
+                    body: stellar_xdr::curr::ContractEventBody::V0(
+                        stellar_xdr::curr::ContractEventV0 {
+                            topics: vec![].try_into().unwrap(),
+                            data: stellar_xdr::curr::ScVal::Void,
+                        },
+                    ),
+                }]
+                .try_into()
+                .unwrap(),
                 return_value: stellar_xdr::curr::ScVal::Void,
                 diagnostic_events: vec![].try_into().unwrap(),
             }),
         });
 
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&meta).expect("encode V3");
-        let decoded = <TransactionMeta as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode V3");
+        let decoded = <TransactionMeta as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64)
+            .expect("decode V3");
 
         if let TransactionMeta::V3(v3) = decoded {
             assert_eq!(v3.operations.len(), 1);
@@ -460,7 +437,8 @@ mod tests {
         let xdr_bytes = vec![0u8; 20];
         let bytes = encode_xdr_base64(&xdr_bytes);
 
-        let decoded = <TransactionResult as crate::xdr::codec::XdrCodec>::from_xdr_base64(&bytes).expect("decode");
+        let decoded = <TransactionResult as crate::xdr::codec::XdrCodec>::from_xdr_base64(&bytes)
+            .expect("decode");
         let encoded = crate::xdr::codec::XdrCodec::to_xdr_base64(&decoded).expect("encode");
 
         assert_eq!(bytes, encoded);
@@ -474,28 +452,36 @@ mod tests {
                 ext: ExtensionPoint::V0,
                 contract_id: None,
                 type_: stellar_xdr::curr::ContractEventType::Contract,
-                body: stellar_xdr::curr::ContractEventBody::V0(stellar_xdr::curr::ContractEventV0 {
-                    topics: vec![].try_into().unwrap(),
-                    data: stellar_xdr::curr::ScVal::Void,
-                }),
+                body: stellar_xdr::curr::ContractEventBody::V0(
+                    stellar_xdr::curr::ContractEventV0 {
+                        topics: vec![].try_into().unwrap(),
+                        data: stellar_xdr::curr::ScVal::Void,
+                    },
+                ),
             },
         };
 
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&event).expect("encode");
-        let decoded = <DiagnosticEvent as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        let decoded = <DiagnosticEvent as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64)
+            .expect("decode");
         assert_eq!(event, decoded);
     }
 
     #[test]
     fn test_scvec_round_trip() {
-        let scvec = ScVec(vec![
-            stellar_xdr::curr::ScVal::Void,
-            stellar_xdr::curr::ScVal::Bool(true),
-            stellar_xdr::curr::ScVal::U32(42),
-        ].try_into().unwrap());
+        let scvec = ScVec(
+            vec![
+                stellar_xdr::curr::ScVal::Void,
+                stellar_xdr::curr::ScVal::Bool(true),
+                stellar_xdr::curr::ScVal::U32(42),
+            ]
+            .try_into()
+            .unwrap(),
+        );
 
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&scvec).expect("encode");
-        let decoded = <ScVec as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        let decoded =
+            <ScVec as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
         assert_eq!(scvec, decoded);
     }
 
@@ -579,9 +565,7 @@ mod tests {
         scval_round_trip(ScVal::Symbol(ScSymbol(
             StringM::try_from(b"transfer".to_vec()).unwrap(),
         )));
-        scval_round_trip(ScVal::Symbol(ScSymbol(
-            StringM::try_from(vec![]).unwrap(),
-        )));
+        scval_round_trip(ScVal::Symbol(ScSymbol(StringM::try_from(vec![]).unwrap())));
     }
 
     #[test]
@@ -641,12 +625,8 @@ mod tests {
     fn test_scval_ledger_key_nonce_round_trip() {
         use stellar_xdr::curr::ScNonceKey;
         scval_round_trip(ScVal::LedgerKeyNonce(ScNonceKey { nonce: 0 }));
-        scval_round_trip(ScVal::LedgerKeyNonce(ScNonceKey {
-            nonce: i64::MIN,
-        }));
-        scval_round_trip(ScVal::LedgerKeyNonce(ScNonceKey {
-            nonce: i64::MAX,
-        }));
+        scval_round_trip(ScVal::LedgerKeyNonce(ScNonceKey { nonce: i64::MIN }));
+        scval_round_trip(ScVal::LedgerKeyNonce(ScNonceKey { nonce: i64::MAX }));
     }
 
     #[test]
@@ -713,7 +693,8 @@ mod tests {
     fn test_scmap_empty_round_trip() {
         let map = ScMap(vec![].try_into().unwrap());
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&map).expect("encode");
-        let decoded = <ScMap as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        let decoded =
+            <ScMap as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
         assert_eq!(map, decoded);
         assert_eq!(decoded.0.len(), 0);
     }
@@ -724,17 +705,23 @@ mod tests {
             key: ScVal::U32(1),
             val: ScVal::Bool(true),
         };
-        
+
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&entry).expect("encode");
-        let decoded_entry = <ScMapEntry as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        let decoded_entry =
+            <ScMapEntry as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
         assert_eq!(entry, decoded_entry);
 
-        let map = ScMap::sorted_from_entries(vec![ScMapEntry {
-            key: ScVal::U32(1),
-            val: ScVal::Bool(true),
-        }].into_iter()).expect("sorted_from_entries");
+        let map = ScMap::sorted_from_entries(
+            vec![ScMapEntry {
+                key: ScVal::U32(1),
+                val: ScVal::Bool(true),
+            }]
+            .into_iter(),
+        )
+        .expect("sorted_from_entries");
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&map).expect("encode");
-        let decoded = <ScMap as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        let decoded =
+            <ScMap as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
         assert_eq!(map, decoded);
         assert_eq!(decoded.0.len(), 1);
         assert_eq!(decoded.0[0].key, ScVal::U32(1));
@@ -743,18 +730,27 @@ mod tests {
 
     #[test]
     fn test_scmap_multi_entry_round_trip() {
-        
         let entries = vec![
-            ScMapEntry { key: ScVal::U32(3), val: ScVal::Bool(false) },
-            ScMapEntry { key: ScVal::U32(1), val: ScVal::Void },
-            ScMapEntry { key: ScVal::U32(2), val: ScVal::Bool(true) },
+            ScMapEntry {
+                key: ScVal::U32(3),
+                val: ScVal::Bool(false),
+            },
+            ScMapEntry {
+                key: ScVal::U32(1),
+                val: ScVal::Void,
+            },
+            ScMapEntry {
+                key: ScVal::U32(2),
+                val: ScVal::Bool(true),
+            },
         ];
         let map = ScMap::sorted_from_entries(entries.into_iter()).expect("sorted_from_entries");
         let b64 = crate::xdr::codec::XdrCodec::to_xdr_base64(&map).expect("encode");
-        let decoded = <ScMap as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
+        let decoded =
+            <ScMap as crate::xdr::codec::XdrCodec>::from_xdr_base64(&b64).expect("decode");
         assert_eq!(map, decoded);
         assert_eq!(decoded.0.len(), 3);
-        
+
         assert_eq!(decoded.0[0].key, ScVal::U32(1));
         assert_eq!(decoded.0[1].key, ScVal::U32(2));
         assert_eq!(decoded.0[2].key, ScVal::U32(3));

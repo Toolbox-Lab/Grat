@@ -42,7 +42,6 @@ pub fn decode_auth_entry_signatures(auth_entry_b64: &str) -> Vec<String> {
 ///
 fn extract_signatures_from_scval(val: &ScVal) -> Vec<String> {
     match val {
-        
         ScVal::Bytes(sc_bytes) => vec![decode_signature_bytes(sc_bytes.as_ref())],
 
         ScVal::Map(Some(ScMap(entries))) => {
@@ -102,7 +101,6 @@ mod tests {
 
     #[test]
     fn decode_invalid_xdr_returns_error_label() {
-        
         let result = decode_auth_entry_signatures("AAAA");
         assert_eq!(result, vec!["<invalid: xdr decode failed>"]);
     }

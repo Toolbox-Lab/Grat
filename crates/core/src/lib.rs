@@ -1,5 +1,3 @@
-
-
 pub mod archive;
 pub mod cache;
 pub mod debugger;
@@ -13,16 +11,16 @@ pub mod taxonomy;
 pub mod types;
 pub mod xdr;
 
-pub use network::config::Network;
-pub use types::address::Address;
-pub use types::config::NetworkConfig;
-pub use error::{GratError, GratResult};
-pub use types::report::DiagnosticReport;
 pub use decode::{
     walk_diagnostic_events, AddressCredential, AddressWithNonce, AuthChain, AuthCredential,
     AuthFunctionKind, AuthInvocation, DiagnosticEventKind, DiagnosticEventWalker,
     StructuredDiagnosticEvent,
 };
+pub use error::{GratError, GratResult};
+pub use network::config::Network;
+pub use types::address::Address;
+pub use types::config::NetworkConfig;
+pub use types::report::DiagnosticReport;
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 

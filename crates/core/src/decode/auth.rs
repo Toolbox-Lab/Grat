@@ -1,13 +1,3 @@
-
-
-
-
-
-
-
-
-
-
 use crate::error::GratResult;
 use crate::xdr::codec::XdrCodec;
 use serde::{Deserialize, Serialize};
@@ -25,9 +15,9 @@ use stellar_xdr::curr::{
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AuthorizationType {
-///    
+    ///    
     Ed25519,
-///    
+    ///    
     SmartWallet,
 }
 
@@ -45,28 +35,28 @@ impl std::fmt::Display for AuthorizationType {
 #[serde(rename_all = "snake_case", tag = "kind")]
 pub enum AuthCredential {
     /// Authorized implicitly by the transaction's source account — no nonce or
-///    
+    ///    
     SourceAccount,
-///    
+    ///    
     Address(AddressCredential),
 }
 
 ///
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AddressCredential {
-///    
+    ///    
     pub address: String,
-///    
+    ///    
     pub auth_type: AuthorizationType,
-///    
-///    
+    ///    
+    ///    
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub contract_id: Option<String>,
-///    
+    ///    
     pub nonce: i64,
-///    
+    ///    
     pub signature_expiration_ledger: u32,
-///    
+    ///    
     pub signed: bool,
 }
 
@@ -74,28 +64,28 @@ pub struct AddressCredential {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AuthFunctionKind {
-///    
+    ///    
     ContractFn,
-///    
+    ///    
     CreateContract,
 }
 
 ///
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AuthInvocation {
-///    
+    ///    
     pub depth: usize,
-///    
+    ///    
     pub kind: AuthFunctionKind,
-///    
+    ///    
     pub contract: Option<String>,
-///    
+    ///    
     pub function: Option<String>,
-///    
+    ///    
     pub arg_count: usize,
-///    
+    ///    
     pub args: Vec<String>,
-///    
+    ///    
     pub target: String,
 }
 
@@ -103,20 +93,20 @@ pub struct AuthInvocation {
 ///
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AuthChain {
-///    
+    ///    
     pub credential: AuthCredential,
-///    
+    ///    
     pub invocations: Vec<AuthInvocation>,
 }
 
 impl AuthChain {
-///    
+    ///    
     pub fn from_xdr_base64(b64: &str) -> GratResult<Self> {
         let entry = SorobanAuthorizationEntry::from_xdr_base64(b64)?;
         Ok(Self::from_entry(&entry))
     }
 
-///    
+    ///    
     pub fn from_entry(entry: &SorobanAuthorizationEntry) -> Self {
         let credential = parse_credential(&entry.credentials);
         let mut invocations = Vec::new();
@@ -360,7 +350,10 @@ mod tests {
             AuthCredential::Address(creds) => {
                 assert_eq!(creds.auth_type, AuthorizationType::Ed25519);
                 assert!(creds.address.starts_with('G'));
-                assert!(creds.contract_id.is_none(), "Ed25519 should have no contract_id");
+                assert!(
+                    creds.contract_id.is_none(),
+                    "Ed25519 should have no contract_id"
+                );
                 assert_eq!(creds.auth_type.to_string(), "Ed25519");
             }
             other => panic!("expected address credential, got {other:?}"),
@@ -387,8 +380,11 @@ mod tests {
             AuthCredential::Address(creds) => {
                 assert_eq!(creds.auth_type, AuthorizationType::SmartWallet);
                 assert!(creds.address.starts_with('C'));
-                
-                let contract_id = creds.contract_id.as_deref().expect("smart wallet must have contract_id");
+
+                let contract_id = creds
+                    .contract_id
+                    .as_deref()
+                    .expect("smart wallet must have contract_id");
                 assert_eq!(contract_id, creds.address);
                 assert!(contract_id.starts_with('C'));
                 assert_eq!(creds.auth_type.to_string(), "Smart Wallet");
@@ -399,7 +395,6 @@ mod tests {
 
     #[test]
     fn smart_wallet_contract_id_matches_address() {
-        
         let seed = 42u8;
         let addr = contract_address(seed);
         let entry = SorobanAuthorizationEntry {
@@ -453,7 +448,6 @@ mod tests {
 
     #[test]
     fn nested_invocations_are_flattened_depth_first() {
-        
         let grandchild = invocation(
             contract_fn(contract_address(30), "gc", vec![]),
             empty_subs(),
@@ -485,7 +479,7 @@ mod tests {
             .collect();
 
         assert_eq!(steps, vec![(0, "root"), (1, "a"), (2, "gc"), (1, "b")]);
-        
+
         assert_eq!(chain.invocations[1].arg_count, 2);
         assert_eq!(chain.invocations[1].args, vec!["1", "2"]);
         assert!(chain.invocations[1].target.contains(".a(1, 2)"));

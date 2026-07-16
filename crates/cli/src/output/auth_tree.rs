@@ -211,10 +211,7 @@ fn render_auth_invocation(
     )?;
 
     if invocation.sub_invocations.is_empty() {
-        writeln!(
-            output,
-            "{auth_prefix}└─ (no additional auth requirements)"
-        )?;
+        writeln!(output, "{auth_prefix}└─ (no additional auth requirements)")?;
     } else {
         writeln!(
             output,

@@ -1,5 +1,3 @@
-
-
 use crate::decode::decode_context::DecodeContext;
 use crate::error::{GratError, GratResult};
 use crate::spec::decoder;

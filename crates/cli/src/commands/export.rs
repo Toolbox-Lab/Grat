@@ -1,11 +1,8 @@
-
-
 use clap::Args;
 use grat_core::types::config::NetworkConfig;
 
 #[derive(Args)]
 pub struct ExportArgs {
-
     pub tx_hash: String,
 
     #[arg(long, default_value = "test")]

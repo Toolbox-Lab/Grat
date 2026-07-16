@@ -79,7 +79,9 @@ pub const EVENTS_ERROR_DETAILS: &[EventsErrorDetail] = &[
 ];
 
 pub fn lookup(code: u32) -> Option<&'static EventsErrorDetail> {
-    EVENTS_ERROR_DETAILS.iter().find(|detail| detail.code == code)
+    EVENTS_ERROR_DETAILS
+        .iter()
+        .find(|detail| detail.code == code)
 }
 
 #[cfg(test)]
@@ -90,14 +92,20 @@ mod tests {
     fn lookup_returns_exceeded_limit_for_code_5() {
         let detail = lookup(5).expect("exceeded limit detail");
         assert_eq!(detail.name, "ExceededLimit");
-        assert!(detail.summary.contains("too many topics") || detail.summary.to_lowercase().contains("topics"));
+        assert!(
+            detail.summary.contains("too many topics")
+                || detail.summary.to_lowercase().contains("topics")
+        );
     }
 
     #[test]
     fn lookup_returns_unexpected_size_for_code_9() {
         let detail = lookup(9).expect("unexpected size detail");
         assert_eq!(detail.name, "UnexpectedSize");
-        assert!(detail.summary.to_lowercase().contains("payload") || detail.summary.to_lowercase().contains("size"));
+        assert!(
+            detail.summary.to_lowercase().contains("payload")
+                || detail.summary.to_lowercase().contains("size")
+        );
     }
 
     #[test]

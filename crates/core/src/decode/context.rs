@@ -1,23 +1,23 @@
-
-
 use crate::decode::auth::{AuthChain, AuthCredential};
 use crate::decode::auth_signature::decode_auth_entry_signatures;
 use crate::error::GratResult;
-use crate::types::report::{AuthEntryInfo, DiagnosticReport, FeeBreakdown, ResourceSummary, TransactionContext};
+use crate::types::report::{
+    AuthEntryInfo, DiagnosticReport, FeeBreakdown, ResourceSummary, TransactionContext,
+};
 use crate::xdr::codec::XdrCodec;
 use stellar_xdr::curr::{TransactionEnvelope, TransactionMeta, TransactionResult};
 
-pub fn enrich_report(
-    report: &mut DiagnosticReport,
-    tx_data: &serde_json::Value,
-) -> GratResult<()> {
+pub fn enrich_report(report: &mut DiagnosticReport, tx_data: &serde_json::Value) -> GratResult<()> {
     let tx_hash = tx_data
         .get("hash")
         .and_then(|h| h.as_str())
         .unwrap_or("unknown")
         .to_string();
 
-    let ledger_sequence = tx_data.get("ledger").and_then(serde_json::Value::as_u64).unwrap_or(0) as u32;
+    let ledger_sequence = tx_data
+        .get("ledger")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(0) as u32;
 
     let context = TransactionContext {
         tx_hash,
@@ -61,7 +61,6 @@ fn extract_return_value(tx_data: &serde_json::Value) -> Option<String> {
 }
 
 fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
-    
     let mut total_fee = 0;
     if let Some(result_xdr_b64) = tx_data.get("resultXdr").and_then(|v| v.as_str()) {
         if let Ok(tx_result) = TransactionResult::from_xdr_base64(result_xdr_b64) {
@@ -248,10 +247,10 @@ mod tests {
     use super::*;
     use crate::xdr::codec::XdrCodec;
     use stellar_xdr::curr::{
-        Memo, MuxedAccount, Preconditions, SequenceNumber, Transaction, TransactionEnvelope,
-        TransactionExt, TransactionResult, TransactionResultResult, TransactionV1Envelope, Uint256,
-        TransactionMeta, TransactionMetaV3, SorobanTransactionMeta, SorobanTransactionMetaExt,
-        SorobanTransactionMetaExtV1, ExtensionPoint,
+        ExtensionPoint, Memo, MuxedAccount, Preconditions, SequenceNumber, SorobanTransactionMeta,
+        SorobanTransactionMetaExt, SorobanTransactionMetaExtV1, Transaction, TransactionEnvelope,
+        TransactionExt, TransactionMeta, TransactionMetaV3, TransactionResult,
+        TransactionResultResult, TransactionV1Envelope, Uint256,
     };
 
     #[test]
@@ -418,14 +417,14 @@ mod tests {
         let breakdown = extract_fee_breakdown(&tx_data);
         assert_eq!(breakdown.total_charged_fee, 450);
         assert_eq!(breakdown.bid_fee, Some(500));
-        assert_eq!(breakdown.resource_fee, 350); 
-        assert_eq!(breakdown.inclusion_fee, 100); 
-        assert_eq!(breakdown.refundable_resource_fee, 200); 
-        assert_eq!(breakdown.refundable_fee, 250); 
+        assert_eq!(breakdown.resource_fee, 350);
+        assert_eq!(breakdown.inclusion_fee, 100);
+        assert_eq!(breakdown.refundable_resource_fee, 200);
+        assert_eq!(breakdown.refundable_fee, 250);
         assert_eq!(breakdown.non_refundable_fee, 100);
     }
 
-///    
+    ///    
     fn ed25519_auth_entry_b64(nonce: i64) -> String {
         use stellar_xdr::curr::{
             AccountId, Hash, InvokeContractArgs, PublicKey, ScAddress, ScSymbol, ScVal,
@@ -453,7 +452,7 @@ mod tests {
         XdrCodec::to_xdr_base64(&entry).expect("encode")
     }
 
-///    
+    ///    
     fn smart_wallet_auth_entry_b64(nonce: i64) -> String {
         use stellar_xdr::curr::{
             Hash, InvokeContractArgs, ScAddress, ScSymbol, ScVal, SorobanAddressCredentials,
@@ -498,7 +497,10 @@ mod tests {
         assert_eq!(entries.len(), 1);
         assert_eq!(entries[0].auth_type, "Smart Wallet");
         assert!(entries[0].address.starts_with('C'));
-        let contract_id = entries[0].contract_id.as_deref().expect("smart wallet must have contract_id");
+        let contract_id = entries[0]
+            .contract_id
+            .as_deref()
+            .expect("smart wallet must have contract_id");
         assert_eq!(contract_id, entries[0].address);
     }
 
@@ -517,7 +519,7 @@ mod tests {
     fn extract_auth_entries_skips_invalid_payloads() {
         let tx_data = serde_json::json!({ "auth": ["!!!not-valid-xdr!!!"] });
         let entries = extract_auth_entries(&tx_data);
-        
+
         assert!(entries.is_empty());
     }
 
@@ -530,7 +532,6 @@ mod tests {
 
     #[test]
     fn existing_ed25519_decoding_unchanged() {
-        
         let b64 = ed25519_auth_entry_b64(7);
         let tx_data = serde_json::json!({ "auth": [b64] });
 

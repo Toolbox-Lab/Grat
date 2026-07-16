@@ -1,5 +1,3 @@
-
-
 #![allow(dead_code)]
 
 use anyhow::Context;
@@ -15,7 +13,6 @@ pub struct ConfigManager {
 }
 
 impl ConfigManager {
-
     pub fn new() -> anyhow::Result<Self> {
         Ok(Self {
             config_path: default_config_path()?,

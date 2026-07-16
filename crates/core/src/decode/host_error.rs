@@ -1,5 +1,3 @@
-
-
 use serde::Serialize;
 use stellar_xdr::curr::{
     InvokeHostFunctionResult, OperationResult, OperationResultTr, TransactionResult,
@@ -13,27 +11,49 @@ use crate::xdr::codec::XdrCodec;
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "category", rename_all = "snake_case")]
 pub enum HostError {
-    Budget { code: u32 },
-    Storage { code: u32 },
-    Auth { code: u32 },
-    Context { code: u32 },
-    Value { code: u32 },
-    Object { code: u32 },
-    Crypto { code: u32 },
-    Contract { code: u32 },
-    Wasm { code: u32 },
-    Events { code: u32 },
+    Budget {
+        code: u32,
+    },
+    Storage {
+        code: u32,
+    },
+    Auth {
+        code: u32,
+    },
+    Context {
+        code: u32,
+    },
+    Value {
+        code: u32,
+    },
+    Object {
+        code: u32,
+    },
+    Crypto {
+        code: u32,
+    },
+    Contract {
+        code: u32,
+    },
+    Wasm {
+        code: u32,
+    },
+    Events {
+        code: u32,
+    },
 
     ContractSpecific {
         contract_id: Option<String>,
         code: u32,
     },
 
-    Unknown { type_code: u32, sub_code: u32 },
+    Unknown {
+        type_code: u32,
+        sub_code: u32,
+    },
 }
 
 impl HostError {
-
     pub fn category_name(&self) -> &str {
         match self {
             Self::Budget { .. } => "Budget",
@@ -59,81 +79,82 @@ impl HostError {
                 } else {
                     format!("Budget error (code {code}): the transaction exceeded an allocated resource budget.")
                 }
-            },
+            }
             Self::Storage { code } => {
                 if let Some(detail) = crate::decode::mappings::storage::lookup(*code) {
                     detail.summary.to_string()
                 } else {
                     format!("Storage error (code {code}): an unexpected error occurred while accessing contract data.")
                 }
-            },
+            }
             Self::Auth { code } => {
                 if let Some(detail) = crate::decode::mappings::auth::lookup(*code) {
                     detail.summary.to_string()
                 } else {
-                    format!("Auth error (code {code}): an authorization requirement was not satisfied.")
+                    format!(
+                        "Auth error (code {code}): an authorization requirement was not satisfied."
+                    )
                 }
-            },
+            }
             Self::Context { code } => {
                 if let Some(detail) = crate::decode::mappings::context::lookup(*code) {
                     detail.summary.to_string()
                 } else {
                     format!("Context error (code {code}): the contract was invoked in an invalid execution context.")
                 }
-            },
+            }
             Self::Value { code } => {
                 if let Some(detail) = crate::decode::mappings::value::lookup(*code) {
                     detail.summary.to_string()
                 } else {
                     format!("Value error (code {code}): a host value could not be converted or validated.")
                 }
-            },
+            }
             Self::Object { code } => {
                 if let Some(detail) = crate::decode::mappings::object::lookup(*code) {
                     detail.summary.to_string()
                 } else {
                     format!("Object error (code {code}): an operation on a host object (vector, map, bytes) failed.")
                 }
-            },
+            }
             Self::Crypto { code } => {
                 if let Some(detail) = crate::decode::mappings::crypto::lookup(*code) {
                     detail.summary.to_string()
                 } else {
-                    format!(
-                        "Crypto error (code {code}): a cryptographic operation failed."
-                    )
+                    format!("Crypto error (code {code}): a cryptographic operation failed.")
                 }
-            },
+            }
             Self::Contract { code } => {
                 if let Some(detail) = crate::decode::mappings::contract::lookup(*code) {
                     detail.summary.to_string()
                 } else {
                     format!("Contract error (code {code}): the contract returned a non-zero error code — run with --resolve to identify it.")
                 }
-            },
+            }
             Self::Wasm { code } => {
                 if let Some(detail) = crate::decode::mappings::wasm::lookup(*code) {
                     detail.summary.to_string()
                 } else {
                     format!("WASM error (code {code}): the contract's WASM module could not be loaded or executed.")
                 }
-            },
+            }
             Self::Events { code } => {
                 if let Some(detail) = crate::decode::mappings::events::lookup(*code) {
                     detail.summary.to_string()
                 } else {
                     format!("Events error (code {code}): an error occurred during event emission.")
                 }
-            },
+            }
             Self::ContractSpecific { contract_id, code } => {
-                let contract = contract_id
-                    .as_deref()
-                    .unwrap_or("unknown contract");
+                let contract = contract_id.as_deref().unwrap_or("unknown contract");
                 format!(
                     "Contract-specific error {code} from {contract}: run with --resolve to look up the error name from the contract's WASM metadata."
                 )
             }
-            Self::Unknown { type_code, sub_code } => {
+            Self::Unknown {
+                type_code,
+                sub_code,
+            } => {
                 format!(
                     "Unknown error (type {type_code}, sub-code {sub_code}): this error code is not recognised — the network may be running a newer protocol version."
                 )
@@ -175,15 +196,11 @@ pub fn from_transaction_result(tx_result: TransactionResult) -> GratResult<Class
 
     let (category, error_code, is_contract_error) = match ihf_result {
         InvokeHostFunctionResult::Success(_) => return Err(GratError::TransactionSucceeded),
-        InvokeHostFunctionResult::Trapped => {
-
-            (ErrorCategory::Contract, 0u32, false)
-        }
+        InvokeHostFunctionResult::Trapped => (ErrorCategory::Contract, 0u32, false),
         InvokeHostFunctionResult::ResourceLimitExceeded => (ErrorCategory::Budget, 0, false),
         InvokeHostFunctionResult::EntryArchived => (ErrorCategory::Storage, 0, false),
-        InvokeHostFunctionResult::Malformed | InvokeHostFunctionResult::InsufficientRefundableFee => {
-            (ErrorCategory::Context, 0, false)
-        }
+        InvokeHostFunctionResult::Malformed
+        | InvokeHostFunctionResult::InsufficientRefundableFee => (ErrorCategory::Context, 0, false),
     };
 
     Ok(ClassifiedError {
@@ -273,11 +290,19 @@ mod tests {
         assert_eq!(HostError::Wasm { code: 0 }.category_name(), "Wasm");
         assert_eq!(HostError::Events { code: 0 }.category_name(), "Events");
         assert_eq!(
-            HostError::ContractSpecific { contract_id: None, code: 42 }.category_name(),
+            HostError::ContractSpecific {
+                contract_id: None,
+                code: 42
+            }
+            .category_name(),
             "ContractSpecific"
         );
         assert_eq!(
-            HostError::Unknown { type_code: 99, sub_code: 1 }.category_name(),
+            HostError::Unknown {
+                type_code: 99,
+                sub_code: 1
+            }
+            .category_name(),
             "Unknown"
         );
     }
@@ -296,7 +321,10 @@ mod tests {
 
     #[test]
     fn test_unknown_variant() {
-        let err = HostError::Unknown { type_code: 7, sub_code: 255 };
+        let err = HostError::Unknown {
+            type_code: 7,
+            sub_code: 255,
+        };
         let json = serde_json::to_value(&err).unwrap();
         assert_eq!(json["category"], "unknown");
         assert_eq!(json["type_code"], 7);
@@ -306,7 +334,10 @@ mod tests {
     #[test]
     fn test_parse_error_category() {
         assert_eq!(parse_error_category("budget"), Some(ErrorCategory::Budget));
-        assert_eq!(parse_error_category("STORAGE"), Some(ErrorCategory::Storage));
+        assert_eq!(
+            parse_error_category("STORAGE"),
+            Some(ErrorCategory::Storage)
+        );
         assert_eq!(parse_error_category("unknown_xyz"), None);
     }
 
@@ -391,7 +422,11 @@ mod tests {
 
     #[test]
     fn test_summary_unknown_variant() {
-        let s = HostError::Unknown { type_code: 9, sub_code: 42 }.summary();
+        let s = HostError::Unknown {
+            type_code: 9,
+            sub_code: 42,
+        }
+        .summary();
         assert!(s.contains("9"));
         assert!(s.contains("42"));
         assert!(s.contains("not recognised"));
@@ -399,7 +434,6 @@ mod tests {
 
     #[test]
     fn test_summary_unknown_codes_fallback() {
-
         let s = HostError::Budget { code: 99 }.summary();
         assert!(s.contains("99"));
         assert!(s.contains("Budget") || s.contains("budget"));
@@ -407,7 +441,6 @@ mod tests {
 
     #[test]
     fn test_summary_under_120_chars() {
-
         let errors = vec![
             HostError::Budget { code: 0 },
             HostError::Storage { code: 0 },

@@ -10,7 +10,6 @@ mod tests {
 
     #[test]
     fn error_severity_critical_maps_to_fatal() {
-        
         let detail = budget::lookup(0).expect("budget code 0 exists");
         let severity: Severity = detail.severity.clone().into();
         assert_eq!(severity, Severity::Fatal);
@@ -18,7 +17,6 @@ mod tests {
 
     #[test]
     fn error_severity_error_maps_to_error() {
-        
         let detail = budget::lookup(8).expect("budget code 8 exists");
         let severity: Severity = detail.severity.clone().into();
         assert_eq!(severity, Severity::Error);
@@ -40,7 +38,6 @@ mod tests {
 
     #[test]
     fn value_internal_error_maps_to_fatal() {
-        
         let detail = value::lookup(4).expect("value code 4 exists");
         let severity: Severity = detail.severity.clone().into();
         assert_eq!(severity, Severity::Fatal);
@@ -68,7 +65,7 @@ mod tests {
     #[test]
     fn storage_near_expiry_maps_to_warning() {
         use crate::decode::mappings::storage;
-        
+
         let detail = storage::lookup(4).expect("storage code 4 exists");
         assert_eq!(detail.severity, Severity::Warning);
     }
@@ -187,7 +184,10 @@ mod tests {
         for entry in BUDGET_ERROR_DETAILS {
             let sev: Severity = entry.severity.clone().into();
             assert!(
-                matches!(sev, Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info),
+                matches!(
+                    sev,
+                    Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info
+                ),
                 "Unexpected severity for budget code {}: {:?}",
                 entry.code,
                 sev
@@ -202,7 +202,10 @@ mod tests {
         for entry in VALUE_ERROR_DETAILS {
             let sev: Severity = entry.severity.clone().into();
             assert!(
-                matches!(sev, Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info),
+                matches!(
+                    sev,
+                    Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info
+                ),
                 "Unexpected severity for value code {}: {:?}",
                 entry.code,
                 sev
@@ -216,7 +219,10 @@ mod tests {
 
         for entry in STORAGE_ERROR_DETAILS {
             assert!(
-                matches!(entry.severity, Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info),
+                matches!(
+                    entry.severity,
+                    Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info
+                ),
                 "Unexpected severity for storage code {}: {:?}",
                 entry.code,
                 entry.severity
@@ -230,7 +236,10 @@ mod tests {
 
         for entry in CONTEXT_ERROR_DETAILS {
             assert!(
-                matches!(entry.severity, Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info),
+                matches!(
+                    entry.severity,
+                    Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info
+                ),
                 "Unexpected severity for context code {}: {:?}",
                 entry.code,
                 entry.severity
@@ -244,18 +253,27 @@ mod tests {
 
         for entry in AUTH_ERROR_DETAILS {
             assert!(
-                matches!(entry.severity, Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info),
+                matches!(
+                    entry.severity,
+                    Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info
+                ),
                 "Unexpected severity for auth code {}: {:?}",
                 entry.code,
                 entry.severity
             );
+        }
+    }
+
     #[test]
     fn all_contract_entries_have_valid_severity() {
         use crate::decode::mappings::contract::CONTRACT_ERROR_DETAILS;
 
         for entry in CONTRACT_ERROR_DETAILS {
             assert!(
-                matches!(entry.severity, Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info),
+                matches!(
+                    entry.severity,
+                    Severity::Fatal | Severity::Error | Severity::Warning | Severity::Info
+                ),
                 "Unexpected severity for contract code {}: {:?}",
                 entry.code,
                 entry.severity

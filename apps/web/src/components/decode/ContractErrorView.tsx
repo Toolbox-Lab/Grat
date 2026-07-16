@@ -240,7 +240,7 @@ export default function ContractErrorView() {
               Detailed Explanation
             </h4>
             <p className="text-slate-400 text-sm leading-relaxed">
-              This is a custom contract-defined error code. Custom error codes are defined by the contract author inside their `#[contracterror]` enum. To map this code to its name, you need the contract's WASM specification or source code.
+              This is a custom contract-defined error code. Custom error codes are defined by the contract author inside their `#[contracterror]` enum. To map this code to its name, you need the contract&apos;s WASM specification or source code.
             </p>
           </div>
 

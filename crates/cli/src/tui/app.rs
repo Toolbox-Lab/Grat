@@ -1,5 +1,3 @@
-
-
 use grat_core::types::config::NetworkConfig;
 
 pub async fn launch(tx_hash: &str, network: &NetworkConfig) -> anyhow::Result<()> {

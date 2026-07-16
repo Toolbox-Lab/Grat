@@ -1,5 +1,3 @@
-
-
 use anyhow::{Context, Result};
 use clap::{Args, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
@@ -14,15 +12,11 @@ pub struct DbArgs {
 
 #[derive(Subcommand)]
 pub enum DbCommands {
-
     Update,
 
     Stats,
 
-    Search {
-
-        query: String,
-    },
+    Search { query: String },
 }
 
 pub async fn run(args: DbArgs, output_format: &str) -> anyhow::Result<()> {
