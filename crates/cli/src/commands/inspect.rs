@@ -18,7 +18,7 @@ pub async fn run(
     save: Option<&str>,
 ) -> anyhow::Result<()> {
     let ctx = DecodeContextBuilder::from(network)
-        .output_format(OutputFormat::from_str(output_format))
+        .output_format(OutputFormat::parse(output_format))
         .build();
 
     let spinner = indicatif::ProgressBar::new_spinner();
