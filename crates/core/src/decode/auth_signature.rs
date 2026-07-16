@@ -56,10 +56,7 @@ fn extract_signatures_from_scval(val: &ScVal) -> Vec<String> {
             results
         }
 
-        ScVal::Vec(Some(vec)) => vec
-            .iter()
-            .flat_map(extract_signatures_from_scval)
-            .collect(),
+        ScVal::Vec(Some(vec)) => vec.iter().flat_map(extract_signatures_from_scval).collect(),
 
         _ => vec![],
     }

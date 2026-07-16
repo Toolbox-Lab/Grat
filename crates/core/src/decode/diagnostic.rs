@@ -152,9 +152,7 @@ fn deepest_error_event(events: &[DiagnosticEvent]) -> Option<DiagnosticErrorEven
                 };
                 let is_deeper = deepest
                     .as_ref()
-                    .is_none_or(|current: &DiagnosticErrorEvent| {
-                        candidate.depth >= current.depth
-                    });
+                    .is_none_or(|current: &DiagnosticErrorEvent| candidate.depth >= current.depth);
 
                 if is_deeper {
                     deepest = Some(candidate);
@@ -317,8 +315,7 @@ fn analyze_diagnostic_event(report: &mut DiagnosticReport, event: &DiagnosticEve
         let topics_str = topics.join(" > ");
         if !report.detailed_explanation.contains(&topics_str) {
             if report.detailed_explanation.is_empty() {
-                report.detailed_explanation =
-                    format!("Diagnostic events trace:\n- [{topics_str}]");
+                report.detailed_explanation = format!("Diagnostic events trace:\n- [{topics_str}]");
             } else {
                 report
                     .detailed_explanation

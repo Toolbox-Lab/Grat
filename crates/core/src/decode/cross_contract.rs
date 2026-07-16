@@ -27,8 +27,12 @@ pub fn attribute_failure(
     let mut failure: Option<CallFrame> = None;
 
     for event_b64 in events_b64 {
-        let Some(b64_str) = event_b64.as_str() else { continue };
-        let Ok(event) = DiagnosticEvent::from_xdr_base64(b64_str) else { continue };
+        let Some(b64_str) = event_b64.as_str() else {
+            continue;
+        };
+        let Ok(event) = DiagnosticEvent::from_xdr_base64(b64_str) else {
+            continue;
+        };
 
         process_event(&event, &mut call_stack, &mut failure);
     }

@@ -155,8 +155,14 @@ fn extract_resource_summary(tx_data: &serde_json::Value) -> ResourceSummary {
             if event.get("type").and_then(|t| t.as_str()) == Some("budget") {
                 if let Some(data) = event.get("data") {
                     let category = data.get("category").and_then(|c| c.as_str()).unwrap_or("");
-                    let used = data.get("used").and_then(serde_json::Value::as_u64).unwrap_or(0);
-                    let limit = data.get("limit").and_then(serde_json::Value::as_u64).unwrap_or(0);
+                    let used = data
+                        .get("used")
+                        .and_then(serde_json::Value::as_u64)
+                        .unwrap_or(0);
+                    let limit = data
+                        .get("limit")
+                        .and_then(serde_json::Value::as_u64)
+                        .unwrap_or(0);
 
                     if category == "cpu" {
                         cpu_used = used;

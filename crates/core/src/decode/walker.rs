@@ -128,10 +128,7 @@ impl DiagnosticEventWalker {
         let kind = DiagnosticEventKind::from_contract_event_type(inner.type_.clone());
 
         // Resolve optional contract address to a strkey string.
-        let contract_id = inner
-            .contract_id
-            .as_ref()
-            .map(Self::hash_to_strkey);
+        let contract_id = inner.contract_id.as_ref().map(Self::hash_to_strkey);
 
         // Extract topics and data from the event body.
         match &inner.body {
