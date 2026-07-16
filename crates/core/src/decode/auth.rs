@@ -169,7 +169,7 @@ pub fn scval_to_readable_string(val: &ScVal) -> String {
             #[allow(clippy::cast_possible_wrap)]
             let lo = u128::from(i.lo) as i128;
             ((i128::from(i.hi) << 64) | lo).to_string()
-        },
+        }
         ScVal::Address(address) => scaddress_to_strkey(address),
         ScVal::Bytes(bytes) => format!(
             "0x{}",
