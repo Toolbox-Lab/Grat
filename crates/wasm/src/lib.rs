@@ -1,4 +1,3 @@
-___RUST_DOC_MOD___
 
 use grat_core::decode::report::build_report;
 use grat_core::decode::host_error::ClassifiedError;
@@ -146,8 +145,9 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
                         total_charged_fee: 0,
                         inclusion_fee: 0,
                         resource_fee: 0,
+                        refundable_resource_fee: 0,
                         refundable_fee: 0,
-                        non_refundable_resource_fee: 0,
+                        non_refundable_fee: 0,
                         bid_fee: None,
                     },
                     resources: grat_core::types::report::ResourceSummary {
@@ -156,9 +156,8 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
                         memory_bytes_used: 0,
                         memory_bytes_limit: 0,
                         read_bytes: 0,
-                        read_limit: 0,
+                        read_bytes_limit: 0,
                         write_bytes: 0,
-                        write_limit: 0,
                     },
                 },
             );
