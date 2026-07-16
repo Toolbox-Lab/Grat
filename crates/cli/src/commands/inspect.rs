@@ -1,8 +1,8 @@
 
 
 use clap::Args;
-use prism_core::types::config::NetworkConfig;
-use prism_core::decode::decode_context::{DecodeContextBuilder, OutputFormat};
+use grat_core::types::config::NetworkConfig;
+use grat_core::decode::decode_context::{DecodeContextBuilder, OutputFormat};
 
 #[derive(Args)]
 pub struct InspectArgs {
@@ -28,7 +28,7 @@ pub async fn run(
     spinner.set_message("Fetching and decoding transaction...");
     spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-    let reports = prism_core::decode::decode_transaction_with_op_filter(
+    let reports = grat_core::decode::decode_transaction_with_op_filter(
         &args.tx_hash,
         &ctx.network,
         args.op_index,

@@ -1,10 +1,10 @@
 
 
 use crate::replay::sandbox::SandboxResult;
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::types::trace::{DiffChangeType, ResourceProfile, StateDiff};
 
-pub fn generate_profile(result: &SandboxResult, state_diff: &StateDiff) -> PrismResult<ResourceProfile> {
+pub fn generate_profile(result: &SandboxResult, state_diff: &StateDiff) -> GratResult<ResourceProfile> {
     let mut total_write_bytes: u64 = 0;
     let mut total_read_bytes: u64 = 0;
 

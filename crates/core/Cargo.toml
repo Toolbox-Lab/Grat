@@ -2,11 +2,11 @@
 workspace = true
 
 [package]
-name = "prism-core"
+name = "grat-core"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Core library for Prism — Soroban Transaction Debugger"
+description = "Core library for Grat — Soroban Transaction Debugger"
 
 [features]
 default = ["decode", "taxonomy"]

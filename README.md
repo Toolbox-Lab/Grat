@@ -47,8 +47,8 @@ Grat is organized as a modular monorepo:
 2. **Clone and Prepare**:
 
    ```bash
-   git clone https://github.com/prism-soroban/prism.git
-   cd Prism
+   git clone https://github.com/grat-soroban/grat.git
+   cd Grat
    pnpm install
    ```
 
@@ -60,24 +60,24 @@ Grat is organized as a modular monorepo:
 
 4. **Run the CLI**:
    ```bash
-   ./target/release/prism decode <tx-hash>
+   ./target/release/grat decode <tx-hash>
    ```
 
 ## Documentation
 
-For full technical specifications, architecture deep-dives, and API references, visit our [Live Documentation](https://prism-ddf93e61.mintlify.app/docs/introduction).
+For full technical specifications, architecture deep-dives, and API references, visit our [Live Documentation](https://grat-ddf93e61.mintlify.app/docs/introduction).
 
 <CardGroup cols={2}>
-  <Card title="Quickstart" icon="bolt" href="https://prism-ddf93e61.mintlify.app/docs/quickstart">
+  <Card title="Quickstart" icon="bolt" href="https://grat-ddf93e61.mintlify.app/docs/quickstart">
     Get up and running in under 60 seconds.
   </Card>
-  <Card title="CLI Reference" icon="terminal" href="https://prism-ddf93e61.mintlify.app/docs/cli/decode">
-    Complete guide to all Prism commands.
+  <Card title="CLI Reference" icon="terminal" href="https://grat-ddf93e61.mintlify.app/docs/cli/decode">
+    Complete guide to all Grat commands.
   </Card>
-  <Card title="Architecture" icon="sitemap" href="https://prism-ddf93e61.mintlify.app/docs/architecture/overview">
+  <Card title="Architecture" icon="sitemap" href="https://grat-ddf93e61.mintlify.app/docs/architecture/overview">
     Deep dive into the 3-tier diagnostic engine.
   </Card>
-  <Card title="Guides" icon="book" href="https://prism-ddf93e61.mintlify.app/docs/guides/debugging-transactions">
+  <Card title="Guides" icon="book" href="https://grat-ddf93e61.mintlify.app/docs/guides/debugging-transactions">
     Real-world walkthroughs and optimization tips.
   </Card>
 </CardGroup>
@@ -98,7 +98,7 @@ Export failed transactions as standalone test cases to ensure bugs are permanent
 
 ## Authorization Type Detection
 
-Prism automatically identifies the kind of authorization used in each Soroban transaction and includes this information in every diagnostic report.
+Grat automatically identifies the kind of authorization used in each Soroban transaction and includes this information in every diagnostic report.
 
 ### Supported Types
 

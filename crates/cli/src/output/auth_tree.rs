@@ -1,4 +1,4 @@
-use prism_core::types::trace::{ContractInvocation, ExecutionTrace};
+use grat_core::types::trace::{ContractInvocation, ExecutionTrace};
 use std::fmt::Write;
 
 mod icons {
@@ -235,7 +235,7 @@ fn render_auth_invocation(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use prism_core::types::trace::ContractInvocation;
+    use grat_core::types::trace::ContractInvocation;
 
     #[test]
     fn test_render_simple_auth_tree() {

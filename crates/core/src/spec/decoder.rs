@@ -1,6 +1,6 @@
 
 
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 use serde::{Deserialize, Serialize};
 use stellar_xdr::curr::{ScSpecEntry, ScSpecTypeDef, Limits, ReadXdr, Limited};
 
@@ -38,7 +38,7 @@ pub struct ContractSpec {
     pub version: Option<String>,
 }
 
-pub fn decode_contract_spec(wasm_bytes: &[u8]) -> PrismResult<ContractSpec> {
+pub fn decode_contract_spec(wasm_bytes: &[u8]) -> GratResult<ContractSpec> {
     let raw_spec = SpecParser::extract_spec(wasm_bytes)?;
 
     let mut errors = Vec::new();
@@ -144,11 +144,11 @@ pub struct SpecParser;
 
 impl SpecParser {
 
-    pub fn extract_spec(wasm_bytes: &[u8]) -> PrismResult<Vec<u8>> {
+    pub fn extract_spec(wasm_bytes: &[u8]) -> GratResult<Vec<u8>> {
         let parser = wasmparser::Parser::new(0);
         for payload in parser.parse_all(wasm_bytes) {
             let payload =
-                payload.map_err(|e| PrismError::SpecError(format!("WASM parse error: {e}")))?;
+                payload.map_err(|e| GratError::SpecError(format!("WASM parse error: {e}")))?;
 
             if let wasmparser::Payload::CustomSection(section) = payload {
                 if section.name() == "contractspecv0" {
@@ -157,7 +157,7 @@ impl SpecParser {
             }
         }
 
-        Err(PrismError::SpecError(
+        Err(GratError::SpecError(
             "contractspecv0 custom section not found".into(),
         ))
     }
@@ -212,7 +212,7 @@ mod tests {
         let result = SpecParser::extract_spec(&wasm);
         assert!(result.is_err());
         match result {
-            Err(PrismError::SpecError(msg)) => assert!(msg.contains("not found")),
+            Err(GratError::SpecError(msg)) => assert!(msg.contains("not found")),
             _ => panic!("Expected SpecError"),
         }
     }

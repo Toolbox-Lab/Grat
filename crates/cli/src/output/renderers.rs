@@ -2,8 +2,8 @@
 
 use crate::output::theme::ColorPalette;
 use colored::Colorize;
-use prism_core::types::report::{DiagnosticReport, RootCause, TransactionContext, FeeBreakdown};
-use prism_core::types::trace::ResourceProfile;
+use grat_core::types::report::{DiagnosticReport, RootCause, TransactionContext, FeeBreakdown};
+use grat_core::types::trace::ResourceProfile;
 use tabled::{Table, Tabled};
 
 const BAR_WIDTH: usize = 10;
@@ -17,7 +17,7 @@ pub fn render_error_card(report: &DiagnosticReport) -> String {
     ErrorCard::new(report).render()
 }
 
-pub fn render_fix_list(fixes: &[prism_core::types::report::SuggestedFix]) -> String {
+pub fn render_fix_list(fixes: &[grat_core::types::report::SuggestedFix]) -> String {
     FixList::new(fixes).render()
 }
 
@@ -25,7 +25,7 @@ pub fn render_cause_list(causes: &[RootCause]) -> String {
     CauseList::new(causes).render()
 }
 
-pub fn render_state_diff_table(diff: &prism_core::types::trace::StateDiff) -> String {
+pub fn render_state_diff_table(diff: &grat_core::types::trace::StateDiff) -> String {
     StateDiffTable::new(diff).render()
 }
 
@@ -101,11 +101,11 @@ impl<'a> ErrorCard<'a> {
 }
 
 pub struct FixList<'a> {
-    fixes: &'a [prism_core::types::report::SuggestedFix],
+    fixes: &'a [grat_core::types::report::SuggestedFix],
 }
 
 impl<'a> FixList<'a> {
-    pub fn new(fixes: &'a [prism_core::types::report::SuggestedFix]) -> Self {
+    pub fn new(fixes: &'a [grat_core::types::report::SuggestedFix]) -> Self {
         Self { fixes }
     }
 
@@ -376,11 +376,11 @@ struct DiffRow {
 
 ___RUST_DOC_COMMENT___
 pub struct StateDiffTable<'a> {
-    diff: &'a prism_core::types::trace::StateDiff,
+    diff: &'a grat_core::types::trace::StateDiff,
 }
 
 impl<'a> StateDiffTable<'a> {
-    pub fn new(diff: &'a prism_core::types::trace::StateDiff) -> Self {
+    pub fn new(diff: &'a grat_core::types::trace::StateDiff) -> Self {
         Self { diff }
     }
 
@@ -396,16 +396,16 @@ impl<'a> StateDiffTable<'a> {
             .iter()
             .map(|entry| {
                 let change = match entry.change_type {
-                    prism_core::types::trace::DiffChangeType::Created => {
+                    grat_core::types::trace::DiffChangeType::Created => {
                         palette.success_text("Created")
                     }
-                    prism_core::types::trace::DiffChangeType::Deleted => {
+                    grat_core::types::trace::DiffChangeType::Deleted => {
                         palette.error_text("Deleted")
                     }
-                    prism_core::types::trace::DiffChangeType::Updated => {
+                    grat_core::types::trace::DiffChangeType::Updated => {
                         palette.warning_text("Updated")
                     }
-                    prism_core::types::trace::DiffChangeType::Unchanged => {
+                    grat_core::types::trace::DiffChangeType::Unchanged => {
                         palette.muted_text("Unchanged")
                     }
                 };
@@ -470,10 +470,10 @@ pub fn render_fee_breakdown(fee: &FeeBreakdown) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use prism_core::types::report::{
+    use grat_core::types::report::{
         ContractErrorInfo, FeeBreakdown, ResourceSummary, Severity, TransactionContext,
     };
-    use prism_core::types::trace::{ResourceHotspot, ResourceProfile};
+    use grat_core::types::trace::{ResourceHotspot, ResourceProfile};
 
     fn make_profile(hotspots: Vec<ResourceHotspot>) -> ResourceProfile {
         ResourceProfile {

@@ -1,4 +1,4 @@
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::types::report::{DiagnosticReport, RootCause, SuggestedFix};
 use crate::xdr::codec::XdrCodec;
 use stellar_xdr::curr::{ContractEventBody, DiagnosticEvent, ScVal};
@@ -7,7 +7,7 @@ use crate::decode::walker::DiagnosticEventWalker;
 pub fn enrich_report(
     report: &mut DiagnosticReport,
     tx_data: &serde_json::Value,
-) -> PrismResult<()> {
+) -> GratResult<()> {
     if let Some(events_b64) = tx_data
         .get("diagnosticEventsXdr")
         .and_then(|e| e.as_array())

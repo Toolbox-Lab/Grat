@@ -1,17 +1,17 @@
 # Architecture Overview
 
-Prism is built as a modular diagnostic suite for the Stellar Soroban ecosystem.
+Grat is built as a modular diagnostic suite for the Stellar Soroban ecosystem.
 
 ## Modular Monorepo Structure
 
 ### Core Logic (`crates/`)
-- **`prism-core`**: The heart of the platform. It handles error classification, ledger state reconstruction, and transaction simulation.
-- **`prism-cli`**: The Rust-native command-line tool providing high-speed diagnostics.
-- **`prism-wasm`**: Core engine compiled to WebAssembly, enabling client-side decoding in the web dashboard.
+- **`grat-core`**: The heart of the platform. It handles error classification, ledger state reconstruction, and transaction simulation.
+- **`grat-cli`**: The Rust-native command-line tool providing high-speed diagnostics.
+- **`grat-wasm`**: Core engine compiled to WebAssembly, enabling client-side decoding in the web dashboard.
 
 ### Applications (`apps/`)
-- **`prism-web`**: A Next.js 16 frontend for interactive debugging and sharing trace sessions.
-- **`prism-server`**: A Node.js/Rust backend that handles heavy lifting for the web app (S3/GCS history archive fetching and state reconstruction).
+- **`grat-web`**: A Next.js 16 frontend for interactive debugging and sharing trace sessions.
+- **`grat-server`**: A Node.js/Rust backend that handles heavy lifting for the web app (S3/GCS history archive fetching and state reconstruction).
 
 ## Diagnostic Engines
 

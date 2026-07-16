@@ -23,7 +23,7 @@ const standardContractErrors: Record<number, ContractErrorDetail> = {
       "Access control check failed — the caller is not authorized for this operation"
     ],
     fixes: [
-      "Use prism's contract error resolver to map the numeric code to the contract's error enum name",
+      "Use grat's contract error resolver to map the numeric code to the contract's error enum name",
       "Review the contract source code for the error enum definition to understand the specific failure"
     ]
   },

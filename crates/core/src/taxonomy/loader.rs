@@ -1,13 +1,13 @@
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 use crate::taxonomy::schema::{ErrorCategory, TaxonomyEntry, TaxonomySchema};
 use std::collections::HashMap;
 
 pub struct TaxonomyParser;
 
 impl TaxonomyParser {
-    pub fn parse(input: &str) -> PrismResult<TaxonomySchema> {
+    pub fn parse(input: &str) -> GratResult<TaxonomySchema> {
         toml::from_str(input)
-            .map_err(|e| PrismError::TaxonomyError(format!("TOML parse error: {e}")))
+            .map_err(|e| GratError::TaxonomyError(format!("TOML parse error: {e}")))
     }
 }
 
@@ -18,7 +18,7 @@ pub struct TaxonomyDatabase {
 }
 
 impl TaxonomyDatabase {
-    pub fn load_embedded() -> PrismResult<Self> {
+    pub fn load_embedded() -> GratResult<Self> {
         let mut db = Self {
             entries: HashMap::new(),
             all_entries: Vec::new(),
@@ -56,25 +56,25 @@ impl TaxonomyDatabase {
         Ok(db)
     }
 
-    pub fn load_from_dir(dir: &std::path::Path) -> PrismResult<Self> {
+    pub fn load_from_dir(dir: &std::path::Path) -> GratResult<Self> {
         let mut db = Self {
             entries: HashMap::new(),
             all_entries: Vec::new(),
         };
 
         for entry in std::fs::read_dir(dir)
-            .map_err(|e| PrismError::TaxonomyError(format!("Cannot read taxonomy dir: {e}")))?
+            .map_err(|e| GratError::TaxonomyError(format!("Cannot read taxonomy dir: {e}")))?
         {
-            let entry = entry.map_err(|e| PrismError::TaxonomyError(e.to_string()))?;
+            let entry = entry.map_err(|e| GratError::TaxonomyError(e.to_string()))?;
             let path = entry.path();
 
             if path.extension().is_some_and(|ext| ext == "toml") {
                 let content = std::fs::read_to_string(&path).map_err(|e| {
-                    PrismError::TaxonomyError(format!("Cannot read {}: {e}", path.display()))
+                    GratError::TaxonomyError(format!("Cannot read {}: {e}", path.display()))
                 })?;
 
                 let schema = TaxonomyParser::parse(&content).map_err(|e| {
-                    PrismError::TaxonomyError(format!("Parse error in {}: {e}", path.display()))
+                    GratError::TaxonomyError(format!("Parse error in {}: {e}", path.display()))
                 })?;
 
                 for entry in schema.errors {

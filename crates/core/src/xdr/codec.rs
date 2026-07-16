@@ -1,6 +1,6 @@
 
 
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use stellar_xdr::curr::{
     ContractEvent, DiagnosticEvent, LedgerEntry, LedgerKey, Limits, ReadXdr, ScAddress, ScBytes,
@@ -13,19 +13,19 @@ pub trait XdrCodec: Sized {
     const TYPE_NAME: &'static str;
 
     /// Decode from XDR bytes.
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self>;
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self>;
 
     /// Encode to XDR bytes.
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>>;
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>>;
 
     /// Decode from a base64-encoded XDR string.
-    fn from_xdr_base64(b64: &str) -> PrismResult<Self> {
+    fn from_xdr_base64(b64: &str) -> GratResult<Self> {
         let bytes = decode_xdr_base64(b64)?;
         Self::from_xdr_bytes(&bytes)
     }
 
     /// Encode to a base64-encoded XDR string.
-    fn to_xdr_base64(&self) -> PrismResult<String> {
+    fn to_xdr_base64(&self) -> GratResult<String> {
         let bytes = self.to_xdr_bytes()?;
         Ok(encode_xdr_base64(&bytes))
     }
@@ -34,18 +34,18 @@ pub trait XdrCodec: Sized {
 impl XdrCodec for TransactionMeta {
     const TYPE_NAME: &'static str = "TransactionMeta";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         TransactionMeta::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -53,18 +53,18 @@ impl XdrCodec for TransactionMeta {
 impl XdrCodec for TransactionEnvelope {
     const TYPE_NAME: &'static str = "TransactionEnvelope";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         TransactionEnvelope::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -72,18 +72,18 @@ impl XdrCodec for TransactionEnvelope {
 impl XdrCodec for TransactionResult {
     const TYPE_NAME: &'static str = "TransactionResult";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         TransactionResult::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -91,18 +91,18 @@ impl XdrCodec for TransactionResult {
 impl XdrCodec for SorobanAuthorizationEntry {
     const TYPE_NAME: &'static str = "SorobanAuthorizationEntry";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         SorobanAuthorizationEntry::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -110,18 +110,18 @@ impl XdrCodec for SorobanAuthorizationEntry {
 impl XdrCodec for LedgerEntry {
     const TYPE_NAME: &'static str = "LedgerEntry";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         LedgerEntry::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -129,18 +129,18 @@ impl XdrCodec for LedgerEntry {
 impl XdrCodec for DiagnosticEvent {
     const TYPE_NAME: &'static str = "DiagnosticEvent";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         DiagnosticEvent::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -148,18 +148,18 @@ impl XdrCodec for DiagnosticEvent {
 impl XdrCodec for ScVec {
     const TYPE_NAME: &'static str = "ScVec";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         ScVec::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -167,18 +167,18 @@ impl XdrCodec for ScVec {
 impl XdrCodec for ContractEvent {
     const TYPE_NAME: &'static str = "ContractEvent";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         ContractEvent::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -186,18 +186,18 @@ impl XdrCodec for ContractEvent {
 impl XdrCodec for ScVal {
     const TYPE_NAME: &'static str = "ScVal";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         ScVal::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -205,18 +205,18 @@ impl XdrCodec for ScVal {
 impl XdrCodec for ScAddress {
     const TYPE_NAME: &'static str = "ScAddress";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         ScAddress::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -224,18 +224,18 @@ impl XdrCodec for ScAddress {
 impl XdrCodec for ScSymbol {
     const TYPE_NAME: &'static str = "ScSymbol";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         ScSymbol::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -243,18 +243,18 @@ impl XdrCodec for ScSymbol {
 impl XdrCodec for ScString {
     const TYPE_NAME: &'static str = "ScString";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         ScString::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -262,18 +262,18 @@ impl XdrCodec for ScString {
 impl XdrCodec for ScBytes {
     const TYPE_NAME: &'static str = "ScBytes";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         ScBytes::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -281,18 +281,18 @@ impl XdrCodec for ScBytes {
 impl XdrCodec for ScMap {
     const TYPE_NAME: &'static str = "ScMap";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         ScMap::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -300,18 +300,18 @@ impl XdrCodec for ScMap {
 impl XdrCodec for ScMapEntry {
     const TYPE_NAME: &'static str = "ScMapEntry";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         ScMapEntry::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
@@ -319,26 +319,26 @@ impl XdrCodec for ScMapEntry {
 impl XdrCodec for LedgerKey {
     const TYPE_NAME: &'static str = "LedgerKey";
 
-    fn from_xdr_bytes(bytes: &[u8]) -> PrismResult<Self> {
+    fn from_xdr_bytes(bytes: &[u8]) -> GratResult<Self> {
         LedgerKey::from_xdr(bytes, Limits::none()).map_err(|e| {
-            PrismError::XdrDecodingFailed {
+            GratError::XdrDecodingFailed {
                 type_name: Self::TYPE_NAME,
                 reason: e.to_string(),
             }
         })
     }
 
-    fn to_xdr_bytes(&self) -> PrismResult<Vec<u8>> {
+    fn to_xdr_bytes(&self) -> GratResult<Vec<u8>> {
         self.to_xdr(Limits::none()).map_err(|e| {
-            PrismError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
+            GratError::XdrError(format!("Failed to encode {}: {}", Self::TYPE_NAME, e))
         })
     }
 }
 
 ___RUST_DOC_COMMENT___
-pub fn decode_xdr_base64(xdr_base64: &str) -> PrismResult<Vec<u8>> {
+pub fn decode_xdr_base64(xdr_base64: &str) -> GratResult<Vec<u8>> {
     STANDARD.decode(xdr_base64).map_err(|e| {
-        PrismError::XdrError(format!("Base64 decode failed: {e}"))
+        GratError::XdrError(format!("Base64 decode failed: {e}"))
     })
 }
 
@@ -348,12 +348,12 @@ pub fn encode_xdr_base64(bytes: &[u8]) -> String {
 }
 
 ___RUST_DOC_COMMENT___
-pub fn decode_tx_hash(hash_hex: &str) -> PrismResult<[u8; 32]> {
+pub fn decode_tx_hash(hash_hex: &str) -> GratResult<[u8; 32]> {
     let bytes = hex_decode(hash_hex)
-        .map_err(|e| PrismError::XdrError(format!("Invalid tx hash hex: {e}")))?;
+        .map_err(|e| GratError::XdrError(format!("Invalid tx hash hex: {e}")))?;
 
     if bytes.len() != 32 {
-        return Err(PrismError::XdrError(format!(
+        return Err(GratError::XdrError(format!(
             "Transaction hash must be 32 bytes, got {}",
             bytes.len()
         )));
@@ -669,7 +669,7 @@ mod tests {
     #[test]
     fn test_scval_string_codec_standalone() {
         use stellar_xdr::curr::StringM;
-        let val = ScString(StringM::try_from(b"Prism".to_vec()).unwrap());
+        let val = ScString(StringM::try_from(b"Grat".to_vec()).unwrap());
         let b64 = XdrCodec::to_xdr_base64(&val).expect("encode");
         let decoded = <ScString as XdrCodec>::from_xdr_base64(&b64).expect("decode");
         assert_eq!(val, decoded);

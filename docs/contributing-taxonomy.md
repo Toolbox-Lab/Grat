@@ -1,6 +1,6 @@
 # Contributing to the Error Taxonomy
 
-The error taxonomy is a community-contributable database of every known Soroban host error. It's the easiest way to contribute to Prism — no Rust knowledge required!
+The error taxonomy is a community-contributable database of every known Soroban host error. It's the easiest way to contribute to Grat — no Rust knowledge required!
 
 ## File Location
 

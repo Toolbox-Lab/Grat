@@ -18,7 +18,7 @@ let nodeCount = 0;
 let startTime = Date.now();
 
 ws.on('open', () => {
-  console.log('✓ Connected to Prism WebSocket server');
+  console.log('✓ Connected to Grat WebSocket server');
   console.log(`Requesting trace for: ${TX_HASH}\n`);
   
   ws.send(JSON.stringify({ tx_hash: TX_HASH }));

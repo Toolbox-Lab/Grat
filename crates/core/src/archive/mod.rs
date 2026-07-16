@@ -1,7 +1,7 @@
 
 
 use crate::network::NetworkConfig;
-use crate::error::{ArchiveErrorKind, PrismResult};
+use crate::error::{ArchiveErrorKind, GratResult};
 
 pub struct ArchiveClient {
 
@@ -33,7 +33,7 @@ impl ArchiveClient {
         }
     }
 
-    pub async fn fetch_checkpoint(&self, ledger_sequence: u32) -> PrismResult<ArchiveCheckpoint> {
+    pub async fn fetch_checkpoint(&self, ledger_sequence: u32) -> GratResult<ArchiveCheckpoint> {
         let checkpoint_seq = (ledger_sequence / 64) * 64;
         let _path = format_checkpoint_path(checkpoint_seq);
         let archive_count = self.archive_urls.len();
@@ -55,7 +55,7 @@ impl ArchiveClient {
         &self,
         _ledger_sequence: u32,
         _key: &str,
-    ) -> PrismResult<Vec<u8>> {
+    ) -> GratResult<Vec<u8>> {
         Err(ArchiveErrorKind::FetchFailed {
             file: format!("ledger-entry-{_ledger_sequence}-{_key}"),
             reason: "Ledger entry fetch not yet implemented".to_string(),

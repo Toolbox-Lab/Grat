@@ -2,7 +2,7 @@
 
 #![allow(dead_code)]
 
-use prism_core::types::{
+use grat_core::types::{
     report::DiagnosticReport,
     trace::{DiffChangeType, ExecutionTrace, ResourceProfile, StateDiff},
 };

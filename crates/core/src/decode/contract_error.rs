@@ -1,7 +1,7 @@
 
 
 use crate::decode::decode_context::DecodeContext;
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 use crate::spec::decoder;
 use crate::types::address::Address;
 use crate::types::config::NetworkConfig;
@@ -11,7 +11,7 @@ pub async fn resolve(
     contract_id: &str,
     error_code: u32,
     ctx: &DecodeContext,
-) -> PrismResult<ContractErrorInfo> {
+) -> GratResult<ContractErrorInfo> {
     resolve_with_network(contract_id, error_code, &ctx.network).await
 }
 
@@ -19,7 +19,7 @@ async fn resolve_with_network(
     contract_id: &str,
     error_code: u32,
     network: &NetworkConfig,
-) -> PrismResult<ContractErrorInfo> {
+) -> GratResult<ContractErrorInfo> {
     Address::validate_contract_id(contract_id)?;
 
     let cache = crate::cache::store::CacheStore::default_location()?;
@@ -52,12 +52,12 @@ async fn resolve_with_network(
    })
 }
 
-async fn fetch_contract_wasm(contract_id: &str, network: &NetworkConfig) -> PrismResult<Vec<u8>> {
+async fn fetch_contract_wasm(contract_id: &str, network: &NetworkConfig) -> GratResult<Vec<u8>> {
     let rpc = crate::rpc::SorobanRpcClient::new(network);
 
     let _result = rpc.get_ledger_entries(&[contract_id.to_string()]).await?;
 
-    Err(PrismError::ContractNotFound(format!(
+    Err(GratError::ContractNotFound(format!(
         "WASM fetch not yet implemented for {contract_id}"
     )))
 }

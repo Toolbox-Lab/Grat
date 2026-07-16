@@ -2,14 +2,14 @@ use std::process::Command;
 
 fn main() {
     println!("cargo:rerun-if-changed=../../.git/HEAD");
-    println!("cargo:rerun-if-env-changed=PRISM_BUILD_HASH");
+    println!("cargo:rerun-if-env-changed=GRAT_BUILD_HASH");
 
-    let build_hash = std::env::var("PRISM_BUILD_HASH")
+    let build_hash = std::env::var("GRAT_BUILD_HASH")
         .ok()
         .filter(|value| !value.trim().is_empty())
         .unwrap_or_else(git_hash);
 
-    println!("cargo:rustc-env=PRISM_BUILD_HASH={build_hash}");
+    println!("cargo:rustc-env=GRAT_BUILD_HASH={build_hash}");
 }
 
 fn git_hash() -> String {

@@ -12,7 +12,7 @@ use std::fmt;
 use stellar_xdr::curr::{SorobanAddressCredentials, SorobanAuthorizationEntry, SorobanCredentials};
 
 use crate::decode::auth::scaddress_to_strkey;
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::xdr::codec::XdrCodec;
 
 ___RUST_DOC_COMMENT___
@@ -30,7 +30,7 @@ ___RUST_DOC_COMMENT___
 ___RUST_DOC_COMMENT___    
 ___RUST_DOC_COMMENT___    
 ___RUST_DOC_COMMENT___    
-    pub fn from_auth_entry_base64(b64: &str) -> PrismResult<Option<Self>> {
+    pub fn from_auth_entry_base64(b64: &str) -> GratResult<Option<Self>> {
         let entry = SorobanAuthorizationEntry::from_xdr_base64(b64)?;
         Ok(Self::from_entry(&entry))
     }

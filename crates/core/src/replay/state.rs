@@ -1,7 +1,7 @@
 
 
 use crate::types::config::NetworkConfig;
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -24,13 +24,13 @@ pub enum ReconstructionPath {
 
 const HOT_PATH_THRESHOLD: u32 = 50_000;
 
-pub async fn reconstruct_state(tx_hash: &str, network: &NetworkConfig) -> PrismResult<LedgerState> {
+pub async fn reconstruct_state(tx_hash: &str, network: &NetworkConfig) -> GratResult<LedgerState> {
     let rpc = crate::rpc::SorobanRpcClient::new(network);
 
     let tx_data = rpc.get_transaction(tx_hash).await?;
     let tx_ledger = tx_data
         .ledger
-        .ok_or_else(|| PrismError::ReplayError("Cannot determine transaction ledger".to_string()))?;
+        .ok_or_else(|| GratError::ReplayError("Cannot determine transaction ledger".to_string()))?;
 
     let latest: serde_json::Value = rpc.get_latest_ledger().await?;
     let latest_ledger = latest
@@ -52,7 +52,7 @@ pub async fn reconstruct_state(tx_hash: &str, network: &NetworkConfig) -> PrismR
 async fn reconstruct_hot_path(
     ledger_sequence: u32,
     _rpc: &crate::rpc::SorobanRpcClient,
-) -> PrismResult<LedgerState> {
+) -> GratResult<LedgerState> {
     Ok(LedgerState {
         ledger_sequence,
         entries: HashMap::new(),
@@ -63,7 +63,7 @@ async fn reconstruct_hot_path(
 async fn reconstruct_cold_path(
     ledger_sequence: u32,
     _network: &NetworkConfig,
-) -> PrismResult<LedgerState> {
+) -> GratResult<LedgerState> {
     tracing::warn!("Cold path reconstruction is computationally heavy — this may take a while");
 
     Ok(LedgerState {

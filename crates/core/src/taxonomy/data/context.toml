@@ -22,7 +22,7 @@ related_errors = ["host.context.internal_error"]
 source_file = "soroban-env-host/src/host.rs"
 
 [[errors.common_causes]]
-description = "The transaction reached a host state that Prism cannot classify more specifically"
+description = "The transaction reached a host state that Grat cannot classify more specifically"
 likelihood = "medium"
 
 [[errors.common_causes]]

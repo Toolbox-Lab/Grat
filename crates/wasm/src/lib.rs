@@ -1,10 +1,10 @@
 ___RUST_DOC_MOD___
 
-use prism_core::decode::report::build_report;
-use prism_core::decode::host_error::ClassifiedError;
-use prism_core::taxonomy::schema::ErrorCategory;
-use prism_core::types::report::DiagnosticReport;
-use prism_core::xdr::codec::XdrCodec;
+use grat_core::decode::report::build_report;
+use grat_core::decode::host_error::ClassifiedError;
+use grat_core::taxonomy::schema::ErrorCategory;
+use grat_core::types::report::DiagnosticReport;
+use grat_core::xdr::codec::XdrCodec;
 use wasm_bindgen::prelude::*;
 
 ___RUST_DOC_COMMENT___
@@ -46,7 +46,7 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
             }
         }
         report.failing_contract_id =
-            prism_core::decode::walker::DiagnosticEventWalker::find_failing_contract(
+            grat_core::decode::walker::DiagnosticEventWalker::find_failing_contract(
                 &events,
             );
     }
@@ -65,7 +65,7 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
                 .to_string();
             if !desc.is_empty() {
                 report.root_causes.push(
-                    prism_core::types::report::RootCause {
+                    grat_core::types::report::RootCause {
                         description: desc,
                         likelihood,
                     },
@@ -105,7 +105,7 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
                 .map(String::from);
             if !desc.is_empty() {
                 report.suggested_fixes.push(
-                    prism_core::types::report::SuggestedFix {
+                    grat_core::types::report::SuggestedFix {
                         description: desc,
                         difficulty,
                         requires_upgrade,
@@ -127,7 +127,7 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
             ctx.tx_hash = tx_hash.to_string();
         } else {
             report.transaction_context = Some(
-                prism_core::types::report::TransactionContext {
+                grat_core::types::report::TransactionContext {
                     tx_hash: tx_hash.to_string(),
                     ledger_sequence: parsed
                         .get("ledgerSequence")
@@ -142,7 +142,7 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
                         .get("returnValue")
                         .and_then(|r| r.as_str())
                         .map(String::from),
-                    fee: prism_core::types::report::FeeBreakdown {
+                    fee: grat_core::types::report::FeeBreakdown {
                         total_charged_fee: 0,
                         inclusion_fee: 0,
                         resource_fee: 0,
@@ -150,7 +150,7 @@ fn decode_report_inner(tx_result_json: &str) -> Result<DiagnosticReport, String>
                         non_refundable_resource_fee: 0,
                         bid_fee: None,
                     },
-                    resources: prism_core::types::report::ResourceSummary {
+                    resources: grat_core::types::report::ResourceSummary {
                         cpu_instructions_used: 0,
                         cpu_instructions_limit: 0,
                         memory_bytes_used: 0,

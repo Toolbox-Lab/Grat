@@ -325,7 +325,7 @@ fn get_config_path(override_path: Option<String>) -> Result<PathBuf> {
         return Ok(PathBuf::from(path));
     }
 
-    let project_dirs = directories::ProjectDirs::from("dev", "prism", "prism")
+    let project_dirs = directories::ProjectDirs::from("dev", "grat", "grat")
         .ok_or_else(|| anyhow!("Could not determine config directory"))?;
 
     Ok(project_dirs.config_dir().join("auth.toml"))

@@ -1,6 +1,6 @@
 
 
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 use crate::rpc::jsonrpc::{JsonRpcTransport, JsonRpcRequest, GetHealthParams};
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -35,10 +35,10 @@ impl Network {
 
     pub const LOCAL: &str = "local";
 
-    pub fn parse(value: &str) -> PrismResult<Self> {
+    pub fn parse(value: &str) -> GratResult<Self> {
         let trimmed = value.trim();
         if trimmed.is_empty() {
-            return Err(PrismError::ConfigError(
+            return Err(GratError::ConfigError(
                 "network selector cannot be empty".to_string(),
             ));
         }
@@ -101,7 +101,7 @@ impl fmt::Display for Network {
 }
 
 impl FromStr for Network {
-    type Err = PrismError;
+    type Err = GratError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Self::parse(s)
@@ -244,7 +244,7 @@ pub fn resolve_network(network_str: &str) -> NetworkConfig {
     }
 }
 
-pub fn resolve_network_target(network_str: &str) -> PrismResult<Network> {
+pub fn resolve_network_target(network_str: &str) -> GratResult<Network> {
     Network::parse(network_str)
 }
 

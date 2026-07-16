@@ -1,6 +1,6 @@
 
 
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 use crate::network::NetworkConfig;
 use crate::rpc::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
 use reqwest::header::{HeaderMap, HeaderValue, CONTENT_TYPE};
@@ -124,7 +124,7 @@ impl SorobanRpcClient {
 
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(config.request_timeout_secs))
-            .user_agent(concat!("prism-cli/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("grat-cli/", env!("CARGO_PKG_VERSION")))
             .default_headers(headers)
             .build()
             .expect("Failed to build reqwest client");
@@ -140,14 +140,14 @@ impl SorobanRpcClient {
         headers.insert(CONTENT_TYPE, HeaderValue::from_static("application/json"));
         self.client = reqwest::Client::builder()
             .timeout(Duration::from_secs(timeout_secs))
-            .user_agent(concat!("prism-cli/", env!("CARGO_PKG_VERSION")))
+            .user_agent(concat!("grat-cli/", env!("CARGO_PKG_VERSION")))
             .default_headers(headers)
             .build()
             .expect("Failed to build reqwest client");
         self
     }
 
-    pub async fn get_transaction(&self, tx_hash: &str) -> PrismResult<GetTransactionResponse> {
+    pub async fn get_transaction(&self, tx_hash: &str) -> GratResult<GetTransactionResponse> {
         let params = serde_json::json!([tx_hash]);
         self.call("getTransaction", params).await
     }
@@ -155,18 +155,18 @@ impl SorobanRpcClient {
     pub async fn simulate_transaction(
         &self,
         tx_xdr: &str,
-    ) -> PrismResult<SimulateTransactionResponse> {
+    ) -> GratResult<SimulateTransactionResponse> {
         let params = serde_json::json!({ "transaction": tx_xdr });
         let raw = self
             .call::<serde_json::Value>("simulateTransaction", params)
             .await?;
 
         let response: SimulateTransactionResponse = serde_json::from_value(raw).map_err(|e| {
-            PrismError::RpcError(format!("Failed to parse simulateTransaction response: {e}"))
+            GratError::RpcError(format!("Failed to parse simulateTransaction response: {e}"))
         })?;
 
         if let Some(ref err) = response.error {
-            return Err(PrismError::RpcError(format!(
+            return Err(GratError::RpcError(format!(
                 "simulateTransaction failed: {err}"
             )));
         }
@@ -174,7 +174,7 @@ impl SorobanRpcClient {
         Ok(response)
     }
 
-    pub async fn get_ledger_entries(&self, keys: &[String]) -> PrismResult<serde_json::Value> {
+    pub async fn get_ledger_entries(&self, keys: &[String]) -> GratResult<serde_json::Value> {
         let params = serde_json::json!({ "keys": keys });
         self.call::<serde_json::Value>("getLedgerEntries", params)
             .await
@@ -184,7 +184,7 @@ impl SorobanRpcClient {
         &self,
         start_ledger: u32,
         filters: serde_json::Value,
-    ) -> PrismResult<serde_json::Value> {
+    ) -> GratResult<serde_json::Value> {
         let params = serde_json::json!({
             "startLedger": start_ledger,
             "filters": filters,
@@ -192,7 +192,7 @@ impl SorobanRpcClient {
         self.call("getEvents", params).await
     }
 
-    pub async fn get_latest_ledger(&self) -> PrismResult<serde_json::Value> {
+    pub async fn get_latest_ledger(&self) -> GratResult<serde_json::Value> {
         self.call("getLatestLedger", serde_json::json!({})).await
     }
 
@@ -200,11 +200,11 @@ impl SorobanRpcClient {
         &self,
         method: &'static str,
         params: serde_json::Value,
-    ) -> PrismResult<T> {
+    ) -> GratResult<T> {
         let request = JsonRpcRequest::new(1, method, params);
 
         const MAX_RETRIES: u32 = 3;
-        let mut last_error: Option<PrismError> = None;
+        let mut last_error: Option<GratError> = None;
 
         for attempt in 0..=MAX_RETRIES {
             if attempt > 0 {
@@ -240,7 +240,7 @@ impl SorobanRpcClient {
                         crate::rpc::record_rpc_duration(method, duration_secs, false);
                         tracing::warn!(method, attempt, "Rate limited by RPC node (429), will retry");
                         last_error =
-                            Some(PrismError::RpcError(format!("Rate limited (attempt {attempt})")));
+                            Some(GratError::RpcError(format!("Rate limited (attempt {attempt})")));
                         continue;
                     }
 
@@ -254,7 +254,7 @@ impl SorobanRpcClient {
                             elapsed_ms,
                             "RPC node returned a server error (5xx), will retry"
                         );
-                        last_error = Some(PrismError::RpcError(format!(
+                        last_error = Some(GratError::RpcError(format!(
                             "Server error {status} on attempt {attempt}"
                         )));
                         continue;
@@ -262,7 +262,7 @@ impl SorobanRpcClient {
 
                     let body = response.text().await.map_err(|e| {
                         crate::rpc::record_rpc_duration(method, duration_secs, false);
-                        PrismError::RpcError(format!("Failed to read response body: {e}"))
+                        GratError::RpcError(format!("Failed to read response body: {e}"))
                     })?;
 
                     tracing::debug!(
@@ -276,7 +276,7 @@ impl SorobanRpcClient {
 
                     if !status.is_success() {
                         crate::rpc::record_rpc_duration(method, duration_secs, false);
-                        return Err(PrismError::RpcError(format!(
+                        return Err(GratError::RpcError(format!(
                             "RPC request failed with HTTP {status}: {body}"
                         )));
                     }
@@ -284,7 +284,7 @@ impl SorobanRpcClient {
                     let rpc_response: JsonRpcResponse<T> = serde_json::from_str(&body)
                         .map_err(|e| {
                             crate::rpc::record_rpc_duration(method, duration_secs, false);
-                            PrismError::RpcError(format!("Response parse error: {e}"))
+                            GratError::RpcError(format!("Response parse error: {e}"))
                         })?;
 
                     if let Some(err) = rpc_response.error {
@@ -297,12 +297,12 @@ impl SorobanRpcClient {
                             code = err.code,
                             "RPC returned an error response"
                         );
-                        return Err(PrismError::JsonRpc(err));
+                        return Err(GratError::JsonRpc(err));
                     }
 
                     crate::rpc::record_rpc_duration(method, duration_secs, true);
                     return rpc_response.result.ok_or_else(|| {
-                        PrismError::RpcError("Empty result in RPC response".into())
+                        GratError::RpcError("Empty result in RPC response".into())
                     });
                 }
                 Err(e) => {
@@ -325,12 +325,12 @@ impl SorobanRpcClient {
                         error = %e,
                         "RPC request failed"
                     );
-                    last_error = Some(PrismError::RpcError(format!("HTTP request failed: {e}")));
+                    last_error = Some(GratError::RpcError(format!("HTTP request failed: {e}")));
                 }
             }
         }
 
-        Err(last_error.unwrap_or_else(|| PrismError::RpcError("Unknown RPC error".into())))
+        Err(last_error.unwrap_or_else(|| GratError::RpcError("Unknown RPC error".into())))
     }
 }
 
@@ -820,8 +820,8 @@ mod tests {
         let result = client.simulate_transaction("AAAA").await;
         assert!(result.is_err());
         match result.unwrap_err() {
-            PrismError::RpcError(msg) => assert!(msg.contains("contract trap")),
-            _ => panic!("Expected PrismError::RpcError"),
+            GratError::RpcError(msg) => assert!(msg.contains("contract trap")),
+            _ => panic!("Expected GratError::RpcError"),
         }
     }
 }

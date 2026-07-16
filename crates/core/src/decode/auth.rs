@@ -8,7 +8,7 @@ ___RUST_DOC_MOD___
 ___RUST_DOC_MOD___
 ___RUST_DOC_MOD___
 
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::xdr::codec::XdrCodec;
 use serde::{Deserialize, Serialize};
 use stellar_xdr::curr::{
@@ -111,7 +111,7 @@ ___RUST_DOC_COMMENT___
 
 impl AuthChain {
 ___RUST_DOC_COMMENT___    
-    pub fn from_xdr_base64(b64: &str) -> PrismResult<Self> {
+    pub fn from_xdr_base64(b64: &str) -> GratResult<Self> {
         let entry = SorobanAuthorizationEntry::from_xdr_base64(b64)?;
         Ok(Self::from_entry(&entry))
     }

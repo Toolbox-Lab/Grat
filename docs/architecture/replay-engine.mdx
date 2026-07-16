@@ -9,7 +9,7 @@ The Replay Engine powers Tier 2 and Tier 3 diagnostics.
 It uses the **History Archive Client** to fetch compressed ledger snapshots. These are decompressed and loaded into a local state database.
 
 ## Instrumented Sandbox
-Prism uses a modified `soroban-env-host` that:
+Grat uses a modified `soroban-env-host` that:
 - Emits a trace event for every host function call.
 - Records gas/budget consumption at each step.
 - Captures event emissions and storage diffs.

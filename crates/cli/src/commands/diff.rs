@@ -1,7 +1,7 @@
 
 
 use clap::Args;
-use prism_core::types::config::NetworkConfig;
+use grat_core::types::config::NetworkConfig;
 
 #[derive(Args)]
 pub struct DiffArgs {
@@ -20,7 +20,7 @@ pub async fn run(
     progress.set_message("Computing state diff...");
     progress.enable_steady_tick(std::time::Duration::from_millis(100));
 
-    let trace = prism_core::replay::replay_transaction(&args.tx_hash, network).await?;
+    let trace = grat_core::replay::replay_transaction(&args.tx_hash, network).await?;
 
     progress.finish_and_clear();
 

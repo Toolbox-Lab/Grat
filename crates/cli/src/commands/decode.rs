@@ -1,6 +1,6 @@
 use clap::Args;
-use prism_core::types::config::NetworkConfig;
-use prism_core::types::report::{DiagnosticReport, Severity};
+use grat_core::types::config::NetworkConfig;
+use grat_core::types::report::{DiagnosticReport, Severity};
 
 #[derive(Args)]
 pub struct DecodeArgs {
@@ -32,7 +32,7 @@ pub async fn run(
         ));
         spinner.enable_steady_tick(std::time::Duration::from_millis(100));
 
-        let reports = prism_core::decode::decode_transaction_with_op_filter(
+        let reports = grat_core::decode::decode_transaction_with_op_filter(
             &args.tx_hash,
             network,
             None,
@@ -60,7 +60,7 @@ pub async fn run(
 }
 
 fn build_raw_xdr_report(raw_xdr: &str) -> anyhow::Result<DiagnosticReport> {
-    let bytes = prism_core::xdr::codec::decode_xdr_base64(raw_xdr)?;
+    let bytes = grat_core::xdr::codec::decode_xdr_base64(raw_xdr)?;
     let mut report =
         DiagnosticReport::new("raw-xdr", 0, "RawXdr", "Decoded raw XDR input from --raw");
     report.severity = Severity::Info;

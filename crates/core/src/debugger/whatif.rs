@@ -1,6 +1,6 @@
 
 
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::types::trace::ExecutionTrace;
 use serde::{Deserialize, Serialize};
 
@@ -52,9 +52,9 @@ pub async fn simulate_whatif(
     _tx_hash: &str,
     _patches: &[WhatIfPatch],
     _network: &crate::types::config::NetworkConfig,
-) -> PrismResult<WhatIfResult> {
+) -> GratResult<WhatIfResult> {
 
-    Err(crate::error::PrismError::Internal(
+    Err(crate::error::GratError::Internal(
         "What-if simulation not yet implemented".to_string(),
     ))
 }

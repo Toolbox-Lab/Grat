@@ -1,4 +1,4 @@
-use prism_core::types::report::DiagnosticReport;
+use grat_core::types::report::DiagnosticReport;
 
 use crate::output::renderers::{
     render_cause_list, render_error_card, render_fix_list, render_section_header,

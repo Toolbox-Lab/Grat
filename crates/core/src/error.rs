@@ -33,7 +33,7 @@ pub enum ArchiveErrorKind {
 }
 
 #[derive(Debug, Error)]
-pub enum PrismError {
+pub enum GratError {
 
     #[error("RPC request timed out after {timeout_secs}s (method: {method})")]
     NetworkTimeout { method: String, timeout_secs: u64 },
@@ -90,4 +90,4 @@ pub enum PrismError {
     TransactionSucceeded,
 }
 
-pub type PrismResult<T> = Result<T, PrismError>;
+pub type GratResult<T> = Result<T, GratError>;

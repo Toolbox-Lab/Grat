@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 use stellar_strkey::{ed25519::PublicKey, Contract, Strkey};
 
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Address {
@@ -47,9 +47,9 @@ impl Address {
         }
     }
 
-    pub fn from_string(s: &str) -> PrismResult<Self> {
+    pub fn from_string(s: &str) -> GratResult<Self> {
         let strkey = Strkey::from_string(s)
-            .map_err(|e| PrismError::InvalidAddress(format!("Failed to parse strkey: {e}")))?;
+            .map_err(|e| GratError::InvalidAddress(format!("Failed to parse strkey: {e}")))?;
 
         match strkey {
             Strkey::PublicKeyEd25519(pk) => Ok(Self {
@@ -60,30 +60,30 @@ impl Address {
                 bytes: c.0.to_vec(),
                 address_type: AddressType::Contract,
             }),
-            _ => Err(PrismError::InvalidAddress(format!(
+            _ => Err(GratError::InvalidAddress(format!(
                 "Unsupported address type: {s}"
             ))),
         }
     }
 
-    pub fn validate_contract_id(contract_id: &str) -> PrismResult<()> {
+    pub fn validate_contract_id(contract_id: &str) -> GratResult<()> {
         if !contract_id.starts_with('C') {
-            return Err(PrismError::InvalidAddress(
+            return Err(GratError::InvalidAddress(
                 "Contract ID must start with 'C'".to_string(),
             ));
         }
 
         Contract::from_string(contract_id).map_err(|e| {
-            PrismError::InvalidAddress(format!("Invalid contract ID '{contract_id}': {e}"))
+            GratError::InvalidAddress(format!("Invalid contract ID '{contract_id}': {e}"))
         })?;
 
         Ok(())
     }
 
-    pub fn from_contract_id(contract_id: &str) -> PrismResult<Self> {
+    pub fn from_contract_id(contract_id: &str) -> GratResult<Self> {
         Self::validate_contract_id(contract_id)?;
         let contract = Contract::from_string(contract_id).map_err(|e| {
-            PrismError::InvalidAddress(format!("Invalid contract ID '{contract_id}': {e}"))
+            GratError::InvalidAddress(format!("Invalid contract ID '{contract_id}': {e}"))
         })?;
 
         Ok(Self {
@@ -160,7 +160,7 @@ mod tests {
         let s = "invalid";
         let res = Address::from_string(s);
         assert!(res.is_err());
-        if let Err(PrismError::InvalidAddress(msg)) = res {
+        if let Err(GratError::InvalidAddress(msg)) = res {
             assert!(msg.contains("Failed to parse strkey"));
         } else {
             panic!("Expected InvalidAddress error");
@@ -173,7 +173,7 @@ mod tests {
         let res = Address::from_string(&s);
         assert!(res.is_err());
         match res {
-            Err(PrismError::InvalidAddress(msg)) => {
+            Err(GratError::InvalidAddress(msg)) => {
                 assert!(msg.contains("Unsupported address type"));
             }
             _ => panic!("Expected InvalidAddress error for unsupported type"),
@@ -189,7 +189,7 @@ mod tests {
         let res = Address::from_string(&s);
         assert!(res.is_err());
         match res {
-            Err(PrismError::InvalidAddress(msg)) => {
+            Err(GratError::InvalidAddress(msg)) => {
                 assert!(msg.contains("Failed to parse strkey"));
             }
             _ => panic!("Expected InvalidAddress error for corrupted checksum"),
@@ -209,7 +209,7 @@ mod tests {
         let res = Address::validate_contract_id(&s);
         assert!(res.is_err());
         match res {
-            Err(PrismError::InvalidAddress(msg)) => {
+            Err(GratError::InvalidAddress(msg)) => {
                 assert!(msg.contains("must start with 'C'"));
             }
             _ => panic!("Expected InvalidAddress error for wrong prefix"),
@@ -225,7 +225,7 @@ mod tests {
         let res = Address::validate_contract_id(&s);
         assert!(res.is_err());
         match res {
-            Err(PrismError::InvalidAddress(msg)) => {
+            Err(GratError::InvalidAddress(msg)) => {
                 assert!(msg.contains("Invalid contract ID"));
             }
             _ => panic!("Expected InvalidAddress error for malformed contract id"),

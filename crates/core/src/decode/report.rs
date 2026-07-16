@@ -1,9 +1,9 @@
 use crate::decode::host_error::ClassifiedError;
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::taxonomy::loader::TaxonomyDatabase;
 use crate::types::report::{DiagnosticReport, RootCause, Severity, SuggestedFix};
 
-pub fn build_report(error: &ClassifiedError) -> PrismResult<DiagnosticReport> {
+pub fn build_report(error: &ClassifiedError) -> GratResult<DiagnosticReport> {
     let db = TaxonomyDatabase::load_embedded()?;
 
     if let Some(entry) = db.lookup(&error.category, error.error_code) {

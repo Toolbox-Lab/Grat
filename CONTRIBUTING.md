@@ -1,6 +1,6 @@
-# Contributing to Prism
+# Contributing to Grat
 
-We welcome contributions to Prism!
+We welcome contributions to Grat!
 
 ## Code of Conduct
 By participating, you agree to follow our [Code of Conduct](./CODE_OF_CONDUCT.md).

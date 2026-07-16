@@ -1,7 +1,7 @@
 
 
 use crate::replay::state::LedgerState;
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 
 #[derive(Debug, Clone, serde::Serialize)]
 pub struct TraceEvent {
@@ -52,11 +52,11 @@ pub struct SandboxResult {
 pub async fn execute_with_tracing(
     _state: &LedgerState,
     _tx_hash: &str,
-) -> PrismResult<SandboxResult> {
+) -> GratResult<SandboxResult> {
 
     tracing::info!("Sandbox execution with tracing — not yet implemented");
 
-    Err(PrismError::ReplayError(
+    Err(GratError::ReplayError(
         "Sandbox execution not yet implemented. Requires soroban-env-host instrumentation."
             .to_string(),
     ))

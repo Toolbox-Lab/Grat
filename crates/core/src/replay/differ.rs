@@ -2,10 +2,10 @@
 
 use crate::replay::sandbox::SandboxResult;
 use crate::replay::state::LedgerState;
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::types::trace::{DiffChangeType, LedgerEntryDiff, StateDiff};
 
-pub fn compute_diff(pre_state: &LedgerState, result: &SandboxResult) -> PrismResult<StateDiff> {
+pub fn compute_diff(pre_state: &LedgerState, result: &SandboxResult) -> GratResult<StateDiff> {
     let mut entries = Vec::new();
 
     for (key, before_value) in &pre_state.entries {

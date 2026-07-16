@@ -22,7 +22,7 @@ pub use walker::{
     StructuredDiagnosticEvent,
 };
 
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 use crate::types::report::DiagnosticReport;
 use crate::xdr::codec::XdrCodec;
 use stellar_xdr::curr::{ScVal, SorobanTransactionMetaExt, TransactionMeta, TransactionResult};
@@ -32,7 +32,7 @@ ___RUST_DOC_COMMENT___
 ___RUST_DOC_COMMENT___
 ___RUST_DOC_COMMENT___
 ___RUST_DOC_COMMENT___
-fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> PrismResult<()> {
+fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> GratResult<()> {
 
     let mut total_fee = None;
     if let Some(result_b64) = tx_data.get("resultXdr").and_then(|r| r.as_str()) {
@@ -52,7 +52,7 @@ fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> PrismResult<()> {
     };
 
     let meta = TransactionMeta::from_xdr_base64(&meta_b64).map_err(|e| {
-        PrismError::XdrDecodingFailed {
+        GratError::XdrDecodingFailed {
             type_name: "TransactionMeta",
             reason: e.to_string(),
         }
@@ -124,7 +124,7 @@ fn parse_v3_metadata(tx_data: &mut serde_json::Value) -> PrismResult<()> {
 fn filter_transaction_by_operation(
     tx_data: &mut serde_json::Value,
     op_index: usize,
-) -> PrismResult<()> {
+) -> GratResult<()> {
     if let Some(events) = tx_data.get_mut("events") {
         if let Some(contract_events) = events.get_mut("contractEventsXdr") {
             if let Some(events_array) = contract_events.as_array_mut() {
@@ -155,7 +155,7 @@ fn filter_transaction_by_operation(
 pub async fn decode_transaction(
     tx_hash: &str,
     network: &crate::types::config::NetworkConfig,
-) -> PrismResult<Vec<DiagnosticReport>> {
+) -> GratResult<Vec<DiagnosticReport>> {
     decode_transaction_with_op_filter(tx_hash, network, None).await
 }
 
@@ -163,18 +163,18 @@ pub async fn decode_transaction_with_op_filter(
     tx_hash: &str,
     network: &crate::types::config::NetworkConfig,
     op_index: Option<usize>,
-) -> PrismResult<Vec<DiagnosticReport>> {
+) -> GratResult<Vec<DiagnosticReport>> {
     let rpc = crate::rpc::SorobanRpcClient::new(network);
     let tx_data = rpc.get_transaction(tx_hash).await?;
     let mut base_tx_data = serde_json::to_value(tx_data)
-        .map_err(|e| crate::error::PrismError::Internal(e.to_string()))?;
+        .map_err(|e| crate::error::GratError::Internal(e.to_string()))?;
 
     parse_v3_metadata(&mut base_tx_data)?;
 
     let num_ops = if let Some(envelope_str) = base_tx_data.get("envelopeXdr").and_then(|v| v.as_str()) {
         
         let envelope = <stellar_xdr::curr::TransactionEnvelope as crate::xdr::codec::XdrCodec>::from_xdr_base64(envelope_str)
-            .map_err(|e| crate::error::PrismError::Internal(format!("Failed to decode envelope XDR: {}", e)))?;
+            .map_err(|e| crate::error::GratError::Internal(format!("Failed to decode envelope XDR: {}", e)))?;
         match envelope {
             stellar_xdr::curr::TransactionEnvelope::TxV0(v0) => v0.tx.operations.len(),
             stellar_xdr::curr::TransactionEnvelope::Tx(v1) => v1.tx.operations.len(),
@@ -306,7 +306,7 @@ mod tests {
         let result = parse_v3_metadata(&mut data);
         assert!(result.is_err());
         match result.unwrap_err() {
-            PrismError::XdrDecodingFailed { type_name, .. } => {
+            GratError::XdrDecodingFailed { type_name, .. } => {
                 assert_eq!(type_name, "TransactionMeta");
             }
             e => panic!("expected XdrDecodingFailed, got {e}"),
@@ -321,7 +321,7 @@ mod tests {
         let result = parse_v3_metadata(&mut data);
         assert!(result.is_err());
         match result.unwrap_err() {
-            PrismError::XdrDecodingFailed { type_name, .. } => {
+            GratError::XdrDecodingFailed { type_name, .. } => {
                 assert_eq!(type_name, "TransactionMeta");
             }
             e => panic!("expected XdrDecodingFailed, got {e}"),

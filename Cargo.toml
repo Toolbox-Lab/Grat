@@ -42,7 +42,7 @@ borrow_as_ptr = "allow"
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/prism-soroban/prism"
+repository = "https://github.com/grat-soroban/grat"
 description = "Soroban Transaction Debugger — From cryptic error to root cause in one command."
 
 [workspace.dependencies]
@@ -95,4 +95,4 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # Shared internal crates
-prism-core = { path = "crates/core" }
+grat-core = { path = "crates/core" }

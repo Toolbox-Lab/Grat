@@ -8,7 +8,7 @@ use stellar_xdr::curr::{
     ContractEventBody, ContractEventType, DiagnosticEvent, Hash, ScVal,
 };
 
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::types::report::{DiagnosticReport, FailureAttribution};
 use crate::xdr::codec::XdrCodec;
 
@@ -25,7 +25,7 @@ ___RUST_DOC_COMMENT___
 pub fn attribute_failure(
     report: &mut DiagnosticReport,
     tx_data: &serde_json::Value,
-) -> PrismResult<()> {
+) -> GratResult<()> {
     let events_b64 = match tx_data
         .get("diagnosticEventsXdr")
         .and_then(|v| v.as_array())

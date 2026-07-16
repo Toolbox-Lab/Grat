@@ -1,6 +1,6 @@
-# Prism Documentation Index
+# Grat Documentation Index
 
-Welcome to the Prism documentation.
+Welcome to the Grat documentation.
 
 ## Sections
 
@@ -11,7 +11,7 @@ Installation and basic usage instructions.
 Detailed breakdown of the monorepo structure and core engines.
 
 ### [Integration Guide](./INTEGRATION-GUIDE.md)
-How to embed Prism into your existing Soroban workflow.
+How to embed Grat into your existing Soroban workflow.
 
 ### [Replay Internals](./replay-internals.md)
 Deep dive into historical state reconstruction and transaction simulation.

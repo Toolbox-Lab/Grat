@@ -1,10 +1,10 @@
 
 
 use crate::replay::sandbox::{SandboxResult, TraceEventType};
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::types::trace::{ContractInvocation, HostFunctionCall};
 
-pub fn build_trace_tree(result: &SandboxResult) -> PrismResult<Vec<ContractInvocation>> {
+pub fn build_trace_tree(result: &SandboxResult) -> GratResult<Vec<ContractInvocation>> {
     let mut root_invocations: Vec<ContractInvocation> = Vec::new();
     let mut stack: Vec<ContractInvocation> = Vec::new();
 

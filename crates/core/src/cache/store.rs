@@ -1,6 +1,6 @@
 
 
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,9 +37,9 @@ ___RUST_DOC_COMMENT___
 
 impl CacheStore {
 ___RUST_DOC_COMMENT___    
-    pub fn new(cache_dir: PathBuf, max_size_mb: u64) -> PrismResult<Self> {
+    pub fn new(cache_dir: PathBuf, max_size_mb: u64) -> GratResult<Self> {
         std::fs::create_dir_all(&cache_dir)
-            .map_err(|e| PrismError::CacheError(format!("Failed to create cache dir: {e}")))?;
+            .map_err(|e| GratError::CacheError(format!("Failed to create cache dir: {e}")))?;
 
         Ok(Self {
             cache_dir,
@@ -48,19 +48,19 @@ ___RUST_DOC_COMMENT___
     }
 
 ___RUST_DOC_COMMENT___    
-    pub fn default_location() -> PrismResult<Self> {
+    pub fn default_location() -> GratResult<Self> {
         let project_dirs =
-            directories::ProjectDirs::from("dev", "prism", "prism").ok_or_else(|| {
-                PrismError::CacheError("Could not determine cache directory".to_string())
+            directories::ProjectDirs::from("dev", "grat", "grat").ok_or_else(|| {
+                GratError::CacheError("Could not determine cache directory".to_string())
             })?;
 
         Self::new(project_dirs.cache_dir().to_path_buf(), 512)
     }
 
 ___RUST_DOC_COMMENT___    
-    pub fn put(&self, category: CacheCategory, key: &str, value: &[u8]) -> PrismResult<()> {
+    pub fn put(&self, category: CacheCategory, key: &str, value: &[u8]) -> GratResult<()> {
         if value.len() as u64 > self.max_size {
-            return Err(PrismError::CacheError(format!(
+            return Err(GratError::CacheError(format!(
                 "Cache entry exceeds configured cache size limit of {} bytes",
                 self.max_size
             )));
@@ -69,19 +69,19 @@ ___RUST_DOC_COMMENT___
         let path = self.entry_path(category, key);
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)
-                .map_err(|e| PrismError::CacheError(format!("Failed to create dir: {e}")))?;
+                .map_err(|e| GratError::CacheError(format!("Failed to create dir: {e}")))?;
         }
         std::fs::write(&path, value)
-            .map_err(|e| PrismError::CacheError(format!("Failed to write cache entry: {e}")))?;
+            .map_err(|e| GratError::CacheError(format!("Failed to write cache entry: {e}")))?;
         Ok(())
     }
 
 ___RUST_DOC_COMMENT___    
-    pub fn get(&self, category: CacheCategory, key: &str) -> PrismResult<Option<Vec<u8>>> {
+    pub fn get(&self, category: CacheCategory, key: &str) -> GratResult<Option<Vec<u8>>> {
         let path = self.entry_path(category, key);
         if path.exists() {
             let data = std::fs::read(&path)
-                .map_err(|e| PrismError::CacheError(format!("Failed to read cache entry: {e}")))?;
+                .map_err(|e| GratError::CacheError(format!("Failed to read cache entry: {e}")))?;
             Ok(Some(data))
         } else {
             Ok(None)
@@ -94,23 +94,23 @@ ___RUST_DOC_COMMENT___
     }
 
 ___RUST_DOC_COMMENT___    
-    pub fn remove(&self, category: CacheCategory, key: &str) -> PrismResult<()> {
+    pub fn remove(&self, category: CacheCategory, key: &str) -> GratResult<()> {
         let path = self.entry_path(category, key);
         if path.exists() {
             std::fs::remove_file(&path).map_err(|e| {
-                PrismError::CacheError(format!("Failed to remove cache entry: {e}"))
+                GratError::CacheError(format!("Failed to remove cache entry: {e}"))
             })?;
         }
         Ok(())
     }
 
 ___RUST_DOC_COMMENT___    
-    pub fn clear(&self) -> PrismResult<()> {
+    pub fn clear(&self) -> GratResult<()> {
         if self.cache_dir.exists() {
             std::fs::remove_dir_all(&self.cache_dir)
-                .map_err(|e| PrismError::CacheError(format!("Failed to clear cache: {e}")))?;
+                .map_err(|e| GratError::CacheError(format!("Failed to clear cache: {e}")))?;
             std::fs::create_dir_all(&self.cache_dir).map_err(|e| {
-                PrismError::CacheError(format!("Failed to recreate cache dir: {e}"))
+                GratError::CacheError(format!("Failed to recreate cache dir: {e}"))
             })?;
         }
         Ok(())
@@ -128,7 +128,7 @@ mod tests {
 
     #[test]
     fn test_cache_roundtrip() {
-        let dir = std::env::temp_dir().join("prism_test_cache");
+        let dir = std::env::temp_dir().join("grat_test_cache");
         let store = CacheStore::new(dir.clone(), 10).unwrap();
 
         store

@@ -16,7 +16,7 @@ pub mod xdr;
 pub use network::config::Network;
 pub use types::address::Address;
 pub use types::config::NetworkConfig;
-pub use error::{PrismError, PrismResult};
+pub use error::{GratError, GratResult};
 pub use types::report::DiagnosticReport;
 pub use decode::{
     walk_diagnostic_events, AddressCredential, AddressWithNonce, AuthChain, AuthCredential,
@@ -35,7 +35,7 @@ fn init_test_logging() {
     use tracing_subscriber::EnvFilter;
 
     let filter = EnvFilter::try_from_default_env()
-        .unwrap_or_else(|_| EnvFilter::new("prism_core=debug,soroban_env_host=warn"));
+        .unwrap_or_else(|_| EnvFilter::new("grat_core=debug,soroban_env_host=warn"));
 
     let _ = tracing_subscriber::fmt()
         .with_env_filter(filter)

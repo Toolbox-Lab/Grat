@@ -6,7 +6,7 @@ use stellar_xdr::curr::{
     TransactionResultResult,
 };
 
-use crate::error::{PrismError, PrismResult};
+use crate::error::{GratError, GratResult};
 use crate::taxonomy::schema::ErrorCategory;
 use crate::xdr::codec::XdrCodec;
 
@@ -151,15 +151,15 @@ pub struct ClassifiedError {
     pub raw_data: serde_json::Value,
 }
 
-pub fn from_transaction_result(tx_result: TransactionResult) -> PrismResult<ClassifiedError> {
+pub fn from_transaction_result(tx_result: TransactionResult) -> GratResult<ClassifiedError> {
     let op_results = match tx_result.result {
-        TransactionResultResult::TxSuccess(_) => return Err(PrismError::TransactionSucceeded),
+        TransactionResultResult::TxSuccess(_) => return Err(GratError::TransactionSucceeded),
         TransactionResultResult::TxFailed(ops) => ops,
         TransactionResultResult::TxFeeBumpInnerSuccess(_) => {
-            return Err(PrismError::TransactionSucceeded)
+            return Err(GratError::TransactionSucceeded)
         }
 
-        _ => return Err(PrismError::NotSorobanTransaction),
+        _ => return Err(GratError::NotSorobanTransaction),
     };
 
     let ihf_result = op_results
@@ -171,10 +171,10 @@ pub fn from_transaction_result(tx_result: TransactionResult) -> PrismResult<Clas
                 None
             }
         })
-        .ok_or(PrismError::NotSorobanTransaction)?;
+        .ok_or(GratError::NotSorobanTransaction)?;
 
     let (category, error_code, is_contract_error) = match ihf_result {
-        InvokeHostFunctionResult::Success(_) => return Err(PrismError::TransactionSucceeded),
+        InvokeHostFunctionResult::Success(_) => return Err(GratError::TransactionSucceeded),
         InvokeHostFunctionResult::Trapped => {
 
             (ErrorCategory::Contract, 0u32, false)
@@ -195,14 +195,14 @@ pub fn from_transaction_result(tx_result: TransactionResult) -> PrismResult<Clas
     })
 }
 
-pub fn classify_error(tx_data: &serde_json::Value) -> PrismResult<ClassifiedError> {
+pub fn classify_error(tx_data: &serde_json::Value) -> GratResult<ClassifiedError> {
     let status = tx_data
         .get("status")
         .and_then(|s| s.as_str())
         .unwrap_or("UNKNOWN");
 
     if status == "SUCCESS" {
-        return Err(PrismError::TransactionSucceeded);
+        return Err(GratError::TransactionSucceeded);
     }
 
     if let Some(result_xdr_b64) = tx_data.get("resultXdr").and_then(|r| r.as_str()) {
@@ -463,7 +463,7 @@ mod tests {
         };
         assert!(matches!(
             from_transaction_result(tx_result),
-            Err(PrismError::TransactionSucceeded)
+            Err(GratError::TransactionSucceeded)
         ));
     }
 
@@ -476,7 +476,7 @@ mod tests {
         };
         assert!(matches!(
             from_transaction_result(tx_result),
-            Err(PrismError::NotSorobanTransaction)
+            Err(GratError::NotSorobanTransaction)
         ));
     }
 
@@ -485,7 +485,7 @@ mod tests {
         let result = make_tx_result(InvokeHostFunctionResult::Success(Hash([0; 32])));
         assert!(matches!(
             from_transaction_result(result),
-            Err(PrismError::TransactionSucceeded)
+            Err(GratError::TransactionSucceeded)
         ));
     }
 }

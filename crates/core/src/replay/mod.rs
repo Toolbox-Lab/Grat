@@ -7,13 +7,13 @@ pub mod state;
 pub mod trace;
 
 use crate::types::config::NetworkConfig;
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::types::trace::ExecutionTrace;
 
 pub async fn replay_transaction(
     tx_hash: &str,
     network: &NetworkConfig,
-) -> PrismResult<ExecutionTrace> {
+) -> GratResult<ExecutionTrace> {
     let ledger_state = state::reconstruct_state(tx_hash, network).await?;
 
     let raw_trace = sandbox::execute_with_tracing(&ledger_state, tx_hash).await?;

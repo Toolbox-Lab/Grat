@@ -2,7 +2,7 @@
 
 use crate::decode::auth::{AuthChain, AuthCredential};
 use crate::decode::auth_signature::decode_auth_entry_signatures;
-use crate::error::PrismResult;
+use crate::error::GratResult;
 use crate::types::report::{AuthEntryInfo, DiagnosticReport, FeeBreakdown, ResourceSummary, TransactionContext};
 use crate::xdr::codec::XdrCodec;
 use stellar_xdr::curr::{TransactionEnvelope, TransactionMeta, TransactionResult};
@@ -10,7 +10,7 @@ use stellar_xdr::curr::{TransactionEnvelope, TransactionMeta, TransactionResult}
 pub fn enrich_report(
     report: &mut DiagnosticReport,
     tx_data: &serde_json::Value,
-) -> PrismResult<()> {
+) -> GratResult<()> {
     let tx_hash = tx_data
         .get("hash")
         .and_then(|h| h.as_str())

@@ -36,7 +36,7 @@ description = "Access control check failed — the caller is not authorized for 
 likelihood = "medium"
 
 [[errors.suggested_fixes]]
-description = "Use prism's contract error resolver to map the numeric code to the contract's error enum name"
+description = "Use grat's contract error resolver to map the numeric code to the contract's error enum name"
 difficulty = "easy"
 requires_upgrade = false
 

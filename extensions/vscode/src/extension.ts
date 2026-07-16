@@ -5,7 +5,7 @@ import { registerCodeLens } from "./providers/codeLens";
 import { registerQuickFix } from "./providers/quickFix";
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log("Prism extension activated");
+  console.log("Grat extension activated");
 
   registerDiagnostics(context);
   registerHoverProvider(context);
@@ -13,8 +13,8 @@ export function activate(context: vscode.ExtensionContext) {
   registerQuickFix(context);
 
   context.subscriptions.push(
-    vscode.commands.registerCommand("prism.decode", () => {
-      vscode.window.showInformationMessage("Prism: Decode not yet implemented");
+    vscode.commands.registerCommand("grat.decode", () => {
+      vscode.window.showInformationMessage("Grat: Decode not yet implemented");
     })
   );
 }
