@@ -10,6 +10,7 @@ pub mod host_error;
 pub mod mappings;
 pub mod report;
 pub mod walker;
+pub mod function_call_decoder;
 
 pub use auth::{
     AddressCredential, AuthChain, AuthCredential, AuthFunctionKind, AuthInvocation,
