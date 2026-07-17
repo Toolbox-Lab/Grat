@@ -9,6 +9,8 @@ const BASE_DELAY_MS: u64 = 100;
 
 const MAX_DELAY_MS: u64 = 10_000;
 
+const LEDGER_ENTRIES_CHUNK_SIZE: usize = 100;
+
 fn backoff_duration(attempt: u32) -> Duration {
     let ms = BASE_DELAY_MS.saturating_mul(2u64.saturating_pow(attempt));
     Duration::from_millis(ms.min(MAX_DELAY_MS))
@@ -170,9 +172,38 @@ impl SorobanRpcClient {
     }
 
     pub async fn get_ledger_entries(&self, keys: &[String]) -> GratResult<serde_json::Value> {
-        let params = serde_json::json!({ "keys": keys });
-        self.call::<serde_json::Value>("getLedgerEntries", params)
-            .await
+        let mut chunks = keys.chunks(LEDGER_ENTRIES_CHUNK_SIZE);
+        let first_chunk = chunks.next().unwrap_or_default();
+        let params = serde_json::json!({ "keys": first_chunk });
+        let mut combined = self
+            .call::<serde_json::Value>("getLedgerEntries", params)
+            .await?;
+
+        for chunk in chunks {
+            let params = serde_json::json!({ "keys": chunk });
+            let mut response = self
+                .call::<serde_json::Value>("getLedgerEntries", params)
+                .await?;
+            let entries = response
+                .get_mut("entries")
+                .and_then(serde_json::Value::as_array_mut)
+                .ok_or_else(|| {
+                    GratError::RpcError(
+                        "getLedgerEntries response is missing an entries array".to_string(),
+                    )
+                })?;
+            combined
+                .get_mut("entries")
+                .and_then(serde_json::Value::as_array_mut)
+                .ok_or_else(|| {
+                    GratError::RpcError(
+                        "getLedgerEntries response is missing an entries array".to_string(),
+                    )
+                })?
+                .append(entries);
+        }
+
+        Ok(combined)
     }
 
     pub async fn get_events(
@@ -738,6 +769,39 @@ mod tests {
             .unwrap();
         assert_eq!(result["entries"].as_array().unwrap().len(), 0);
         assert_eq!(result["latestLedger"], 123);
+    }
+
+    #[tokio::test]
+    async fn get_ledger_entries_batches_and_combines_large_requests() {
+        let responses = [(101, "entry-1"), (102, "entry-2"), (103, "entry-3")]
+            .into_iter()
+            .map(|(latest_ledger, entry)| {
+                let body = serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "id": 1,
+                    "result": {
+                        "latestLedger": latest_ledger,
+                        "entries": [{ "key": entry }]
+                    }
+                })
+                .to_string();
+                http_response(200, "OK", &body)
+            })
+            .collect();
+        let addr = spawn_mock_server(responses).await;
+        let keys = (0..205).map(|i| format!("key-{i}")).collect::<Vec<_>>();
+
+        let result = make_client(addr).get_ledger_entries(&keys).await.unwrap();
+
+        assert_eq!(result["latestLedger"], 101);
+        assert_eq!(
+            result["entries"],
+            serde_json::json!([
+                { "key": "entry-1" },
+                { "key": "entry-2" },
+                { "key": "entry-3" }
+            ])
+        );
     }
 
     #[tokio::test]
