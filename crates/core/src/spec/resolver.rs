@@ -1,4 +1,4 @@
-use crate::cache::store::{CacheStore, CacheCategory};
+use crate::cache::store::{CacheCategory, CacheStore};
 use crate::error::{GratError, GratResult};
 use crate::network::NetworkConfig;
 use crate::rpc::SorobanRpcClient;
@@ -38,7 +38,7 @@ impl SCSpecResolver {
     pub fn new(config: &NetworkConfig) -> GratResult<Self> {
         let cache = Arc::new(CacheStore::default_location()?);
         let rpc_client = Arc::new(SorobanRpcClient::new(config));
-        
+
         Ok(Self {
             cache,
             rpc_client,
@@ -48,10 +48,13 @@ impl SCSpecResolver {
     }
 
     /// Creates a new SCSpecResolver with a custom cache directory.
-    pub fn with_cache_dir(config: &NetworkConfig, cache_dir: std::path::PathBuf) -> GratResult<Self> {
+    pub fn with_cache_dir(
+        config: &NetworkConfig,
+        cache_dir: std::path::PathBuf,
+    ) -> GratResult<Self> {
         let cache = Arc::new(CacheStore::new(cache_dir, 512)?);
         let rpc_client = Arc::new(SorobanRpcClient::new(config));
-        
+
         Ok(Self {
             cache,
             rpc_client,
@@ -101,10 +104,10 @@ impl SCSpecResolver {
         if let Some(handle) = existing_handle {
             // Join the existing fetch operation
             tracing::debug!(contract_id, "Joining existing fetch operation");
-            
+
             // Wait for the fetch to complete with a timeout
             let mut spec_guard = handle.lock().await;
-            
+
             // Poll for completion with a reasonable timeout
             for _ in 0..50 {
                 if let Some(spec) = spec_guard.take() {
@@ -114,11 +117,11 @@ impl SCSpecResolver {
                 tokio::time::sleep(tokio::time::Duration::from_millis(20)).await;
                 spec_guard = handle.lock().await;
             }
-            
+
             // If we still don't have a result after waiting, proceed with new fetch
             drop(spec_guard);
         }
-        
+
         // No pending fetch or timeout, create a new one
         let fetch_handle = Arc::new(Mutex::new(None));
         {
@@ -147,22 +150,27 @@ impl SCSpecResolver {
     /// Performs the actual network fetch and parsing.
     async fn do_fetch(&self, contract_id: &ContractId) -> GratResult<ContractSpec> {
         tracing::info!(contract_id, "Fetching WASM binary from network");
-        
+
         let wasm_bytes = self.fetch_wasm(contract_id).await?;
-        tracing::debug!(contract_id, wasm_size = wasm_bytes.len(), "WASM binary fetched");
-        
+        tracing::debug!(
+            contract_id,
+            wasm_size = wasm_bytes.len(),
+            "WASM binary fetched"
+        );
+
         let spec = decode_contract_spec(&wasm_bytes)?;
-        
+
         // Cache the spec
         let serialized = bincode::serialize(&spec)
             .map_err(|e| GratError::SpecError(format!("Failed to serialize spec: {e}")))?;
-        
-        self.cache.put(CacheCategory::ContractSpec, contract_id, &serialized)?;
-        
+
+        self.cache
+            .put(CacheCategory::ContractSpec, contract_id, &serialized)?;
+
         // Update memory cache
         let mut mem_cache = self.memory_cache.lock().await;
         mem_cache.insert(contract_id.clone(), spec.clone());
-        
+
         tracing::info!(contract_id, "SCSpec fetched and cached successfully");
         Ok(spec)
     }
@@ -172,37 +180,37 @@ impl SCSpecResolver {
         // Construct the ledger key for the contract code
         // The contract ID is a strkey-encoded C... string
         // We need to convert it to the proper ledger key format for getLedgerEntries
-        
+
         let contract_key = format!("contract_code/{}", contract_id);
-        
+
         let response = self.rpc_client.get_ledger_entries(&[contract_key]).await?;
-        
+
         let entries = response
             .get("entries")
             .and_then(serde_json::Value::as_array)
             .ok_or_else(|| {
-                GratError::ContractNotFound(format!(
-                    "Invalid response for contract {contract_id}"
-                ))
+                GratError::ContractNotFound(format!("Invalid response for contract {contract_id}"))
             })?;
-        
+
         if entries.is_empty() {
             return Err(GratError::ContractNotFound(contract_id.clone()));
         }
-        
+
         let entry = &entries[0];
         let xdr_base64 = entry
             .get("xdr")
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| {
-                GratError::SpecError(format!("Missing XDR in response for contract {contract_id}"))
+                GratError::SpecError(format!(
+                    "Missing XDR in response for contract {contract_id}"
+                ))
             })?;
-        
+
         // Decode the base64 XDR
         let xdr_bytes = base64::engine::general_purpose::STANDARD
             .decode(xdr_base64)
             .map_err(|e| GratError::SpecError(format!("Failed to decode base64 XDR: {e}")))?;
-        
+
         // Parse the XDR to extract the WASM bytecode
         // The ledger entry for contract code contains the WASM bytecode
         self.extract_wasm_from_ledger_entry(&xdr_bytes)
@@ -210,17 +218,15 @@ impl SCSpecResolver {
 
     /// Extracts WASM bytecode from a ledger entry XDR.
     fn extract_wasm_from_ledger_entry(&self, xdr_bytes: &[u8]) -> GratResult<Vec<u8>> {
-        use stellar_xdr::curr::{LedgerEntry, LedgerEntryData, ReadXdr, Limited, Limits};
-        
+        use stellar_xdr::curr::{LedgerEntry, LedgerEntryData, Limited, Limits, ReadXdr};
+
         let mut cursor = std::io::Cursor::new(xdr_bytes);
         let mut limited = Limited::new(&mut cursor, Limits::none());
         let entry = LedgerEntry::read_xdr(&mut limited)
             .map_err(|e| GratError::XdrError(format!("Failed to parse ledger entry XDR: {e}")))?;
-        
+
         match entry.data {
-            LedgerEntryData::ContractCode(code_entry) => {
-                Ok(code_entry.code.to_vec())
-            }
+            LedgerEntryData::ContractCode(code_entry) => Ok(code_entry.code.to_vec()),
             _ => Err(GratError::SpecError(
                 "Ledger entry is not a contract code entry".to_string(),
             )),
@@ -231,18 +237,20 @@ impl SCSpecResolver {
     pub async fn preload(&self, contract_id: ContractId, spec: ContractSpec) -> GratResult<()> {
         let serialized = bincode::serialize(&spec)
             .map_err(|e| GratError::SpecError(format!("Failed to serialize spec: {e}")))?;
-        
-        self.cache.put(CacheCategory::ContractSpec, &contract_id, &serialized)?;
-        
+
+        self.cache
+            .put(CacheCategory::ContractSpec, &contract_id, &serialized)?;
+
         let mut mem_cache = self.memory_cache.lock().await;
         mem_cache.insert(contract_id, spec);
-        
+
         Ok(())
     }
 
     /// Clears both memory and persistent cache for a specific contract.
     pub fn clear_contract(&self, contract_id: &ContractId) -> GratResult<()> {
-        self.cache.remove(CacheCategory::ContractSpec, contract_id)?;
+        self.cache
+            .remove(CacheCategory::ContractSpec, contract_id)?;
         Ok(())
     }
 
@@ -256,7 +264,7 @@ impl SCSpecResolver {
     pub async fn stats(&self) -> ResolverStats {
         let mem_cache = self.memory_cache.lock().await;
         let pending = self.pending_fetches.lock().await;
-        
+
         ResolverStats {
             memory_cache_size: mem_cache.len(),
             pending_fetches: pending.len(),
