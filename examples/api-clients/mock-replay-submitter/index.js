@@ -61,6 +61,63 @@ async function submitReplayJob(txHash) {
   return payload.jobId;
 }
 
+/**
+ * Polls the server using exponential backoff to check the status of a replay job.
+ * 
+ * @param {string} jobId The ID of the job to poll.
+ * @param {number} currentDelay The delay before the next poll request in milliseconds.
+ * @returns {Promise<object>} The final job status payload.
+ */
+function pollJobStatus(jobId, currentDelay = 500) {
+  return new Promise((resolve, reject) => {
+    const executePoll = async () => {
+      try {
+        const response = await fetch(`${REPLAY_ENDPOINT}/${jobId}`, {
+          headers: { Accept: 'application/json' },
+        });
+
+        if (!response.ok) {
+          console.warn(`[Poll Warning] Replay status fetch failed with HTTP ${response.status}`);
+          scheduleNext();
+          return;
+        }
+
+        let payload;
+        try {
+          payload = await response.json();
+        } catch (err) {
+          console.warn(`[Poll Warning] Non-JSON response: ${err.message}`);
+          scheduleNext();
+          return;
+        }
+
+        const status = payload.status;
+        const pendingStatuses = ['queued', 'pending', 'running', 'waiting', 'active'];
+
+        if (pendingStatuses.includes(status)) {
+          scheduleNext();
+        } else {
+          // Job reached terminal state (e.g. completed, failed, error)
+          resolve(payload);
+        }
+      } catch (err) {
+        // Handle network/request errors gracefully without crashing
+        console.warn(`[Poll Warning] Network/request error during poll: ${err.message}`);
+        scheduleNext();
+      }
+    };
+
+    const scheduleNext = () => {
+      // Double the delay for the next poll, capped at 5000ms
+      const nextDelay = Math.min(currentDelay * 2, 5000);
+      pollJobStatus(jobId, nextDelay).then(resolve).catch(reject);
+    };
+
+    // Wait currentDelay before executing the poll
+    setTimeout(executePoll, currentDelay);
+  });
+}
+
 async function main() {
   const txHash = process.argv[2];
 
@@ -75,6 +132,10 @@ async function main() {
   try {
     const jobId = await submitReplayJob(txHash);
     console.log(`✓ Replay job accepted. jobId: ${jobId}`);
+
+    console.log(`Polling for job status...`);
+    const finalResult = await pollJobStatus(jobId);
+    console.log(`✓ Job finished with status: ${finalResult.status}`);
   } catch (err) {
     console.error(`✗ ${err.message}`);
     process.exitCode = 1;
@@ -85,4 +146,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { submitReplayJob };
+module.exports = { submitReplayJob, pollJobStatus };
