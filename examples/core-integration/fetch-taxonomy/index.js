@@ -71,7 +71,112 @@ function sanitizeAndNormalize(value, key = '') {
   return value;
 }
 
-async function buildTaxonomyJson({ inputPath, outputPath }) {
+const NUMERIC_KEY_PATTERN = /^-?\d+$/;
+
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function resolveErrorCode(node, key) {
+  const candidates = [node.code, node.error_code, key];
+
+  for (const candidate of candidates) {
+    if (candidate === undefined || candidate === null || candidate === '') {
+      continue;
+    }
+
+    const normalized = normalizeErrorCode(candidate);
+    if (typeof normalized === 'number') {
+      return normalized;
+    }
+
+    if (typeof normalized === 'string' && NUMERIC_KEY_PATTERN.test(normalized)) {
+      return normalized;
+    }
+  }
+
+  return null;
+}
+
+function isErrorDefinition(node, key) {
+  return isPlainObject(node) && typeof node.name === 'string' && resolveErrorCode(node, key) !== null;
+}
+
+function flattenTaxonomy(root, options = {}) {
+  const dictionary = {};
+  const warnings = [];
+
+  const warn = (path, message) => {
+    warnings.push({ path, message });
+    if (typeof options.onWarning === 'function') {
+      options.onWarning(`[flatten-taxonomy] ${path}: ${message}`);
+    }
+  };
+
+  const addDefinition = (node, key, path) => {
+    const code = resolveErrorCode(node, key);
+    const dictionaryKey = String(code);
+
+    if (Object.prototype.hasOwnProperty.call(dictionary, dictionaryKey)) {
+      warn(path, `duplicate error code ${dictionaryKey}; keeping the first definition encountered`);
+      return;
+    }
+
+    dictionary[dictionaryKey] = { ...node, code };
+  };
+
+  const visit = (node, key, path) => {
+    if (Array.isArray(node)) {
+      node.forEach((item, index) => {
+        const itemPath = `${path}[${index}]`;
+
+        if (isPlainObject(item) || Array.isArray(item)) {
+          visit(item, key, itemPath);
+        }
+        // Primitive array entries (e.g. related_errors string lists) are plain
+        // metadata attached to a definition — nothing to flatten, skip quietly.
+      });
+      return;
+    }
+
+    if (!isPlainObject(node)) {
+      return;
+    }
+
+    if (isErrorDefinition(node, key)) {
+      addDefinition(node, key, path);
+      return;
+    }
+
+    for (const [childKey, childValue] of Object.entries(node)) {
+      const childPath = path ? `${path}.${childKey}` : childKey;
+
+      if (NUMERIC_KEY_PATTERN.test(childKey) && !isPlainObject(childValue)) {
+        // A numeric key promises an error definition table. Anything else
+        // (an array, a bare string, …) is a schema deviation from upstream:
+        // skip it instead of letting a property access blow up downstream.
+        warn(childPath, `expected an error definition table but found ${describeShape(childValue)}; node skipped`);
+        continue;
+      }
+
+      if (isPlainObject(childValue) || Array.isArray(childValue)) {
+        visit(childValue, childKey, childPath);
+      }
+    }
+  };
+
+  visit(root, '', '');
+
+  return { dictionary, warnings };
+}
+
+function describeShape(value) {
+  if (value === null) return 'null';
+  if (Array.isArray(value)) return 'an array';
+  return `a ${typeof value}`;
+}
+
+async function buildTaxonomyJson({ inputPath, outputPath, onWarning }) {
   let input;
   try {
     input = await readFile(inputPath, 'utf8');
@@ -87,7 +192,8 @@ async function buildTaxonomyJson({ inputPath, outputPath }) {
   }
 
   const sanitized = sanitizeAndNormalize(parsed);
-  const serialized = JSON.stringify(sanitized, null, 2) + '\n';
+  const { dictionary, warnings } = flattenTaxonomy(sanitized, { onWarning });
+  const serialized = JSON.stringify(dictionary, null, 2) + '\n';
 
   try {
     await writeFile(outputPath, serialized, 'utf8');
@@ -99,7 +205,7 @@ async function buildTaxonomyJson({ inputPath, outputPath }) {
     );
   }
 
-  return serialized;
+  return { serialized, dictionary, warnings };
 }
 
 function formatReadError(error, inputPath) {
@@ -132,8 +238,13 @@ async function main() {
   const inputPath = path.join(workspaceRoot, 'crates', 'core', 'src', 'taxonomy', 'data', 'contract.toml');
   const outputPath = path.join(__dirname, 'taxonomy.json');
 
-  const serialized = await buildTaxonomyJson({ inputPath, outputPath });
-  console.log(`Wrote sanitized taxonomy JSON to ${path.relative(workspaceRoot, outputPath)}`);
+  const { serialized, dictionary } = await buildTaxonomyJson({
+    inputPath,
+    outputPath,
+    onWarning: (message) => console.warn(message),
+  });
+  const entryCount = Object.keys(dictionary).length;
+  console.log(`Wrote flattened taxonomy JSON (${entryCount} error codes) to ${path.relative(workspaceRoot, outputPath)}`);
   return serialized;
 }
 
@@ -148,6 +259,10 @@ module.exports = {
   sanitizeText,
   normalizeErrorCode,
   sanitizeAndNormalize,
+  isPlainObject,
+  isErrorDefinition,
+  resolveErrorCode,
+  flattenTaxonomy,
   buildTaxonomyJson,
   formatReadError,
 };
