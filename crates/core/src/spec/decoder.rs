@@ -23,10 +23,30 @@ pub struct ContractFunction {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContractStructField {
+    pub name: String,
+
+    pub type_name: String,
+
+    pub doc: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ContractStructDef {
+    pub name: String,
+
+    pub fields: Vec<ContractStructField>,
+
+    pub doc: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContractSpec {
     pub errors: Vec<ContractErrorEntry>,
 
     pub functions: Vec<ContractFunction>,
+
+    pub structs: Vec<ContractStructDef>,
 
     pub name: Option<String>,
 
@@ -38,6 +58,7 @@ pub fn decode_contract_spec(wasm_bytes: &[u8]) -> GratResult<ContractSpec> {
 
     let mut errors = Vec::new();
     let mut functions = Vec::new();
+    let mut structs = Vec::new();
     let name = None;
     let version = None;
 
@@ -90,6 +111,36 @@ pub fn decode_contract_spec(wasm_bytes: &[u8]) -> GratResult<ContractSpec> {
                     });
                 }
             }
+            ScSpecEntry::UdtStructV0(struct_spec) => {
+                let struct_name = struct_spec.name.to_string();
+                let doc = if struct_spec.doc.is_empty() {
+                    None
+                } else {
+                    Some(struct_spec.doc.to_string())
+                };
+
+                let mut fields = Vec::new();
+                for field in struct_spec.fields.iter() {
+                    let field_name = field.name.to_string();
+                    let field_type = format_type_def(&field.type_);
+                    let field_doc = if field.doc.is_empty() {
+                        None
+                    } else {
+                        Some(field.doc.to_string())
+                    };
+                    fields.push(ContractStructField {
+                        name: field_name,
+                        type_name: field_type,
+                        doc: field_doc,
+                    });
+                }
+
+                structs.push(ContractStructDef {
+                    name: struct_name,
+                    fields,
+                    doc,
+                });
+            }
             _ => {}
         }
     }
@@ -97,6 +148,7 @@ pub fn decode_contract_spec(wasm_bytes: &[u8]) -> GratResult<ContractSpec> {
     Ok(ContractSpec {
         errors,
         functions,
+        structs,
         name,
         version,
     })
@@ -182,6 +234,7 @@ mod tests {
                 doc: None,
             }],
             functions: Vec::new(),
+            structs: Vec::new(),
             name: None,
             version: None,
         };
