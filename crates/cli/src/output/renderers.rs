@@ -163,7 +163,6 @@ impl<'a> CauseList<'a> {
     }
 }
 
-///
 pub struct BudgetBar {
     label: &'static str,
     used: u64,
@@ -233,7 +232,6 @@ fn heat_cell(intensity: f64) -> String {
     }
 }
 
-///
 pub fn render_heatmap(profile: &ResourceProfile) -> String {
     if profile.hotspots.is_empty() {
         let palette = ColorPalette::default();
@@ -334,7 +332,6 @@ struct ArgumentRow {
     value: String,
 }
 
-///
 pub fn render_context_table(context: &TransactionContext) -> String {
     if context.arguments.is_empty() {
         return String::new();
@@ -374,7 +371,6 @@ struct DiffRow {
     new_value: String,
 }
 
-///
 pub struct StateDiffTable<'a> {
     diff: &'a grat_core::types::trace::StateDiff,
 }
