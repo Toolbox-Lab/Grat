@@ -129,7 +129,7 @@ export default function TracePage() {
           )}
 
           {trace.nodes.length > 0 && (
-            <ExecutionTimeline nodes={trace.nodes} />
+            <ExecutionTimeline nodes={trace.nodes} resourceProfile={trace.resource_profile} />
           )}
 
           {trace.state_diff.length > 0 && (
