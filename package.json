@@ -6,7 +6,8 @@
   "scripts": {
     "dev:web": "pnpm --filter grat-web dev",
     "dev:server": "pnpm --filter grat-server dev",
-    "build:web": "pnpm --filter grat-web build",
+    "build:taxonomy": "node scripts/build-taxonomy.js",
+    "build:web": "pnpm run build:taxonomy && pnpm --filter grat-web build",
     "build:server": "pnpm --filter grat-server build",
     "build:vscode": "pnpm --filter grat-vscode build",
     "build:wasm": "powershell -File scripts/build-wasm.ps1",
@@ -17,5 +18,8 @@
   "engines": {
     "node": ">=20",
     "pnpm": ">=9"
+  },
+  "devDependencies": {
+    "@iarna/toml": "^2.2.5"
   }
 }
