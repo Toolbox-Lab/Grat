@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      "@iarna/toml":
+        specifier: ^2.2.5
+        version: 2.2.5
 
   apps/server:
     dependencies:
@@ -140,6 +144,10 @@ importers:
         version: 8.64.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.9.3)
 
 packages:
+
+  '@iarna/toml@2.2.5':
+    resolution: {integrity: sha512-trnsAYxU3xnS1gPHPyU961coFyLkh4gAD/0zQ5mymY4yOZ+CYvsPqUbOFSw0aDM4y0tV7tiFxL/1XfXPNC6IPg==}
+    engines: {node: '>=6'}
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
