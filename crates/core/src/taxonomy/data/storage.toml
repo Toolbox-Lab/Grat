@@ -141,13 +141,8 @@ difficulty = "hard"
 requires_upgrade = false
 
 [[errors.suggested_fixes]]
-description = "Inspect diagnostic events for the ledger key or storage operation that failed"
-difficulty = "medium"
-requires_upgrade = false
-
-[[errors.suggested_fixes]]
-description = "Retry on a fresh ledger state or report the transaction if the failure is reproducible"
-difficulty = "medium"
+description = "Retry the operation against a fresh ledger snapshot to rule out transient state corruption"
+difficulty = "easy"
 requires_upgrade = false
 
 [[errors]]
@@ -181,5 +176,3 @@ requires_upgrade = true
 
 related_errors = ["host.storage.entry_not_found"]
 source_file = "soroban-env-host/src/storage.rs"
-
-
