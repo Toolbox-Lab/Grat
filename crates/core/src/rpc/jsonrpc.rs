@@ -132,6 +132,7 @@ impl JsonRpcTransport {
                 tracing::debug!(attempt, method, "retrying RPC request");
             }
 
+            // Start the Prometheus latency timer before the network request.
             let started_at = Instant::now();
             tracing::debug!(method, endpoint = %self.endpoint, attempt, "sending RPC request");
 
@@ -139,7 +140,9 @@ impl JsonRpcTransport {
                 Ok(response) => {
                     let status = response.status();
                     let elapsed_ms = started_at.elapsed().as_millis();
+                    // Exact latency delta recorded into the HistogramVec.
                     let duration_secs = started_at.elapsed().as_secs_f64();
+                    crate::rpc::record_rpc_duration(&self.endpoint, method, duration_secs);
 
                     tracing::debug!(
                         method,
@@ -151,7 +154,7 @@ impl JsonRpcTransport {
                     );
 
                     if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-                        crate::rpc::record_rpc_duration(method, duration_secs, false);
+                        crate::rpc::record_rpc_http_error(&self.endpoint, method, 429);
                         tracing::warn!(method, attempt, "rate limited by RPC endpoint, will retry");
                         last_error = Some(GratError::RpcError(format!(
                             "rate limited (attempt {attempt})"
@@ -160,7 +163,7 @@ impl JsonRpcTransport {
                     }
 
                     if status.is_server_error() {
-                        crate::rpc::record_rpc_duration(method, duration_secs, false);
+                        crate::rpc::record_rpc_http_error(&self.endpoint, method, status.as_u16());
                         tracing::warn!(
                             method,
                             attempt,
@@ -174,21 +177,17 @@ impl JsonRpcTransport {
                         continue;
                     }
 
-                    let body = response.text().await.map_err(|e| {
-                        crate::rpc::record_rpc_duration(method, duration_secs, false);
-                        GratError::RpcError(format!("response read error: {e}"))
-                    })?;
+                    let body = response
+                        .text()
+                        .await
+                        .map_err(|e| GratError::RpcError(format!("response read error: {e}")))?;
 
                     tracing::trace!(method, elapsed_ms, response = %body, "RPC response payload");
 
-                    let envelope: JsonRpcResponse<R> =
-                        serde_json::from_str(&body).map_err(|e| {
-                            crate::rpc::record_rpc_duration(method, duration_secs, false);
-                            GratError::RpcError(format!("response parse error: {e}"))
-                        })?;
+                    let envelope: JsonRpcResponse<R> = serde_json::from_str(&body)
+                        .map_err(|e| GratError::RpcError(format!("response parse error: {e}")))?;
 
                     if let Some(err) = envelope.error {
-                        crate::rpc::record_rpc_duration(method, duration_secs, false);
                         tracing::debug!(
                             method,
                             endpoint = %self.endpoint,
@@ -199,14 +198,13 @@ impl JsonRpcTransport {
                         return Err(GratError::JsonRpc(err));
                     }
 
-                    crate::rpc::record_rpc_duration(method, duration_secs, true);
                     return envelope
                         .result
                         .ok_or_else(|| GratError::RpcError("empty result".to_string()));
                 }
                 Err(e) => {
                     let duration_secs = started_at.elapsed().as_secs_f64();
-                    crate::rpc::record_rpc_duration(method, duration_secs, false);
+                    crate::rpc::record_rpc_duration(&self.endpoint, method, duration_secs);
                     tracing::debug!(
                         method,
                         endpoint = %self.endpoint,
