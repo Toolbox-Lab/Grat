@@ -20,42 +20,20 @@ async fn resolve_with_network(
 ) -> GratResult<ContractErrorInfo> {
     Address::validate_contract_id(contract_id)?;
 
-    let cache = crate::cache::store::CacheStore::default_location()?;
-    let cache_key = format!("{contract_id}_spec");
+    let resolver = crate::decode::contract_error_resolver::ContractErrorResolver::new(network.clone());
+    let (error_name, doc_comment) = resolver.resolve(contract_id, error_code).await;
 
-    let wasm_bytes = if let Some(cached) =
-        cache.get(crate::cache::store::CacheCategory::WasmBlob, &cache_key)?
-    {
-        cached
+    let error_name_opt = if error_name == error_code.to_string() {
+        None
     } else {
-        let wasm = fetch_contract_wasm(contract_id, network).await?;
-        let _ = cache.put(
-            crate::cache::store::CacheCategory::WasmBlob,
-            &cache_key,
-            &wasm,
-        );
-        wasm
+        Some(error_name)
     };
-
-    let spec = decoder::decode_contract_spec(&wasm_bytes)?;
-
-    let error_entry = decoder::resolve_error_code(&spec, error_code);
 
     Ok(ContractErrorInfo {
         contract_id: contract_id.to_string(),
         error_code,
-        error_name: error_entry.map(|e| e.name.clone()),
-        doc_comment: error_entry.and_then(|e| e.doc.clone()),
+        error_name: error_name_opt,
+        doc_comment,
         learn_more: "https://developers.stellar.org/docs/learn/smart-contracts/errors#contract-specific-errors".to_string(), 
-   })
-}
-
-async fn fetch_contract_wasm(contract_id: &str, network: &NetworkConfig) -> GratResult<Vec<u8>> {
-    let rpc = crate::rpc::SorobanRpcClient::new(network);
-
-    let _result = rpc.get_ledger_entries(&[contract_id.to_string()]).await?;
-
-    Err(GratError::ContractNotFound(format!(
-        "WASM fetch not yet implemented for {contract_id}"
-    )))
+    })
 }
