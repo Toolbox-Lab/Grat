@@ -83,6 +83,9 @@ pub enum GratError {
 
     #[error("Transaction succeeded — no error to decode")]
     TransactionSucceeded,
+
+    #[error("Invalid Contract ID: {0}")]
+    InvalidContractId(String),
 }
 
 pub type GratResult<T> = Result<T, GratError>;

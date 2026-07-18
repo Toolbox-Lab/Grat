@@ -1,7 +1,7 @@
 use crate::decode::decode_context::DecodeContext;
 use crate::error::{GratError, GratResult};
 use crate::spec::decoder;
-use crate::types::address::Address;
+use crate::types::contract_id::ContractId;
 use crate::types::config::NetworkConfig;
 use crate::types::report::ContractErrorInfo;
 
@@ -18,7 +18,7 @@ async fn resolve_with_network(
     error_code: u32,
     network: &NetworkConfig,
 ) -> GratResult<ContractErrorInfo> {
-    Address::validate_contract_id(contract_id)?;
+    ContractId::new(contract_id)?;
 
     let cache = crate::cache::store::CacheStore::default_location()?;
     let cache_key = format!("{contract_id}_spec");
