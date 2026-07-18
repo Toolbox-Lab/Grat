@@ -123,12 +123,26 @@ async function runPrism(args = []) {
   const start   = Date.now();
 
   try {
-    const { stdout } = await execFileAsync(binary, args, {
-      // Capture both streams as strings so we can inspect them on error.
+    const { stdout, stderr } = await execFileAsync(binary, args, {
+      // Capture both streams as UTF-8 strings so no output is lost.
       encoding: 'utf8',
       // Give long-running operations up to 5 minutes before we time out.
       timeout: 5 * 60 * 1000,
+      // Soroban envelope decodes can emit multi-megabyte JSON payloads, while
+      // Node.js caps a child's stdout at only 200 KB by default. Overflowing
+      // that cap kills the process with ERR_CHILD_PROCESS_STDIO_MAXBUFFER and
+      // discards the data. Raise the ceiling to 10 MB so large decodes stream
+      // through intact.
+      maxBuffer: 10 * 1024 * 1024,
     });
+
+    // Rust can write diagnostic or warning logs to stderr even on a
+    // successful (exit code 0) run. Surface them instead of dropping them so
+    // no crucial output is lost during the execution lifecycle.
+    const diagnostics = (stderr || '').trim();
+    if (diagnostics) {
+      console.warn(diagnostics);
+    }
 
     return stdout.trim();
   } catch (err) {

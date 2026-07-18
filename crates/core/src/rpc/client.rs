@@ -246,6 +246,7 @@ impl SorobanRpcClient {
                 tracing::debug!(attempt, method, "Retrying RPC request");
             }
 
+            // Start the Prometheus latency timer before the network request.
             let started = Instant::now();
             tracing::debug!(method, endpoint = %self.rpc_url, attempt, "Sending RPC request");
 
@@ -253,7 +254,9 @@ impl SorobanRpcClient {
                 Ok(response) => {
                     let status = response.status();
                     let elapsed_ms = started.elapsed().as_millis();
+                    // Exact latency delta recorded into the HistogramVec.
                     let duration_secs = started.elapsed().as_secs_f64();
+                    crate::rpc::record_rpc_duration(&self.rpc_url, method, duration_secs);
                     tracing::info!(
                         method,
                         endpoint = %self.rpc_url,
@@ -264,7 +267,7 @@ impl SorobanRpcClient {
 
                     // Retry on 429 Too Many Requests.
                     if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-                        crate::rpc::record_rpc_duration(method, duration_secs, false);
+                        crate::rpc::record_rpc_http_error(&self.rpc_url, method, 429);
                         tracing::warn!(
                             method,
                             attempt,
@@ -278,7 +281,7 @@ impl SorobanRpcClient {
 
                     // Retry on any 5xx Server Error — these are transient node failures.
                     if status.is_server_error() {
-                        crate::rpc::record_rpc_duration(method, duration_secs, false);
+                        crate::rpc::record_rpc_http_error(&self.rpc_url, method, status.as_u16());
                         tracing::warn!(
                             method,
                             attempt,
@@ -293,7 +296,6 @@ impl SorobanRpcClient {
                     }
 
                     let body = response.text().await.map_err(|e| {
-                        crate::rpc::record_rpc_duration(method, duration_secs, false);
                         GratError::RpcError(format!("Failed to read response body: {e}"))
                     })?;
 
@@ -307,20 +309,23 @@ impl SorobanRpcClient {
                     );
 
                     if !status.is_success() {
-                        crate::rpc::record_rpc_duration(method, duration_secs, false);
+                        // Track non-retryable client/server HTTP failures as well.
+                        if status.as_u16() == 500 || status.as_u16() == 429 {
+                            crate::rpc::record_rpc_http_error(
+                                &self.rpc_url,
+                                method,
+                                status.as_u16(),
+                            );
+                        }
                         return Err(GratError::RpcError(format!(
                             "RPC request failed with HTTP {status}: {body}"
                         )));
                     }
 
-                    let rpc_response: JsonRpcResponse<T> =
-                        serde_json::from_str(&body).map_err(|e| {
-                            crate::rpc::record_rpc_duration(method, duration_secs, false);
-                            GratError::RpcError(format!("Response parse error: {e}"))
-                        })?;
+                    let rpc_response: JsonRpcResponse<T> = serde_json::from_str(&body)
+                        .map_err(|e| GratError::RpcError(format!("Response parse error: {e}")))?;
 
                     if let Some(err) = rpc_response.error {
-                        crate::rpc::record_rpc_duration(method, duration_secs, false);
                         tracing::debug!(
                             method,
                             endpoint = %self.rpc_url,
@@ -332,7 +337,6 @@ impl SorobanRpcClient {
                         return Err(GratError::JsonRpc(err));
                     }
 
-                    crate::rpc::record_rpc_duration(method, duration_secs, true);
                     return rpc_response
                         .result
                         .ok_or_else(|| GratError::RpcError("Empty result in RPC response".into()));
@@ -340,7 +344,7 @@ impl SorobanRpcClient {
                 Err(e) => {
                     let elapsed_ms = started.elapsed().as_millis();
                     let duration_secs = started.elapsed().as_secs_f64();
-                    crate::rpc::record_rpc_duration(method, duration_secs, false);
+                    crate::rpc::record_rpc_duration(&self.rpc_url, method, duration_secs);
                     tracing::info!(
                         method,
                         endpoint = %self.rpc_url,
@@ -869,6 +873,54 @@ mod tests {
             err_msg.to_lowercase().contains("timeout")
                 || err_msg.to_lowercase().contains("error sending request"),
             "Actual error: {err_msg}"
+        );
+    }
+
+    #[tokio::test]
+    async fn records_latency_histogram_on_success() {
+        let responses = vec![http_response(200, "OK", ok_body())];
+        let addr = spawn_mock_server(responses).await;
+        let client = make_client(addr);
+
+        let result = client.get_latest_ledger().await;
+        assert!(result.is_ok(), "expected success: {result:?}");
+
+        let exposition = crate::rpc::gather_rpc_metrics();
+        assert!(
+            exposition.contains("rpc_request_duration_seconds"),
+            "histogram missing from exposition:\n{exposition}"
+        );
+        assert!(
+            exposition.contains("getLatestLedger"),
+            "method label missing from exposition:\n{exposition}"
+        );
+    }
+
+    #[tokio::test]
+    async fn records_http_error_counter_on_500_and_429() {
+        // Exhaust retries so every attempt is an error that gets counted.
+        let responses = vec![
+            http_response(500, "Internal Server Error", ""),
+            http_response(429, "Too Many Requests", ""),
+            http_response(500, "Internal Server Error", ""),
+            http_response(429, "Too Many Requests", ""),
+        ];
+        let addr = spawn_mock_server(responses).await;
+        let _ = make_client(addr).get_latest_ledger().await;
+
+        let exposition = crate::rpc::gather_rpc_metrics();
+        assert!(
+            exposition.contains("rpc_http_errors_total"),
+            "error counter missing from exposition:\n{exposition}"
+        );
+        // At least one of the tracked statuses should appear.
+        assert!(
+            exposition.contains("500") || exposition.contains("429"),
+            "expected 500/429 status labels:\n{exposition}"
+        );
+        assert!(
+            exposition.contains("rpc_request_duration_seconds"),
+            "duration should still be recorded on error paths:\n{exposition}"
         );
     }
 
