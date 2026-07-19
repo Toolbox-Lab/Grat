@@ -79,7 +79,9 @@ fn parse_bid_fee(envelope_xdr_b64: &str) -> Option<i64> {
     })
 }
 
-fn parse_resource_fee_object(resource_fee_obj: &serde_json::Map<String, serde_json::Value>) -> (i64, i64, i64, bool) {
+fn parse_resource_fee_object(
+    resource_fee_obj: &serde_json::Map<String, serde_json::Value>,
+) -> (i64, i64, i64, bool) {
     (
         resource_fee_obj
             .get("totalNonRefundableResourceFeeCharged")
