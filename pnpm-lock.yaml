@@ -119,6 +119,12 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  examples/core-integration/fetch-taxonomy:
+    dependencies:
+      '@iarna/toml':
+        specifier: ^2.2.5
+        version: 2.2.5
+
   extensions/vscode:
     devDependencies:
       '@eslint/js':
