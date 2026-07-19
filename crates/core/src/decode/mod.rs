@@ -6,6 +6,7 @@ pub mod contract_error;
 pub mod cross_contract;
 pub mod decode_context;
 pub mod diagnostic;
+pub mod event_walker;
 pub mod host_error;
 pub mod mappings;
 pub mod report;
