@@ -95,5 +95,8 @@ crossterm = "0.28"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
+# Metrics / Observability
+prometheus = "0.13"
+
 # Shared internal crates
 grat-core = { path = "crates/core" }

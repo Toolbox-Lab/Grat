@@ -45,6 +45,9 @@ flate2 = { workspace = true }
 # Logging
 tracing = { workspace = true }
 
+# Metrics / Observability
+prometheus = { workspace = true }
+
 # Error handling
 anyhow = { workspace = true }
 thiserror = { workspace = true }
