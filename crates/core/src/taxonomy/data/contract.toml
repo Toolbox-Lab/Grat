@@ -71,6 +71,11 @@ description = "Check the diagnostic logs to see if there are internal contract a
 difficulty = "medium"
 requires_upgrade = false
 
+[[errors.suggested_fixes]]
+description = "Compare host and SDK versions between simulation and submission to rule out a protocol mismatch"
+difficulty = "medium"
+requires_upgrade = false
+
 related_errors = []
 source_file = "soroban-env-host/src/host.rs"
 
@@ -94,6 +99,11 @@ likelihood = "high"
 
 [[errors.suggested_fixes]]
 description = "Check the asset flags and ensure the operation is allowed for the target asset"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Re-check the asset's issuer-set flags (e.g. AUTH_REQUIRED, CLAWBACK_ENABLED) before invoking the operation"
 difficulty = "easy"
 requires_upgrade = false
 
@@ -122,6 +132,11 @@ description = "Ensure that initialization is only called once per contract deplo
 difficulty = "easy"
 requires_upgrade = false
 
+[[errors.suggested_fixes]]
+description = "Guard the initialize function with a storage check (e.g. instance storage has_key) that early-returns if already set"
+difficulty = "easy"
+requires_upgrade = false
+
 related_errors = []
 source_file = "soroban-env-host/src/host.rs"
 
@@ -144,6 +159,11 @@ likelihood = "high"
 
 [[errors.suggested_fixes]]
 description = "Verify that the addresses provided exist and are active on the target network"
+difficulty = "easy"
+requires_upgrade = false
+
+[[errors.suggested_fixes]]
+description = "Fund and create the account on the target network before invoking the contract that references it"
 difficulty = "easy"
 requires_upgrade = false
 

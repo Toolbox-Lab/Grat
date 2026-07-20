@@ -1,90 +1,26 @@
 "use client";
 
 import { useState } from "react";
+import contractTaxonomy from "../../lib/contract-taxonomy.json";
 
-interface ContractErrorDetail {
+interface TaxonomyEntry {
   code: number;
   name: string;
   summary: string;
-  description: string;
-  causes: string[];
-  fixes: string[];
+  detailed_explanation: string;
+  common_causes: Array<{ description: string }>;
+  suggested_fixes: Array<{ description: string }>;
 }
-
-const standardContractErrors: Record<number, ContractErrorDetail> = {
-  0: {
-    code: 0,
-    name: "ContractError",
-    summary: "The contract's own logic rejected this call.",
-    description: "Unlike host errors, contract errors are defined by the contract author. When a contract panics or returns an error value, the host wraps it as a ContractError with code 0 or the custom code.",
-    causes: [
-      "Business logic assertion failure in the contract (e.g., insufficient balance, invalid state)",
-      "Input validation failure — the contract rejected the provided arguments",
-      "Access control check failed — the caller is not authorized for this operation"
-    ],
-    fixes: [
-      "Use grat's contract error resolver to map the numeric code to the contract's error enum name",
-      "Review the contract source code for the error enum definition to understand the specific failure"
-    ]
-  },
-  1: {
-    code: 1,
-    name: "InternalError",
-    summary: "An internal protocol implementation error occurred (e.g. invalid ledger state).",
-    description: "The contract encountered an internal error during execution, indicating a protocol implementation issue or invalid ledger state.",
-    causes: [
-      "Internal validation or state consistency checks failed in the contract"
-    ],
-    fixes: [
-      "Check the diagnostic logs to see if there are internal contract assertion failures"
-    ]
-  },
-  2: {
-    code: 2,
-    name: "OperationNotSupportedError",
-    summary: "The operation is not supported (e.g. calling clawback on an asset without clawback enabled).",
-    description: "The contract attempted an operation that is unsupported by the contract configuration or type (e.g., performing a clawback on an asset when clawback is disabled).",
-    causes: [
-      "Invoking clawback on a non-clawbackable asset"
-    ],
-    fixes: [
-      "Check the asset flags and ensure the operation is allowed for the target asset"
-    ]
-  },
-  3: {
-    code: 3,
-    name: "AlreadyInitializedError",
-    summary: "The contract instance has already been initialized and cannot be re-initialized.",
-    description: "The contract instance was initialized twice. Soroban contracts typically only allow initialization once.",
-    causes: [
-      "Calling the initialize function on an already initialized contract instance"
-    ],
-    fixes: [
-      "Ensure that initialization is only called once per contract deployment"
-    ]
-  },
-  6: {
-    code: 6,
-    name: "AccountMissingError",
-    summary: "An account involved in the transaction does not exist on the network.",
-    description: "The operation required a specific account to exist on the network, but the account could not be found.",
-    causes: [
-      "Providing an invalid account address or an account that has not been created/funded"
-    ],
-    fixes: [
-      "Verify that the addresses provided exist and are active on the target network"
-    ]
-  }
-};
 
 export default function ContractErrorView() {
   const [selectedCode, setSelectedCode] = useState<number>(0);
   const [customCode, setCustomCode] = useState<string>("");
   const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
 
+  const standardContractErrors = contractTaxonomy as Record<string, TaxonomyEntry>;
   const activeError = isCustomMode
-    ? standardContractErrors[parseInt(customCode)]
-    : standardContractErrors[selectedCode];
+    ? standardContractErrors[customCode]
+    : standardContractErrors[String(selectedCode)];
 
   const handleCustomCodeChange = (val: string) => {
     setCustomCode(val);
@@ -173,7 +109,7 @@ export default function ContractErrorView() {
               Detailed Explanation
             </h4>
             <p className="text-slate-400 text-sm leading-relaxed">
-              {activeError.description}
+              {activeError.detailed_explanation}
             </p>
           </div>
 
@@ -183,10 +119,10 @@ export default function ContractErrorView() {
                 Common Causes
               </h4>
               <ul className="space-y-2">
-                {activeError.causes.map((cause, i) => (
+                {activeError.common_causes.map((cause, i) => (
                   <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
                     <span className="text-red-400 mt-1">•</span>
-                    <span>{cause}</span>
+                    <span>{cause.description}</span>
                   </li>
                 ))}
               </ul>
@@ -197,10 +133,10 @@ export default function ContractErrorView() {
                 Suggested Fixes
               </h4>
               <ul className="space-y-2">
-                {activeError.fixes.map((fix, i) => (
+                {activeError.suggested_fixes.map((fix, i) => (
                   <li key={i} className="text-sm text-slate-300 flex items-start gap-2">
                     <span className="text-emerald-400 mt-1">✓</span>
-                    <span>{fix}</span>
+                    <span>{fix.description}</span>
                   </li>
                 ))}
               </ul>
@@ -240,7 +176,7 @@ export default function ContractErrorView() {
               Detailed Explanation
             </h4>
             <p className="text-slate-400 text-sm leading-relaxed">
-              This is a custom contract-defined error code. Custom error codes are defined by the contract author inside their `#[contracterror]` enum. To map this code to its name, you need the contract&apos;s WASM specification or source code.
+              This is a custom contract-defined error code. Custom error codes are defined by the contract author inside their {"`#[contracterror]`"} enum. To map this code to its name, you need the contract{"'s"} WASM specification or source code.
             </p>
           </div>
 
@@ -252,7 +188,7 @@ export default function ContractErrorView() {
               <ul className="space-y-2">
                 <li className="text-sm text-slate-300 flex items-start gap-2">
                   <span className="text-red-400 mt-1">•</span>
-                  <span>A business logic requirement or assertion in the contract was not met.</span>
+                  <span>A business logic requirement or assertion in the contract{"'s"} code was not met.</span>
                 </li>
               </ul>
             </div>
@@ -264,7 +200,7 @@ export default function ContractErrorView() {
               <ul className="space-y-2">
                 <li className="text-sm text-slate-300 flex items-start gap-2">
                   <span className="text-emerald-400 mt-1">✓</span>
-                  <span>Locate the source code of the contract and find its `#[contracterror]` enum.</span>
+                  <span>Locate the source code of the contract and find its {"`#[contracterror]`"} enum.</span>
                 </li>
                 <li className="text-sm text-slate-300 flex items-start gap-2">
                   <span className="text-emerald-400 mt-1">✓</span>

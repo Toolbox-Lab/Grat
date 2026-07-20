@@ -6,9 +6,11 @@ pub mod contract_error;
 pub mod cross_contract;
 pub mod decode_context;
 pub mod diagnostic;
+pub mod event_walker;
 pub mod host_error;
 pub mod mappings;
 pub mod report;
+pub mod scval_to_json;
 pub mod walker;
 pub mod function_call_decoder;
 
@@ -17,6 +19,7 @@ pub use auth::{
     AuthorizationType,
 };
 pub use auth_address_nonce::AddressWithNonce;
+pub use scval_to_json::scval_to_json;
 pub use walker::{
     walk_diagnostic_events, DiagnosticEventKind, DiagnosticEventWalker, StructuredDiagnosticEvent,
 };

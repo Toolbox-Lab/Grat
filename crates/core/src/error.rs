@@ -80,18 +80,22 @@ pub enum GratError {
                                                                                                                                                 #[error("Not a Soroban transaction: no InvokeHostFunction operation found")]
                                                                                                                                                     NotSorobanTransaction,
 
-                                                                                                                                                        #[error("Transaction succeeded — no error to decode")]
-                                                                                                                                                            TransactionSucceeded,
+  #[error("Transaction succeeded — no error to decode")]
+    TransactionSucceeded,
 
-                                                                                                                                                                #[error("Function '{function_name}' expects {expected} argument(s), but {actual} were provided")]
-                                                                                                                                                                    ArityMismatch {
-                                                                                                                                                                            function_name: String,
-                                                                                                                                                                                    expected: usize,
-                                                                                                                                                                                            actual: usize,
-                                                                                                                                                                                                },
+    #[error("Invalid Contract ID: {0}")]
+    InvalidContractId(String),
 
-                                                                                                                                                                                                    #[error("Unsupported host function: {0}")]
-                                                                                                                                                                                                        UnsupportedHostFunction(String),
-                                                                                                                                                                                                        }
+    #[error("Function '{function_name}' expects {expected} argument(s), but {actual} were provided")]
+    ArityMismatch {
+        function_name: String,
+        expected: usize,
+        actual: usize,
+    },
+
+    #[error("Unsupported host function: {0}")]
+    UnsupportedHostFunction(String),
+}
+
 
                                                                                                                                                                                                         pub type GratResult<T> = Result<T, GratError>;
