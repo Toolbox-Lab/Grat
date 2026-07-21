@@ -1,3 +1,4 @@
+use crate::decode::chain_analyzer::CallChain;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -134,6 +135,12 @@ pub struct DiagnosticReport {
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub failing_contract_id: Option<String>,
 
+    /// Full reconstructed call chain at the point of failure, including
+    /// root-cause and fault-line identification. `None` when no diagnostic
+    /// events were present or no failure was detected in the chain.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub call_chain: Option<CallChain>,
+
     pub learn_more: String,
 }
 
@@ -155,6 +162,7 @@ impl DiagnosticReport {
             auth_signatures: Vec::new(),
             auth_entries: Vec::new(),
             failing_contract_id: None,
+            call_chain: None,
             learn_more: "https://developers.stellar.org/docs/learn/smart-contracts/errors"
                 .to_string(),
         }

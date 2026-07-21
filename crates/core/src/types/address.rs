@@ -48,9 +48,7 @@ impl Address {
             .map_err(|e| GratError::InvalidAddress(format!("Failed to parse strkey: {e}")))?;
 
         match strkey {
-            Strkey::PublicKeyEd25519(pk) => {
-                Self::new(pk.0.to_vec(), AddressType::Account)
-            }
+            Strkey::PublicKeyEd25519(pk) => Self::new(pk.0.to_vec(), AddressType::Account),
             Strkey::Contract(c) => Self::new(c.0.to_vec(), AddressType::Contract),
             _ => Err(GratError::InvalidAddress(format!(
                 "Unsupported address type: {s}"
@@ -107,14 +105,17 @@ impl Address {
 
 impl fmt::Display for Address {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let rendered = self.to_strkey().unwrap_or_else(|e| format!("<invalid address: {e}>"));
+        let rendered = self
+            .to_strkey()
+            .unwrap_or_else(|e| format!("<invalid address: {e}>"));
         write!(f, "{rendered}")
     }
 }
 
 impl From<Address> for String {
     fn from(addr: Address) -> String {
-        addr.to_strkey().unwrap_or_else(|e| format!("<invalid address: {e}>"))
+        addr.to_strkey()
+            .unwrap_or_else(|e| format!("<invalid address: {e}>"))
     }
 }
 

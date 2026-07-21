@@ -1,13 +1,13 @@
+use crate::cache::store::{CacheCategory, CacheStore};
 use crate::error::{GratError, GratResult};
-use crate::types::config::NetworkConfig;
-use crate::types::address::Address;
-use crate::spec::decoder::{decode_contract_spec, resolve_error_code};
-use crate::cache::store::{CacheStore, CacheCategory};
 use crate::rpc::SorobanRpcClient;
+use crate::spec::decoder::{decode_contract_spec, resolve_error_code};
+use crate::types::address::Address;
+use crate::types::config::NetworkConfig;
 use crate::xdr::codec::XdrCodec;
 use stellar_xdr::curr::{
-    LedgerEntry, LedgerEntryData, LedgerKey, LedgerKeyContractData, LedgerKeyContractCode,
-    ContractDataDurability, Hash, ScAddress, ScVal, ContractExecutable
+    ContractDataDurability, ContractExecutable, Hash, LedgerEntry, LedgerEntryData, LedgerKey,
+    LedgerKeyContractCode, LedgerKeyContractData, ScAddress, ScVal,
 };
 
 pub struct ContractErrorResolver {
@@ -36,14 +36,18 @@ impl ContractErrorResolver {
         }
     }
 
-    async fn resolve_inner(&self, contract_id: &str, error_code: u32) -> GratResult<(String, Option<String>)> {
+    async fn resolve_inner(
+        &self,
+        contract_id: &str,
+        error_code: u32,
+    ) -> GratResult<(String, Option<String>)> {
         // Validate Contract ID
         Address::validate_contract_id(contract_id)?;
 
         // Try local cache first
         let cache = CacheStore::default_location()?;
         let cache_key = format!("{contract_id}_spec");
-        
+
         let wasm_bytes = if let Some(cached) = cache.get(CacheCategory::WasmBlob, &cache_key)? {
             cached
         } else {
@@ -71,7 +75,7 @@ impl ContractErrorResolver {
     async fn fetch_wasm_from_network(&self, contract_id: &str) -> GratResult<Vec<u8>> {
         let rpc_client = SorobanRpcClient::new(&self.network);
         let address = Address::from_contract_id(contract_id)?;
-        
+
         let mut contract_bytes = [0u8; 32];
         contract_bytes.copy_from_slice(&address.bytes);
 
@@ -109,24 +113,30 @@ impl ContractErrorResolver {
         let ledger_entry = LedgerEntry::from_xdr_base64(xdr_base64)?;
 
         let wasm_hash = match ledger_entry.data {
-            LedgerEntryData::ContractData(contract_data) => {
-                match contract_data.val {
-                    ScVal::ContractInstance(instance) => {
-                        match instance.executable {
-                            ContractExecutable::Wasm(wasm_hash) => wasm_hash,
-                            _ => return Err(GratError::SpecError("Contract is not a WASM executable".to_string())),
-                        }
+            LedgerEntryData::ContractData(contract_data) => match contract_data.val {
+                ScVal::ContractInstance(instance) => match instance.executable {
+                    ContractExecutable::Wasm(wasm_hash) => wasm_hash,
+                    _ => {
+                        return Err(GratError::SpecError(
+                            "Contract is not a WASM executable".to_string(),
+                        ))
                     }
-                    _ => return Err(GratError::SpecError("Ledger entry value is not a ContractInstance".to_string())),
+                },
+                _ => {
+                    return Err(GratError::SpecError(
+                        "Ledger entry value is not a ContractInstance".to_string(),
+                    ))
                 }
+            },
+            _ => {
+                return Err(GratError::SpecError(
+                    "Ledger entry is not ContractData".to_string(),
+                ))
             }
-            _ => return Err(GratError::SpecError("Ledger entry is not ContractData".to_string())),
         };
 
         // Step 2: Fetch the ContractCode LedgerEntry using wasm_hash
-        let code_key = LedgerKey::ContractCode(LedgerKeyContractCode {
-            hash: wasm_hash,
-        });
+        let code_key = LedgerKey::ContractCode(LedgerKeyContractCode { hash: wasm_hash });
 
         let base64_code_key = code_key.to_xdr_base64()?;
         let code_response = rpc_client.get_ledger_entries(&[base64_code_key]).await?;
@@ -135,7 +145,9 @@ impl ContractErrorResolver {
             .get("entries")
             .and_then(serde_json::Value::as_array)
             .ok_or_else(|| {
-                GratError::ContractNotFound(format!("Invalid response for contract code {contract_id}"))
+                GratError::ContractNotFound(format!(
+                    "Invalid response for contract code {contract_id}"
+                ))
             })?;
 
         if code_entries.is_empty() {
@@ -147,7 +159,9 @@ impl ContractErrorResolver {
             .get("xdr")
             .and_then(serde_json::Value::as_str)
             .ok_or_else(|| {
-                GratError::SpecError(format!("Missing XDR in response for contract code {contract_id}"))
+                GratError::SpecError(format!(
+                    "Missing XDR in response for contract code {contract_id}"
+                ))
             })?;
 
         let code_ledger_entry = LedgerEntry::from_xdr_base64(code_xdr_base64)?;
@@ -164,23 +178,27 @@ impl ContractErrorResolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use stellar_xdr::curr::{ScSpecEntry, ScSpecUdtErrorEnumV0, ScSpecUdtErrorEnumCaseV0, WriteXdr};
+    use stellar_xdr::curr::{
+        Limits, ScSpecEntry, ScSpecUdtErrorEnumCaseV0, ScSpecUdtErrorEnumV0, WriteXdr,
+    };
 
     #[tokio::test]
     async fn test_resolve_from_cache_success() {
         // Construct a mock error enum spec entry
         let error_enum = ScSpecUdtErrorEnumV0 {
             doc: "Error documentation".try_into().unwrap(),
+            lib: "".try_into().unwrap(),
             name: "MyError".try_into().unwrap(),
             cases: vec![ScSpecUdtErrorEnumCaseV0 {
                 doc: "Some doc".try_into().unwrap(),
                 name: "Failed".try_into().unwrap(),
                 value: 1042,
-            }].try_into().unwrap(),
+            }]
+            .try_into()
+            .unwrap(),
         };
         let entry = ScSpecEntry::UdtErrorEnumV0(error_enum);
-        let mut entry_bytes = Vec::new();
-        entry.write_xdr(&mut entry_bytes).unwrap();
+        let entry_bytes = entry.to_xdr(Limits::none()).unwrap();
 
         // Construct mock WASM payload
         let mut wasm = vec![0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00];
@@ -196,10 +214,13 @@ mod tests {
         wasm.push(custom_payload.len() as u8);
         wasm.extend(custom_payload);
 
-        let contract_id = "CA3D5KTHBN6TOVTTTA74S4O4O4O4O4O4O4O4O4O4O4O4O4O4O4O4O4O4";
+        let contract_id_str = stellar_strkey::Contract([7u8; 32]).to_string();
+        let contract_id = &contract_id_str;
         let cache = CacheStore::default_location().unwrap();
         let cache_key = format!("{contract_id}_spec");
-        cache.put(CacheCategory::WasmBlob, &cache_key, &wasm).unwrap();
+        cache
+            .put(CacheCategory::WasmBlob, &cache_key, &wasm)
+            .unwrap();
 
         let resolver = ContractErrorResolver::new(NetworkConfig::testnet());
         let (name, doc) = resolver.resolve(contract_id, 1042).await;
