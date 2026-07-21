@@ -20,7 +20,8 @@ async fn resolve_with_network(
 ) -> GratResult<ContractErrorInfo> {
     ContractId::new(contract_id)?;
 
-    let resolver = crate::decode::contract_error_resolver::ContractErrorResolver::new(network.clone());
+    let resolver =
+        crate::decode::contract_error_resolver::ContractErrorResolver::new(network.clone());
     let (error_name, doc_comment) = resolver.resolve(contract_id, error_code).await;
 
     let error_name_opt = if error_name == error_code.to_string() {

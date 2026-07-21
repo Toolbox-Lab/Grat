@@ -199,11 +199,7 @@ impl ChainAnalyzer {
         for event in events {
             let ContractEventBody::V0(v0) = &event.event.body;
 
-            let topics: Vec<String> = v0
-                .topics
-                .iter()
-                .filter_map(Self::topic_to_string)
-                .collect();
+            let topics: Vec<String> = v0.topics.iter().filter_map(Self::topic_to_string).collect();
 
             let first_topic = topics.first().map(String::as_str);
 
@@ -257,7 +253,7 @@ impl ChainAnalyzer {
     /// that triggered the failure detection.
     fn build_chain(&self, stack: &[StackFrame], failing_event: &DiagnosticEvent) -> CallChain {
         if stack.is_empty() {
-            // Failure occurred before any fn_call was seen — synthesize a
+            // Failure occurred before any fn_call was seen - synthesize a
             // single-frame chain from the event's own contract_id.
             let address = failing_event
                 .event
@@ -495,10 +491,7 @@ mod tests {
         assert_eq!(chain.root_cause_index, Some(0));
         assert_eq!(chain.frames[0].role, FrameRole::RootCause);
         assert_eq!(chain.frames[0].contract_address, strkey(1));
-        assert_eq!(
-            chain.frames[0].function_name.as_deref(),
-            Some("transfer")
-        );
+        assert_eq!(chain.frames[0].function_name.as_deref(), Some("transfer"));
     }
 
     // -----------------------------------------------------------------------
@@ -651,7 +644,7 @@ mod tests {
     }
 
     // -----------------------------------------------------------------------
-    // Trace rendering — no panic, contains expected markers
+    // Trace rendering - no panic, contains expected markers
     // -----------------------------------------------------------------------
 
     #[test]
@@ -663,9 +656,7 @@ mod tests {
             error_event(h2.clone(), "boom"),
         ];
 
-        let chain = ChainAnalyzer::new()
-            .analyze(&events)
-            .expect("chain");
+        let chain = ChainAnalyzer::new().analyze(&events).expect("chain");
 
         let trace = chain.render_trace();
         assert!(
@@ -685,10 +676,7 @@ mod tests {
     #[test]
     fn analyze_call_chain_free_fn_returns_same_result_as_struct() {
         let h1 = contract_hash(9);
-        let events = vec![
-            fn_call(h1.clone(), "go"),
-            error_event(h1.clone(), "nope"),
-        ];
+        let events = vec![fn_call(h1.clone(), "go"), error_event(h1.clone(), "nope")];
 
         let via_fn = analyze_call_chain(&events);
         let via_struct = ChainAnalyzer::new().analyze(&events);
@@ -707,10 +695,7 @@ mod tests {
     #[test]
     fn default_impl_behaves_like_new() {
         let h1 = contract_hash(11);
-        let events = vec![
-            fn_call(h1.clone(), "init"),
-            error_event(h1.clone(), "err"),
-        ];
+        let events = vec![fn_call(h1.clone(), "init"), error_event(h1.clone(), "err")];
         let a = ChainAnalyzer::new().analyze(&events);
         let b = ChainAnalyzer::default().analyze(&events);
         assert_eq!(a.is_some(), b.is_some());
