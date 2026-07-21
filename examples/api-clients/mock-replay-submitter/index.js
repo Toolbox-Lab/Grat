@@ -1,118 +1,149 @@
 #!/usr/bin/env node
 
-/**
- * Task 19: Polling Loop State Machine
- */
-// Implemented robust polling loop state machine (Task 19)
+const API_URL = process.env.API_URL || 'http://localhost:3001';
+const REPLAY_ENDPOINT = `${API_URL}/api/replay`;
 
 /**
- * Mock Replay Submitter
- * 
- * Interacts with the grat-server API to submit a transaction hash for simulation/replay
- * and polls the API for the job's completion status.
+ * Submits a transaction hash to the grat-server replay API and returns the
+ * job token used to track simulation progress.
+ *
+ * Resilient against:
+ * - Fastify 415 Unsupported Media Type (explicit Content-Type/Accept headers)
+ * - Network-level failures — DNS errors, connection refused, server downtime
+ *   (fetch rejections are caught here instead of propagating as unhandled
+ *   Promise rejections that would crash the process)
+ * - Non-2xx responses (4xx/5xx), surfaced as descriptive errors
+ * - Malformed or unexpected JSON response bodies
  */
+async function submitReplayJob(txHash) {
+  let response;
+  try {
+    response = await fetch(REPLAY_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      },
+      body: JSON.stringify({ tx_hash: txHash }),
+    });
+  } catch (err) {
+    throw new Error(
+      `Could not reach grat-server at ${REPLAY_ENDPOINT}: ${err.message}. ` +
+        'Is the server running? (pnpm --filter grat-server dev)'
+    );
+  }
 
-const txHash = process.argv[2];
-if (!txHash) {
-  console.error("Error: Please provide a transaction hash.");
-  console.error("Usage: npm start <transaction_hash>");
-  process.exit(1);
+  let payload;
+  try {
+    payload = await response.json();
+  } catch (err) {
+    throw new Error(
+      `Server returned a non-JSON response (HTTP ${response.status} ${response.statusText}): ${err.message}`
+    );
+  }
+
+  if (!response.ok) {
+    const detail = payload && (payload.error || payload.message);
+    throw new Error(
+      `Replay submission failed with HTTP ${response.status} ${response.statusText}` +
+        (detail ? `: ${detail}` : '')
+    );
+  }
+
+  if (!payload || !payload.jobId) {
+    throw new Error(
+      `Replay submission succeeded (HTTP ${response.status}) but the response did not include a "jobId": ${JSON.stringify(
+        payload
+      )}`
+    );
+  }
+
+  return payload.jobId;
 }
 
-const API_BASE = process.env.API_URL || "http://localhost:3001";
-const TIMEOUT_MS = Number(process.env.TIMEOUT_MS) || 60000; // absolute timeout (default 60s)
-const MAX_ITERATIONS = Number(process.env.MAX_ITERATIONS) || 50; // max iterations (default 50)
+/**
+ * Polls the server using exponential backoff to check the status of a replay job.
+ * 
+ * @param {string} jobId The ID of the job to poll.
+ * @param {number} currentDelay The delay before the next poll request in milliseconds.
+ * @returns {Promise<object>} The final job status payload.
+ */
+function pollJobStatus(jobId, currentDelay = 500) {
+  return new Promise((resolve, reject) => {
+    const executePoll = async () => {
+      try {
+        const response = await fetch(`${REPLAY_ENDPOINT}/${jobId}`, {
+          headers: { Accept: 'application/json' },
+        });
 
-async function run() {
-  console.log(`Submitting transaction hash for replay: ${txHash}`);
+        if (!response.ok) {
+          console.warn(`[Poll Warning] Replay status fetch failed with HTTP ${response.status}`);
+          scheduleNext();
+          return;
+        }
+
+        let payload;
+        try {
+          payload = await response.json();
+        } catch (err) {
+          console.warn(`[Poll Warning] Non-JSON response: ${err.message}`);
+          scheduleNext();
+          return;
+        }
+
+        const status = payload.status;
+        const pendingStatuses = ['queued', 'pending', 'running', 'waiting', 'active'];
+
+        if (pendingStatuses.includes(status)) {
+          scheduleNext();
+        } else {
+          // Job reached terminal state (e.g. completed, failed, error)
+          resolve(payload);
+        }
+      } catch (err) {
+        // Handle network/request errors gracefully without crashing
+        console.warn(`[Poll Warning] Network/request error during poll: ${err.message}`);
+        scheduleNext();
+      }
+    };
+
+    const scheduleNext = () => {
+      // Double the delay for the next poll, capped at 5000ms
+      const nextDelay = Math.min(currentDelay * 2, 5000);
+      pollJobStatus(jobId, nextDelay).then(resolve).catch(reject);
+    };
+
+    // Wait currentDelay before executing the poll
+    setTimeout(executePoll, currentDelay);
+  });
+}
+
+async function main() {
+  const txHash = process.argv[2];
+
+  if (!txHash) {
+    console.error('Usage: node index.js <tx-hash>');
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(`Submitting replay job for ${txHash} to ${REPLAY_ENDPOINT}...`);
 
   try {
-    const submitResponse = await fetch(`${API_BASE}/api/replay`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ txHash, network: "mainnet" }),
-    });
+    const jobId = await submitReplayJob(txHash);
+    console.log(`✓ Replay job accepted. jobId: ${jobId}`);
 
-    if (!submitResponse.ok) {
-      throw new Error(`Failed to submit replay job: HTTP ${submitResponse.status} ${submitResponse.statusText}`);
-    }
-
-    const submitData = await submitResponse.json();
-    console.log("Job submission response:", submitData);
-
-    const jobId = submitData.jobId || submitData.id || txHash;
-    console.log(`Starting polling loop for Job ID: ${jobId}`);
-
-    const startTime = Date.now();
-    let delay = 1000;
-    let iteration = 0;
-
-    while (true) {
-      // Overarching absolute timeout check
-      if (Date.now() - startTime > TIMEOUT_MS) {
-        throw new Error(`Absolute timeout of ${TIMEOUT_MS / 1000} seconds exceeded while polling for job status.`);
-      }
-
-      // Maximum iteration counter check
-      iteration++;
-      if (iteration > MAX_ITERATIONS) {
-        throw new Error(`Maximum iteration limit of ${MAX_ITERATIONS} reached while polling for job status.`);
-      }
-
-      try {
-        const pollResponse = await fetch(`${API_BASE}/api/replay/${jobId}`);
-        if (!pollResponse.ok) {
-          throw new Error(`HTTP error ${pollResponse.status} ${pollResponse.statusText}`);
-        }
-
-        const jobResult = await pollResponse.json();
-        const status = jobResult.status || jobResult.state;
-
-        switch (status) {
-          case "queued":
-          case "running":
-            console.log(`Job is ${status}. Retrying in ${delay}ms...`);
-            await new Promise((resolve) => setTimeout(resolve, delay));
-            // Backoff logic: exponential backoff capped at 5 seconds
-            delay = Math.min(delay * 1.5, 5000);
-            break;
-
-          case "failed": {
-            const errorReason = jobResult.error_reason || "No error reason provided";
-            throw new Error(`Job failed: ${errorReason}`);
-          }
-
-          case "completed": {
-            const results = jobResult.results || jobResult.simulation_results || {};
-            console.log("Job completed successfully!");
-            console.log("Simulation Results:");
-            console.log(JSON.stringify(results, null, 2));
-            process.exit(0);
-          }
-
-          default:
-            // Handle unexpected status values by treating them like queued/running (with backoff)
-            console.log(`Unknown job status received: "${status}". Retrying in ${delay}ms...`);
-            await new Promise((resolve) => setTimeout(resolve, delay));
-            delay = Math.min(delay * 1.5, 5000);
-            break;
-        }
-      } catch (pollError) {
-        // Log the polling error and retry with backoff, unless it's a fatal exception thrown inside the switch-case
-        if (pollError.message.includes("Job failed:")) {
-          throw pollError;
-        }
-        console.warn(`Error during status polling iteration ${iteration}: ${pollError.message}. Retrying in ${delay}ms...`);
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        delay = Math.min(delay * 1.5, 5000);
-      }
-    }
-  } catch (error) {
-    console.error("Fatal Exception:", error.message);
-    process.exit(1);
+    console.log(`Polling for job status...`);
+    const finalResult = await pollJobStatus(jobId);
+    console.log(`✓ Job finished with status: ${finalResult.status}`);
+  } catch (err) {
+    console.error(`✗ ${err.message}`);
+    process.exitCode = 1;
   }
 }
 
-run();
+if (require.main === module) {
+  main();
+}
+
+module.exports = { submitReplayJob, pollJobStatus };

@@ -1,14 +1,18 @@
 pub mod auth;
 pub mod auth_address_nonce;
 pub mod auth_signature;
+pub mod chain_analyzer;
 pub mod context;
 pub mod contract_error;
+pub mod contract_error_resolver;
 pub mod cross_contract;
 pub mod decode_context;
 pub mod diagnostic;
+pub mod event_walker;
 pub mod host_error;
 pub mod mappings;
 pub mod report;
+pub mod scval_to_json;
 pub mod walker;
 
 pub use auth::{
@@ -16,6 +20,8 @@ pub use auth::{
     AuthorizationType,
 };
 pub use auth_address_nonce::AddressWithNonce;
+pub use chain_analyzer::{analyze_call_chain, CallChain, ChainAnalyzer, ChainFrame, FrameRole};
+pub use scval_to_json::scval_to_json;
 pub use walker::{
     walk_diagnostic_events, DiagnosticEventKind, DiagnosticEventWalker, StructuredDiagnosticEvent,
 };
@@ -205,6 +211,23 @@ pub async fn decode_transaction_with_op_filter(
         diagnostic::enrich_report(&mut report, &tx_data)?;
         context::enrich_report(&mut report, &tx_data)?;
         cross_contract::attribute_failure(&mut report, &tx_data)?;
+
+        // Reconstruct the call chain from diagnostic events.
+        if let Some(events_b64) = tx_data
+            .get("diagnosticEventsXdr")
+            .and_then(|v| v.as_array())
+        {
+            let raw_events: Vec<stellar_xdr::curr::DiagnosticEvent> = events_b64
+                .iter()
+                .filter_map(|v| v.as_str())
+                .filter_map(|s| {
+                    use crate::xdr::codec::XdrCodec;
+                    stellar_xdr::curr::DiagnosticEvent::from_xdr_base64(s).ok()
+                })
+                .collect();
+            report.call_chain = chain_analyzer::analyze_call_chain(&raw_events);
+        }
+
         reports.push(report);
     }
 

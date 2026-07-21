@@ -149,10 +149,11 @@ async fn handle_ws_connection(socket: WebSocket, network: Arc<NetworkConfig>) {
             if let Ok(request) = serde_json::from_str::<TraceRequest>(&text) {
                 let (tx, mut rx) = tokio::sync::broadcast::channel::<TraceStreamMessage>(100);
                 let tx_hash = request.tx_hash.clone();
+                let resume_from = request.resume_from;
                 let network = Arc::clone(&network);
 
                 tokio::spawn(async move {
-                    let _ = stream_trace_replay(&tx_hash, &network, tx).await;
+                    let _ = stream_trace_replay(&tx_hash, &network, tx, resume_from).await;
                 });
 
                 while let Ok(update) = rx.recv().await {
@@ -174,12 +175,19 @@ fn get_static_assets_path() -> std::path::PathBuf {
 #[derive(Debug, serde::Deserialize)]
 struct TraceRequest {
     tx_hash: String,
+    /// Synchronization cursor: the index of the last trace node the client has
+    /// already received. When present, the server fast-forwards the replay and
+    /// only streams nodes that occurred after this index (used for resuming a
+    /// trace across a dropped/reconnected WebSocket instead of replaying from 0).
+    #[serde(default)]
+    resume_from: Option<usize>,
 }
 
 async fn stream_trace_replay(
     tx_hash: &str,
     network: &NetworkConfig,
     sender: tokio::sync::broadcast::Sender<TraceStreamMessage>,
+    resume_from: Option<usize>,
 ) -> anyhow::Result<()> {
     use std::time::Instant;
 
@@ -218,6 +226,17 @@ async fn stream_trace_replay(
 
     let mut node_count = 0;
     for (idx, event) in result.events.iter().enumerate() {
+        // Fast-forward: when the client resumes after a disconnect it tells us the
+        // last node index it already received. Skip re-broadcasting those nodes so
+        // the resumed stream contains only unseen trace data (no duplication, no
+        // wasted bandwidth). `node_count` still advances so totals stay accurate.
+        if let Some(cursor) = resume_from {
+            if idx <= cursor {
+                node_count += 1;
+                continue;
+            }
+        }
+
         let node_json = serde_json::to_value(event)?;
 
         let _ = sender.send(TraceStreamMessage::TraceNode {

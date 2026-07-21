@@ -133,8 +133,6 @@ function flattenTaxonomy(root, options = {}) {
         if (isPlainObject(item) || Array.isArray(item)) {
           visit(item, key, itemPath);
         }
-        // Primitive array entries (e.g. related_errors string lists) are plain
-        // metadata attached to a definition — nothing to flatten, skip quietly.
       });
       return;
     }
@@ -152,10 +150,7 @@ function flattenTaxonomy(root, options = {}) {
       const childPath = path ? `${path}.${childKey}` : childKey;
 
       if (NUMERIC_KEY_PATTERN.test(childKey) && !isPlainObject(childValue)) {
-        // A numeric key promises an error definition table. Anything else
-        // (an array, a bare string, …) is a schema deviation from upstream:
-        // skip it instead of letting a property access blow up downstream.
-        warn(childPath, `expected an error definition table but found ${describeShape(childValue)}; node skipped`);
+        warn(childPath, `expected an error definition table but found ${typeof childValue}; node skipped`);
         continue;
       }
 
@@ -170,25 +165,19 @@ function flattenTaxonomy(root, options = {}) {
   return { dictionary, warnings };
 }
 
-function describeShape(value) {
-  if (value === null) return 'null';
-  if (Array.isArray(value)) return 'an array';
-  return `a ${typeof value}`;
-}
-
 async function buildTaxonomyJson({ inputPath, outputPath, onWarning }) {
   let input;
   try {
     input = await readFile(inputPath, 'utf8');
   } catch (error) {
-    throw new Error(formatReadError(error, inputPath));
+    throw new Error(`Could not read taxonomy TOML file: ${inputPath}`);
   }
 
   let parsed;
   try {
     parsed = toml.parse(input);
   } catch (error) {
-    throw new Error(`Parse Error: The TOML file exists but contains invalid syntax:\n  ${error.message}`);
+    throw new Error(`Could not parse TOML file: ${error.message}`);
   }
 
   const sanitized = sanitizeAndNormalize(parsed);
@@ -198,54 +187,24 @@ async function buildTaxonomyJson({ inputPath, outputPath, onWarning }) {
   try {
     await writeFile(outputPath, serialized, 'utf8');
   } catch (error) {
-    throw new Error(
-      `Unexpected file system error while writing the taxonomy JSON file:\n` +
-        `  Code: ${error.code || 'unknown'}\n` +
-        `  Message: ${error.message}`
-    );
+    throw new Error(`Could not write taxonomy JSON file: ${outputPath}`);
   }
 
   return { serialized, dictionary, warnings };
 }
 
-function formatReadError(error, inputPath) {
-  if (error.code === 'ENOENT') {
-    return (
-      `Critical Error: The core taxonomy TOML file could not be located at the expected path:\n` +
-      `  ${inputPath}\n\n` +
-      `Please ensure the crates/core submodule is initialized:\n` +
-      `  git submodule update --init --recursive`
-    );
-  }
-
-  if (error.code === 'EACCES') {
-    return (
-      `Permission Error: Cannot read the taxonomy TOML file due to a permission restriction:\n` +
-      `  ${inputPath}\n\n` +
-      `Verify file permissions or check if another process has locked the file.`
-    );
-  }
-
-  return (
-    `Unexpected file system error while reading the taxonomy TOML file:\n` +
-    `  Code: ${error.code || 'unknown'}\n` +
-    `  Message: ${error.message}`
-  );
-}
-
 async function main() {
-  const workspaceRoot = path.resolve(__dirname, '..', '..', '..');
+  const workspaceRoot = path.resolve(__dirname, '..');
   const inputPath = path.join(workspaceRoot, 'crates', 'core', 'src', 'taxonomy', 'data', 'contract.toml');
-  const outputPath = path.join(__dirname, 'taxonomy.json');
+  const outputPath = path.join(workspaceRoot, 'apps', 'web', 'src', 'lib', 'contract-taxonomy.json');
 
-  const { serialized, dictionary } = await buildTaxonomyJson({
+  const { dictionary } = await buildTaxonomyJson({
     inputPath,
     outputPath,
     onWarning: (message) => console.warn(message),
   });
   const entryCount = Object.keys(dictionary).length;
-  console.log(`Wrote flattened taxonomy JSON (${entryCount} error codes) to ${path.relative(workspaceRoot, outputPath)}`);
-  return serialized;
+  console.log(`Generated contract taxonomy JSON (${entryCount} errors) at ${path.relative(workspaceRoot, outputPath)}`);
 }
 
 if (require.main === module) {
@@ -264,5 +223,4 @@ module.exports = {
   resolveErrorCode,
   flattenTaxonomy,
   buildTaxonomyJson,
-  formatReadError,
 };

@@ -11,16 +11,16 @@ interface ResourceProfileProps {
   };
 }
 
-function ResourceBar({ label, used, limit, format }: { 
-  label: string; 
-  used: number; 
-  limit: number; 
+function ResourceBar({ label, used, limit, format }: {
+  label: string;
+  used: number;
+  limit: number;
   format?: (v: number) => string;
 }) {
   const percentage = limit > 0 ? (used / limit) * 100 : 0;
   const displayValue = format ? format(used) : used.toLocaleString();
   const displayLimit = format ? format(limit) : limit.toLocaleString();
-  
+
   return (
     <div>
       <div className="flex justify-between mb-2">
@@ -31,9 +31,8 @@ function ResourceBar({ label, used, limit, format }: {
       </div>
       <div className="w-full bg-gray-200 rounded-full h-4">
         <div
-          className={`h-4 rounded-full transition-all duration-300 ${
-            percentage > 90 ? "bg-red-500" : percentage > 70 ? "bg-yellow-500" : "bg-green-500"
-          }`}
+          className={`h-4 rounded-full transition-all duration-300 ${percentage > 90 ? "bg-red-500" : percentage > 70 ? "bg-yellow-500" : "bg-green-500"
+            }`}
           style={{ width: `${Math.min(percentage, 100)}%` }}
         />
       </div>
@@ -52,29 +51,29 @@ export function ResourceProfile({ profile }: ResourceProfileProps) {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <h2 className="text-xl font-semibold mb-4">Resource Profile</h2>
-      
+
       <div className="space-y-6">
-        <ResourceBar 
-          label="CPU Instructions" 
-          used={profile.cpu_used} 
-          limit={profile.cpu_limit} 
+        <ResourceBar
+          label="CPU Instructions"
+          used={profile.cpu_used}
+          limit={profile.cpu_limit}
         />
-        <ResourceBar 
-          label="Memory" 
-          used={profile.memory_used} 
-          limit={profile.memory_limit} 
+        <ResourceBar
+          label="Memory"
+          used={profile.memory_used}
+          limit={profile.memory_limit}
           format={(v) => formatBytes(v)}
         />
-        <ResourceBar 
-          label="Read Bytes" 
-          used={profile.read_bytes} 
-          limit={profile.read_limit} 
+        <ResourceBar
+          label="Read Bytes"
+          used={profile.read_bytes}
+          limit={profile.read_limit}
           format={(v) => formatBytes(v)}
         />
-        <ResourceBar 
-          label="Write Bytes" 
-          used={profile.write_bytes} 
-          limit={profile.write_limit} 
+        <ResourceBar
+          label="Write Bytes"
+          used={profile.write_bytes}
+          limit={profile.write_limit}
           format={(v) => formatBytes(v)}
         />
       </div>

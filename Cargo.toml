@@ -62,6 +62,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = "0.8"
 base64 = "0.22"
+hex = "0.4.3"
 libc = "0.2"
 
 # Web Server (using built-in HTTP server)
@@ -93,6 +94,9 @@ crossterm = "0.28"
 # Logging & Tracing
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Metrics / Observability
+prometheus = "0.13"
 
 # Shared internal crates
 grat-core = { path = "crates/core" }

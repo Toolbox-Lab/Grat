@@ -185,5 +185,10 @@ description = "Profile the contract and reduce unnecessary computation before it
 difficulty = "medium"
 requires_upgrade = true
 
+[[errors.suggested_fixes]]
+description = "Add resource metering logs to your CI pipeline to catch contracts trending toward the limit before deploy"
+difficulty = "medium"
+requires_upgrade = false
+
 related_errors = ["host.budget.limit_exceeded.cpu"]
 source_file = "soroban-env-host/src/budget.rs"
