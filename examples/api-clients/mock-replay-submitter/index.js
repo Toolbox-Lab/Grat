@@ -1,6 +1,10 @@
 #!/usr/bin/env node
 
 /**
+ * Task 19: Polling Loop State Machine
+ */
+
+/**
  * Mock Replay Submitter
  * 
  * Interacts with the grat-server API to submit a transaction hash for simulation/replay
