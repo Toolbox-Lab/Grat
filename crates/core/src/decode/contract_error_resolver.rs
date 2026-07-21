@@ -179,7 +179,7 @@ impl ContractErrorResolver {
 mod tests {
     use super::*;
     use stellar_xdr::curr::{
-        ScSpecEntry, ScSpecUdtErrorEnumCaseV0, ScSpecUdtErrorEnumV0, WriteXdr,
+        Limits, ScSpecEntry, ScSpecUdtErrorEnumCaseV0, ScSpecUdtErrorEnumV0, WriteXdr,
     };
 
     #[tokio::test]
@@ -187,6 +187,7 @@ mod tests {
         // Construct a mock error enum spec entry
         let error_enum = ScSpecUdtErrorEnumV0 {
             doc: "Error documentation".try_into().unwrap(),
+            lib: "".try_into().unwrap(),
             name: "MyError".try_into().unwrap(),
             cases: vec![ScSpecUdtErrorEnumCaseV0 {
                 doc: "Some doc".try_into().unwrap(),
@@ -197,8 +198,7 @@ mod tests {
             .unwrap(),
         };
         let entry = ScSpecEntry::UdtErrorEnumV0(error_enum);
-        let mut entry_bytes = Vec::new();
-        entry.write_xdr(&mut entry_bytes).unwrap();
+        let entry_bytes = entry.to_xdr(Limits::none()).unwrap();
 
         // Construct mock WASM payload
         let mut wasm = vec![0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00];

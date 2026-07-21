@@ -1,6 +1,5 @@
 use crate::decode::decode_context::DecodeContext;
-use crate::error::{GratError, GratResult};
-use crate::spec::decoder;
+use crate::error::GratResult;
 use crate::types::config::NetworkConfig;
 use crate::types::contract_id::ContractId;
 use crate::types::report::ContractErrorInfo;
