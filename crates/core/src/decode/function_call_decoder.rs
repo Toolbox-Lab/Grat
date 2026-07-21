@@ -9,13 +9,13 @@
 //! turns that untyped bag back into a labeled, human-readable call, e.g.
 //! `transfer(from: "G...", to: "G...", amount: 1000)`.
 
+use crate::decode::scval_to_json::scval_to_json;
 use crate::error::GratError;
 use crate::spec::ContractSpec;
-use crate::decode::scval_to_json::scval_to_json;
 
-use stellar_xdr::curr::{HostFunction, InvokeContractArgs, ScVal};
 use serde::Serialize;
 use serde_json::Value as JsonValue;
+use stellar_xdr::curr::{HostFunction, InvokeContractArgs, ScVal};
 
 /// One decoded, labeled argument: the parameter name from the contract's
 /// spec, paired with its JSON-decoded value.

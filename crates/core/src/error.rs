@@ -30,63 +30,65 @@ pub enum ArchiveErrorKind {
 #[derive(Debug, Error)]
 pub enum GratError {
     #[error("RPC request timed out after {timeout_secs}s (method: {method})")]
-        NetworkTimeout { method: String, timeout_secs: u64 },
+    NetworkTimeout { method: String, timeout_secs: u64 },
 
-            #[error("RPC error: {0}")]
-                RpcError(String),
+    #[error("RPC error: {0}")]
+    RpcError(String),
 
-                    #[error("JSON-RPC error: {0}")]
-                        JsonRpc(JsonRpcError),
+    #[error("JSON-RPC error: {0}")]
+    JsonRpc(JsonRpcError),
 
-                            #[error("Archive error: {0}")]
-                                ArchiveError(#[from] ArchiveErrorKind),
+    #[error("Archive error: {0}")]
+    ArchiveError(#[from] ArchiveErrorKind),
 
-                                    #[error("XDR error: {0}")]
-                                        XdrError(String),
+    #[error("XDR error: {0}")]
+    XdrError(String),
 
-                                            #[error("XDR decoding failed for {type_name}: {reason}")]
-                                                XdrDecodingFailed {
-                                                        type_name: &'static str,
-                                                                reason: String,
-                                                                    },
+    #[error("XDR decoding failed for {type_name}: {reason}")]
+    XdrDecodingFailed {
+        type_name: &'static str,
+        reason: String,
+    },
 
-                                                                        #[error("Spec error: {0}")]
-                                                                            SpecError(String),
+    #[error("Spec error: {0}")]
+    SpecError(String),
 
-                                                                                #[error("Cache error: {0}")]
-                                                                                    CacheError(String),
+    #[error("Cache error: {0}")]
+    CacheError(String),
 
-                                                                                        #[error("Taxonomy error: {0}")]
-                                                                                            TaxonomyError(String),
+    #[error("Taxonomy error: {0}")]
+    TaxonomyError(String),
 
-                                                                                                #[error("Replay error: {0}")]
-                                                                                                    ReplayError(String),
+    #[error("Replay error: {0}")]
+    ReplayError(String),
 
-                                                                                                        #[error("Transaction not found: {0}")]
-                                                                                                            TransactionNotFound(String),
+    #[error("Transaction not found: {0}")]
+    TransactionNotFound(String),
 
-                                                                                                                #[error("Contract not found: {0}")]
-                                                                                                                    ContractNotFound(String),
+    #[error("Contract not found: {0}")]
+    ContractNotFound(String),
 
-                                                                                                                        #[error("Config error: {0}")]
-                                                                                                                            ConfigError(String),
+    #[error("Config error: {0}")]
+    ConfigError(String),
 
-                                                                                                                                #[error("Invalid address: {0}")]
-                                                                                                                                    InvalidAddress(String),
+    #[error("Invalid address: {0}")]
+    InvalidAddress(String),
 
-                                                                                                                                        #[error("Internal error: {0}")]
-                                                                                                                                            Internal(String),
+    #[error("Internal error: {0}")]
+    Internal(String),
 
-                                                                                                                                                #[error("Not a Soroban transaction: no InvokeHostFunction operation found")]
-                                                                                                                                                    NotSorobanTransaction,
+    #[error("Not a Soroban transaction: no InvokeHostFunction operation found")]
+    NotSorobanTransaction,
 
-  #[error("Transaction succeeded — no error to decode")]
+    #[error("Transaction succeeded — no error to decode")]
     TransactionSucceeded,
 
     #[error("Invalid Contract ID: {0}")]
     InvalidContractId(String),
 
-    #[error("Function '{function_name}' expects {expected} argument(s), but {actual} were provided")]
+    #[error(
+        "Function '{function_name}' expects {expected} argument(s), but {actual} were provided"
+    )]
     ArityMismatch {
         function_name: String,
         expected: usize,
@@ -97,5 +99,4 @@ pub enum GratError {
     UnsupportedHostFunction(String),
 }
 
-
-                                                                                                                                                                                                        pub type GratResult<T> = Result<T, GratError>;
+pub type GratResult<T> = Result<T, GratError>;
