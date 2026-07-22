@@ -72,106 +72,100 @@ impl HostError {
     }
 
     pub fn summary(&self) -> String {
-        match self {
-            Self::Budget { code } => {
-                if let Some(detail) = crate::decode::mappings::budget::lookup(*code) {
-    format!("[BUDGET] {}", detail.name)
-} else {
-    format!("[BUDGET] Code {}", code)
-}
-                }
-            }
-            Self::Storage { code } => {
-                  if let Some(detail) = crate::decode::mappings::storage::lookup(*code) {
-    format!("[STORAGE] {}", detail.name)
-} else {
-    format!("[STORAGE] Code {}", code)
-}
-        
-                }
-            }
-            Self::Auth { code } => {
-                if let Some(detail) = crate::decode::mappings::auth::lookup(*code) {
-    format!("[AUTH] {}", detail.name)
-} else {
-    format!("[AUTH] Code {}", code)
-}
-                    )
-                }
-            }
-            Self::Context { code } => {
-                if let Some(detail) = crate::decode::mappings::context::lookup(*code) {
-    format!("[CONTEXT] {}", detail.name)
-} else {
-    format!("[CONTEXT] Code {}", code)
-                }
-                }
-            }
-            Self::Value { code } => {
-                if let Some(detail) = crate::decode::mappings::value::lookup(*code) {
-    format!("[VALUE] {}", detail.name)
-} else {
-    format!("[VALUE] Code {}", code)
-                }
-                }
-            }
-            Self::Object { code } => {
-                if let Some(detail) = crate::decode::mappings::object::lookup(*code) {
-    format!("[OBJECT] {}", detail.name)
-} else {
-    format!("[OBJECT] Code {}", code)
-                }
-                }
-            }
-            Self::Crypto { code } => {
-                if let Some(detail) = crate::decode::mappings::crypto::lookup(*code) {
-    format!("[CRYPTO] {}", detail.name)
-} else {
-    format!("[CRYPTO] Code {}", code)
-                }
-                }
-            }
-            Self::Contract { code } => {
-                if let Some(detail) = crate::decode::mappings::contract::lookup(*code) {
-    format!("[CONTRACT] {}", detail.name)
-} else {
-    format!("[CONTRACT] Code {}", code)
-                }
-                }
-            }
-            Self::Wasm { code } => {
-                if let Some(detail) = crate::decode::mappings::wasm::lookup(*code) {
-    format!("[WASM] {}", detail.name)
-} else {
-    format!("[WASM] Code {}", code)
-}
-                }
-            }
-            Self::Events { code } => {
-                if let Some(detail) = crate::decode::mappings::events::lookup(*code) {
-    format!("[EVENTS] {}", detail.name)
-} else {
-    format!("[EVENTS] Code {}", code)
-}
-                }
-            }
-            Self::ContractSpecific { contract_id, code } => {
-            let contract = contract_id.as_deref().unwrap_or("unknown");
-format!("[CONTRACT] {} ({})", contract, code)
-
-                   )
-            }
-            Self::Unknown {
-                type_code,
-                sub_code,
-            } => {
-                format!("[UNKNOWN] {}:{}", type_code, sub_code)
-                )
+    match self {
+        Self::Budget { code } => {
+            if let Some(detail) = crate::decode::mappings::budget::lookup(*code) {
+                format!("[BUDGET] {}", detail.name)
+            } else {
+                format!("[BUDGET] Code {}", code)
             }
         }
-    }
-}
 
+        Self::Storage { code } => {
+            if let Some(detail) = crate::decode::mappings::storage::lookup(*code) {
+                format!("[STORAGE] {}", detail.name)
+            } else {
+                format!("[STORAGE] Code {}", code)
+            }
+        }
+
+        Self::Auth { code } => {
+            if let Some(detail) = crate::decode::mappings::auth::lookup(*code) {
+                format!("[AUTH] {}", detail.name)
+            } else {
+                format!("[AUTH] Code {}", code)
+            }
+        }
+
+        Self::Context { code } => {
+            if let Some(detail) = crate::decode::mappings::context::lookup(*code) {
+                format!("[CONTEXT] {}", detail.name)
+            } else {
+                format!("[CONTEXT] Code {}", code)
+            }
+        }
+
+        Self::Value { code } => {
+            if let Some(detail) = crate::decode::mappings::value::lookup(*code) {
+                format!("[VALUE] {}", detail.name)
+            } else {
+                format!("[VALUE] Code {}", code)
+            }
+        }
+
+        Self::Object { code } => {
+            if let Some(detail) = crate::decode::mappings::object::lookup(*code) {
+                format!("[OBJECT] {}", detail.name)
+            } else {
+                format!("[OBJECT] Code {}", code)
+            }
+        }
+
+        Self::Crypto { code } => {
+            if let Some(detail) = crate::decode::mappings::crypto::lookup(*code) {
+                format!("[CRYPTO] {}", detail.name)
+            } else {
+                format!("[CRYPTO] Code {}", code)
+            }
+        }
+
+        Self::Contract { code } => {
+            if let Some(detail) = crate::decode::mappings::contract::lookup(*code) {
+                format!("[CONTRACT] {}", detail.name)
+            } else {
+                format!("[CONTRACT] Code {}", code)
+            }
+        }
+
+        Self::Wasm { code } => {
+            if let Some(detail) = crate::decode::mappings::wasm::lookup(*code) {
+                format!("[WASM] {}", detail.name)
+            } else {
+                format!("[WASM] Code {}", code)
+            }
+        }
+
+        Self::Events { code } => {
+            if let Some(detail) = crate::decode::mappings::events::lookup(*code) {
+                format!("[EVENTS] {}", detail.name)
+            } else {
+                format!("[EVENTS] Code {}", code)
+            }
+        }
+
+        Self::ContractSpecific { contract_id, code } => {
+            let contract = contract_id.as_deref().unwrap_or("unknown");
+            format!("[CONTRACT] {} ({})", contract, code)
+        }
+
+        Self::Unknown {
+            type_code,
+            sub_code,
+        } => {
+            format!("[UNKNOWN] {}:{}", type_code, sub_code)
+        }
+    }
+            }
 #[derive(Debug, Clone)]
 pub struct ClassifiedError {
     pub category: ErrorCategory,
