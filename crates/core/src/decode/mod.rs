@@ -9,11 +9,13 @@ pub mod cross_contract;
 pub mod decode_context;
 pub mod diagnostic;
 pub mod event_walker;
+pub mod function_call_decoder;
 pub mod host_error;
 pub mod mappings;
 pub mod report;
 pub mod scval_to_json;
 pub mod walker;
+
 
 pub use auth::{
     AddressCredential, AuthChain, AuthCredential, AuthFunctionKind, AuthInvocation,

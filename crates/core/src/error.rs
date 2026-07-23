@@ -27,7 +27,6 @@ pub enum ArchiveErrorKind {
     #[error("decompression failed for '{file}': {reason}")]
     DecompressionFailed { file: String, reason: String },
 }
-
 #[derive(Debug, Error)]
 pub enum GratError {
     #[error("RPC request timed out after {timeout_secs}s (method: {method})")]
@@ -86,6 +85,18 @@ pub enum GratError {
 
     #[error("Invalid Contract ID: {0}")]
     InvalidContractId(String),
+
+    #[error(
+        "Function '{function_name}' expects {expected} argument(s), but {actual} were provided"
+    )]
+    ArityMismatch {
+        function_name: String,
+        expected: usize,
+        actual: usize,
+    },
+
+    #[error("Unsupported host function: {0}")]
+    UnsupportedHostFunction(String),
 }
 
 pub type GratResult<T> = Result<T, GratError>;
