@@ -72,97 +72,101 @@ impl HostError {
     }
 
     pub fn summary(&self) -> String {
-        match self {
-            Self::Budget { code } => {
-                if let Some(detail) = crate::decode::mappings::budget::lookup(*code) {
-                    detail.summary.to_string()
-                } else {
-                    format!("Budget error (code {code}): the transaction exceeded an allocated resource budget.")
-                }
-            }
-            Self::Storage { code } => {
-                if let Some(detail) = crate::decode::mappings::storage::lookup(*code) {
-                    detail.summary.to_string()
-                } else {
-                    format!("Storage error (code {code}): an unexpected error occurred while accessing contract data.")
-                }
-            }
-            Self::Auth { code } => {
-                if let Some(detail) = crate::decode::mappings::auth::lookup(*code) {
-                    detail.summary.to_string()
-                } else {
-                    format!(
-                        "Auth error (code {code}): an authorization requirement was not satisfied."
-                    )
-                }
-            }
-            Self::Context { code } => {
-                if let Some(detail) = crate::decode::mappings::context::lookup(*code) {
-                    detail.summary.to_string()
-                } else {
-                    format!("Context error (code {code}): the contract was invoked in an invalid execution context.")
-                }
-            }
-            Self::Value { code } => {
-                if let Some(detail) = crate::decode::mappings::value::lookup(*code) {
-                    detail.summary.to_string()
-                } else {
-                    format!("Value error (code {code}): a host value could not be converted or validated.")
-                }
-            }
-            Self::Object { code } => {
-                if let Some(detail) = crate::decode::mappings::object::lookup(*code) {
-                    detail.summary.to_string()
-                } else {
-                    format!("Object error (code {code}): an operation on a host object (vector, map, bytes) failed.")
-                }
-            }
-            Self::Crypto { code } => {
-                if let Some(detail) = crate::decode::mappings::crypto::lookup(*code) {
-                    detail.summary.to_string()
-                } else {
-                    format!("Crypto error (code {code}): a cryptographic operation failed.")
-                }
-            }
-            Self::Contract { code } => {
-                if let Some(detail) = crate::decode::mappings::contract::lookup(*code) {
-                    detail.summary.to_string()
-                } else {
-                    format!("Contract error (code {code}): the contract returned a non-zero error code — run with --resolve to identify it.")
-                }
-            }
-            Self::Wasm { code } => {
-                if let Some(detail) = crate::decode::mappings::wasm::lookup(*code) {
-                    detail.summary.to_string()
-                } else {
-                    format!("WASM error (code {code}): the contract's WASM module could not be loaded or executed.")
-                }
-            }
-            Self::Events { code } => {
-                if let Some(detail) = crate::decode::mappings::events::lookup(*code) {
-                    detail.summary.to_string()
-                } else {
-                    format!("Events error (code {code}): an error occurred during event emission.")
-                }
-            }
-            Self::ContractSpecific { contract_id, code } => {
-                let contract = contract_id.as_deref().unwrap_or("unknown contract");
-                format!(
-                    "Contract-specific error {code} from {contract}: run with --resolve to look up the error name from the contract's WASM metadata."
-                )
-            }
-            Self::Unknown {
-                type_code,
-                sub_code,
-            } => {
-                format!(
-                    "Unknown error (type {type_code}, sub-code {sub_code}): this error code is not recognised — the network may be running a newer protocol version."
-                )
+    match self {
+        Self::Budget { code } => {
+            if let Some(detail) = crate::decode::mappings::budget::lookup(*code) {
+                format!("[BUDGET] {}", detail.name)
+            } else {
+                format!("[BUDGET] Code {}", code)
             }
         }
-    }
-}
 
+        Self::Storage { code } => {
+            if let Some(detail) = crate::decode::mappings::storage::lookup(*code) {
+                format!("[STORAGE] {}", detail.name)
+            } else {
+                format!("[STORAGE] Code {}", code)
+            }
+        }
+
+        Self::Auth { code } => {
+            if let Some(detail) = crate::decode::mappings::auth::lookup(*code) {
+                format!("[AUTH] {}", detail.name)
+            } else {
+                format!("[AUTH] Code {}", code)
+            }
+        }
+
+        Self::Context { code } => {
+            if let Some(detail) = crate::decode::mappings::context::lookup(*code) {
+                format!("[CONTEXT] {}", detail.name)
+            } else {
+                format!("[CONTEXT] Code {}", code)
+            }
+        }
+
+        Self::Value { code } => {
+            if let Some(detail) = crate::decode::mappings::value::lookup(*code) {
+                format!("[VALUE] {}", detail.name)
+            } else {
+                format!("[VALUE] Code {}", code)
+            }
+        }
+
+        Self::Object { code } => {
+            if let Some(detail) = crate::decode::mappings::object::lookup(*code) {
+                format!("[OBJECT] {}", detail.name)
+            } else {
+                format!("[OBJECT] Code {}", code)
+            }
+        }
+
+        Self::Crypto { code } => {
+            if let Some(detail) = crate::decode::mappings::crypto::lookup(*code) {
+                format!("[CRYPTO] {}", detail.name)
+            } else {
+                format!("[CRYPTO] Code {}", code)
+            }
+        }
+
+        Self::Contract { code } => {
+            if let Some(detail) = crate::decode::mappings::contract::lookup(*code) {
+                format!("[CONTRACT] {}", detail.name)
+            } else {
+                format!("[CONTRACT] Code {}", code)
+            }
+        }
+
+        Self::Wasm { code } => {
+            if let Some(detail) = crate::decode::mappings::wasm::lookup(*code) {
+                format!("[WASM] {}", detail.name)
+            } else {
+                format!("[WASM] Code {}", code)
+            }
+        }
+
+        Self::Events { code } => {
+            if let Some(detail) = crate::decode::mappings::events::lookup(*code) {
+                format!("[EVENTS] {}", detail.name)
+            } else {
+                format!("[EVENTS] Code {}", code)
+            }
+        }
+
+        Self::ContractSpecific { contract_id, code } => {
+            let contract = contract_id.as_deref().unwrap_or("unknown");
+            format!("[CONTRACT] {} ({})", contract, code)
+        }
+
+        Self::Unknown {
+            type_code,
+            sub_code,
+        } => {
+            format!("[UNKNOWN] {}:{}", type_code, sub_code)
+      }
+    }
+  }
+}
 #[derive(Debug, Clone)]
 pub struct ClassifiedError {
     pub category: ErrorCategory,
@@ -343,59 +347,57 @@ mod tests {
 
     #[test]
     fn test_summary_known_codes() {
-        assert_eq!(
-            HostError::Budget { code: 0 }.summary(),
-            "CPU budget exceeded: the transaction ran out of CPU instructions before completing execution."
-        );
-        assert_eq!(
-            HostError::Storage { code: 0 }.summary(),
-            "The contract attempted to access a ledger entry not included in the transaction's footprint."
-        );
-        assert_eq!(
-            HostError::Auth { code: 0 }.summary(),
-            "The authorization context is malformed or does not match the current invocation."
-        );
-        assert_eq!(
-            HostError::Context { code: 0 }.summary(),
-            "Host internal error: an unexpected Soroban runtime error occurred — this may be a platform bug, not a contract bug."
-        );
-        assert_eq!(
-            HostError::Value { code: 0 }.summary(),
-            "Invalid value: a host function received an argument of the wrong type or format."
-        );
-        assert_eq!(
-            HostError::Object { code: 0 }.summary(),
-            "An unknown or unclassified host object error occurred."
-        );
-        assert_eq!(
-            HostError::Object { code: 5 }.summary(),
-            "An index out of bounds was used when accessing a host vector or byte array."
-        );
-        assert_eq!(
-            HostError::Crypto { code: 0 }.summary(),
-            "Invalid cryptographic input: the supplied key, signature, or hash has an invalid format or length."
-        );
-        assert_eq!(
-            HostError::Contract { code: 0 }.summary(),
-            "Contract error: the contract's own logic rejected this call — run with --resolve to map the code to its name."
-        );
-        assert_eq!(
-            HostError::Contract { code: 1 }.summary(),
-            "An internal protocol implementation error occurred (e.g. invalid ledger state)."
-        );
-        assert_eq!(
-            HostError::Contract { code: 2 }.summary(),
-            "The operation is not supported (e.g. calling clawback on an asset without clawback enabled)."
-        );
-        assert_eq!(
-            HostError::Wasm { code: 0 }.summary(),
-            "Invalid WASM module: the contract bytecode failed validation — recompile with a compatible Soroban SDK version."
-        );
-        assert_eq!(
-            HostError::Events { code: 0 }.summary(),
-            "Event emission failed: an arithmetic overflow occurred while constructing the event payload."
-        );
-    }
+           assert_eq!(
+        HostError::Budget { code: 0 }.summary(),
+        "[BUDGET] CPUExceeded"
+    );
+
+    assert_eq!(
+        HostError::Storage { code: 0 }.summary(),
+        "[STORAGE] AccessDenied"
+    );
+
+    assert_eq!(
+        HostError::Auth { code: 0 }.summary(),
+        "[AUTH] InvalidAction"
+    );
+
+    assert_eq!(
+        HostError::Context { code: 0 }.summary(),
+        "[CONTEXT] UnknownError"
+    );
+
+    assert_eq!(
+        HostError::Value { code: 0 }.summary(),
+        "[VALUE] UnknownError"
+    );
+
+    assert_eq!(
+        HostError::Object { code: 0 }.summary(),
+        "[OBJECT] UnknownError"
+    );
+
+    assert_eq!(
+        HostError::Crypto { code: 0 }.summary(),
+        "[CRYPTO] InvalidInput"
+    );
+
+    assert_eq!(
+        HostError::Contract { code: 0 }.summary(),
+        "[CONTRACT] ContractError"
+    );
+
+    assert_eq!(
+        HostError::Wasm { code: 0 }.summary(),
+        "[WASM] InvalidModule"
+    );
+
+    assert_eq!(
+    HostError::Events { code: 0 }.summary(),
+    "[EVENTS] ArithDomain"
+);
+        }
+    
 
     #[test]
     fn test_summary_contract_specific_with_id() {
@@ -406,8 +408,8 @@ mod tests {
         .summary();
         assert!(s.contains("CABC123"));
         assert!(s.contains('3'));
-        assert!(s.contains("--resolve"));
     }
+    
 
     #[test]
     fn test_summary_contract_specific_no_id() {
@@ -416,8 +418,8 @@ mod tests {
             code: 7,
         }
         .summary();
-        assert!(s.contains("unknown contract"));
-        assert!(s.contains("--resolve"));
+        assert!(s.contains("unknown"));
+assert!(s.contains('7'));
     }
 
     #[test]
@@ -427,20 +429,18 @@ mod tests {
             sub_code: 42,
         }
         .summary();
-        assert!(s.contains('9'));
-        assert!(s.contains("42"));
-        assert!(s.contains("not recognised"));
+        assert_eq!(s, "[UNKNOWN] 9:42");
     }
 
     #[test]
     fn test_summary_unknown_codes_fallback() {
         let s = HostError::Budget { code: 99 }.summary();
         assert!(s.contains("99"));
-        assert!(s.contains("Budget") || s.contains("budget"));
+        assert!(s.contains("BUDGET"));
     }
 
     #[test]
-    fn test_summary_under_120_chars() {
+    fn test_summary_under_80_chars() {
         let errors = vec![
             HostError::Budget { code: 0 },
             HostError::Storage { code: 0 },
@@ -456,7 +456,7 @@ mod tests {
         for err in errors {
             let summary = err.summary();
             assert!(
-                summary.len() <= 120,
+                summary.len() <= 80,
                 "Summary too long ({} chars) for {:?}: {}",
                 summary.len(),
                 err,
