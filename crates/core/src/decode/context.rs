@@ -1,11 +1,11 @@
 use crate::decode::auth::{AuthChain, AuthCredential};
 use crate::decode::auth_signature::decode_auth_entry_signatures;
+use crate::decode::fee_analyzer::analyze_fee_breakdown;
 use crate::error::GratResult;
 use crate::types::report::{
     AuthEntryInfo, DiagnosticReport, FeeBreakdown, ResourceSummary, TransactionContext,
 };
 use crate::xdr::codec::XdrCodec;
-use stellar_xdr::curr::{TransactionEnvelope, TransactionMeta, TransactionResult};
 
 pub fn enrich_report(report: &mut DiagnosticReport, tx_data: &serde_json::Value) -> GratResult<()> {
     let tx_hash = tx_data
@@ -61,85 +61,7 @@ fn extract_return_value(tx_data: &serde_json::Value) -> Option<String> {
 }
 
 fn extract_fee_breakdown(tx_data: &serde_json::Value) -> FeeBreakdown {
-    let mut total_fee = 0;
-    if let Some(result_xdr_b64) = tx_data.get("resultXdr").and_then(|v| v.as_str()) {
-        if let Ok(tx_result) = TransactionResult::from_xdr_base64(result_xdr_b64) {
-            total_fee = tx_result.fee_charged;
-        }
-    }
-
-    let mut bid_fee = None;
-    if let Some(envelope_xdr_b64) = tx_data.get("envelopeXdr").and_then(|v| v.as_str()) {
-        if let Ok(tx_envelope) = TransactionEnvelope::from_xdr_base64(envelope_xdr_b64) {
-            match tx_envelope {
-                TransactionEnvelope::Tx(v1) => {
-                    bid_fee = Some(i64::from(v1.tx.fee));
-                }
-                TransactionEnvelope::TxFeeBump(fee_bump) => {
-                    bid_fee = Some(fee_bump.tx.fee);
-                }
-                TransactionEnvelope::TxV0(v0) => {
-                    bid_fee = Some(i64::from(v0.tx.fee));
-                }
-            }
-        }
-    }
-
-    let mut non_refundable_fee = 0;
-    let mut refundable_fee = 0;
-    let mut rent_fee = 0;
-    let mut has_soroban_meta = false;
-
-    if let Some(resource_fee_obj) = tx_data.get("resourceFee").and_then(|v| v.as_object()) {
-        non_refundable_fee = resource_fee_obj
-            .get("totalNonRefundableResourceFeeCharged")
-            .and_then(serde_json::Value::as_i64)
-            .unwrap_or(0);
-        refundable_fee = resource_fee_obj
-            .get("totalRefundableResourceFeeCharged")
-            .and_then(serde_json::Value::as_i64)
-            .unwrap_or(0);
-        rent_fee = resource_fee_obj
-            .get("rentFeeCharged")
-            .and_then(serde_json::Value::as_i64)
-            .unwrap_or(0);
-        has_soroban_meta = true;
-    } else if let Some(meta_xdr_b64) = tx_data.get("resultMetaXdr").and_then(|v| v.as_str()) {
-        if let Ok(TransactionMeta::V3(v3)) = TransactionMeta::from_xdr_base64(meta_xdr_b64) {
-            if let Some(soroban_meta) = v3.soroban_meta {
-                match soroban_meta.ext {
-                    stellar_xdr::curr::SorobanTransactionMetaExt::V0 => {}
-                    stellar_xdr::curr::SorobanTransactionMetaExt::V1(v1) => {
-                        non_refundable_fee = v1.total_non_refundable_resource_fee_charged;
-                        refundable_fee = v1.total_refundable_resource_fee_charged;
-                        rent_fee = v1.rent_fee_charged;
-                        has_soroban_meta = true;
-                    }
-                }
-            }
-        }
-    }
-
-    let resource_fee = if has_soroban_meta {
-        non_refundable_fee + refundable_fee + rent_fee
-    } else {
-        0
-    };
-
-    let inclusion_fee = tx_data
-        .get("inclusionFee")
-        .and_then(serde_json::Value::as_i64)
-        .unwrap_or(total_fee - resource_fee);
-
-    FeeBreakdown {
-        total_charged_fee: total_fee,
-        inclusion_fee,
-        resource_fee,
-        refundable_resource_fee: refundable_fee,
-        refundable_fee: refundable_fee + rent_fee,
-        non_refundable_fee,
-        bid_fee,
-    }
+    analyze_fee_breakdown(tx_data)
 }
 
 fn extract_resource_summary(tx_data: &serde_json::Value) -> ResourceSummary {
