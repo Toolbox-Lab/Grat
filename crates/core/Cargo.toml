@@ -44,6 +44,7 @@ wasmparser = { workspace = true }
 redb = { workspace = true }
 directories = { workspace = true }
 flate2 = { workspace = true }
+dashmap = "6"
 
 # Logging
 tracing = { workspace = true }
