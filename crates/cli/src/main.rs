@@ -62,6 +62,14 @@ struct Cli {
     /// Example: prism trace <hash> --save report.json
     #[arg(long, global = true, value_name = "PATH")]
     save: Option<String>,
+
+    /// Override the default config file location (~/.prism/config.toml).
+    ///
+    /// The file must exist; an error is returned if it does not.
+    ///
+    /// Example: prism --config-path /tmp/my.toml trace <hash>
+    #[arg(long, global = true, value_name = "PATH")]
+    config_path: Option<std::path::PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -152,6 +160,13 @@ async fn main() -> anyhow::Result<()> {
 
     let save = cli.save.as_deref();
 
+    // Resolve configuration — strict if the user supplied --config-path, lenient otherwise.
+    let _prism_config = if let Some(path) = cli.config_path {
+        config::ConfigManager::with_path(path).load_strict()?
+    } else {
+        config::ConfigManager::new()?.load()?
+    };
+
     // Dispatch to command handler.
     match cli.command {
         Commands::Decode(args) => commands::decode::run(args, &network, &cli.output, save).await?,
@@ -169,7 +184,6 @@ async fn main() -> anyhow::Result<()> {
         Commands::Serve(args) => commands::serve::run(args, &network).await?,
         Commands::Clean(args) => commands::clean::run(args).await?,
         Commands::Db(args) => commands::db::run(args).await?,
-        Commands::Serve(args) => commands::serve::run(args).await?,
         Commands::Diagnostic(args) => commands::diagnostic::run(args).await?,
     }
 
@@ -292,5 +306,25 @@ mod tests {
         ])
         .expect("--save after subcommand should parse");
         assert_eq!(cli.save.as_deref(), Some("out.json"));
+    }
+
+    #[test]
+    fn config_path_absent_by_default() {
+        let cli = Cli::try_parse_from(["prism", "db", "update"]).expect("cli should parse");
+        assert!(cli.config_path.is_none());
+    }
+
+    #[test]
+    fn config_path_parsed_before_subcommand() {
+        let cli = Cli::try_parse_from(["prism", "--config-path", "/tmp/x.toml", "db", "update"])
+            .expect("cli should parse");
+        assert_eq!(cli.config_path, Some(std::path::PathBuf::from("/tmp/x.toml")));
+    }
+
+    #[test]
+    fn config_path_parsed_after_subcommand() {
+        let cli = Cli::try_parse_from(["prism", "db", "update", "--config-path", "/tmp/x.toml"])
+            .expect("cli should parse");
+        assert_eq!(cli.config_path, Some(std::path::PathBuf::from("/tmp/x.toml")));
     }
 }

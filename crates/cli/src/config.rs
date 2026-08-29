@@ -53,6 +53,32 @@ impl ConfigManager {
         Ok(config)
     }
 
+    /// Load config from disk, returning an error when the file does not exist.
+    ///
+    /// Use this when the path was explicitly provided by the user via
+    /// `--config-path`. Unlike `load()`, a missing file is always an error.
+    pub fn load_strict(&self) -> anyhow::Result<PrismConfig> {
+        if !self.config_path.exists() {
+            anyhow::bail!(
+                "Config file not found: {}",
+                self.config_path.display()
+            );
+        }
+
+        let content = std::fs::read_to_string(&self.config_path).with_context(|| {
+            format!("Failed to read config file {}", self.config_path.display())
+        })?;
+
+        let config: PrismConfig = toml::from_str(&content).with_context(|| {
+            format!(
+                "Failed to parse config file {} as TOML",
+                self.config_path.display()
+            )
+        })?;
+
+        Ok(config)
+    }
+
     /// Save config to disk in TOML format.
     pub fn save(&self, config: &PrismConfig) -> anyhow::Result<()> {
         if let Some(parent) = self.config_path.parent() {
@@ -129,5 +155,57 @@ mod tests {
 
         let path = manager.path().to_string_lossy();
         assert!(path.ends_with(".prism/config.toml") || path.ends_with(".prism\\config.toml"));
+    }
+
+    #[test]
+    fn load_strict_errors_when_file_missing() {
+        let path = unique_path("strict_missing").join("no_such_file.toml");
+        let manager = ConfigManager::with_path(path.clone());
+
+        let result = manager.load_strict();
+
+        assert!(result.is_err(), "expected Err when file does not exist");
+        let msg = format!("{:#}", result.unwrap_err());
+        assert!(
+            msg.contains(&path.to_string_lossy().to_string()),
+            "error message should contain the path; got: {msg}"
+        );
+    }
+
+    #[test]
+    fn load_strict_errors_on_invalid_toml() {
+        let path = unique_path("strict_bad_toml");
+        std::fs::write(&path, b"not valid toml ]][\n").expect("write bad toml");
+
+        let manager = ConfigManager::with_path(path.clone());
+        let result = manager.load_strict();
+
+        let _ = std::fs::remove_file(&path);
+
+        assert!(result.is_err(), "expected Err for invalid TOML");
+        let msg = format!("{:#}", result.unwrap_err());
+        assert!(
+            msg.contains(&path.to_string_lossy().to_string()),
+            "error message should contain the path; got: {msg}"
+        );
+    }
+
+    #[test]
+    fn load_strict_succeeds_on_valid_toml() {
+        let path = unique_path("strict_valid_toml.toml");
+        let toml_content = r#"
+default_network = "testnet"
+max_cache_size_mb = 256
+networks = []
+"#;
+        std::fs::write(&path, toml_content).expect("write valid toml");
+
+        let manager = ConfigManager::with_path(path.clone());
+        let result = manager.load_strict();
+
+        let _ = std::fs::remove_file(&path);
+
+        let config = result.expect("load_strict should succeed on valid TOML");
+        assert_eq!(config.max_cache_size_mb, 256);
     }
 }
