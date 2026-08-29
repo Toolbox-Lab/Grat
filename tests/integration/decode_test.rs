@@ -1,17 +1,17 @@
-//! Integration tests for the decode pipeline.
+___RUST_DOC_MOD___
 
 #[cfg(test)]
 mod tests {
     #[test]
     fn test_taxonomy_loads_all_categories() {
-        let db = prism_core::taxonomy::loader::TaxonomyDatabase::load_embedded()
+        let db = grat_core::taxonomy::loader::TaxonomyDatabase::load_embedded()
             .expect("Taxonomy should load");
         assert!(!db.is_empty(), "Taxonomy should contain entries");
     }
 
     #[test]
     fn test_diagnostic_report_serializes() {
-        let report = prism_core::types::report::DiagnosticReport::new(
+        let report = grat_core::types::report::DiagnosticReport::new(
             "Budget",
             0,
             "LimitExceeded",

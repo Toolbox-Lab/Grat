@@ -1,0 +1,20 @@
+---
+title: "Resource Optimization"
+description: "Reducing fees and budget consumption."
+---
+
+Soroban has strict resource limits. Optimizing your contract ensures it remains cheap and reliable.
+
+## Finding Hotspots
+
+Use `grat profile <hash>` to identify the most expensive host functions in your transaction.
+
+### Common Hotspots
+
+- **Storage Reads**: Frequent `get_ledger_entry` calls can quickly consume the budget.
+- **Deep Invocations**: Cross-contract calls add stack depth and context overhead.
+- **WASM Size**: Large contract binaries increase the CPU cost of the initial load.
+
+## Verification
+
+After optimizing, use `grat whatif` to re-simulate the transaction with your new contract version to verify the budget reduction before redeploying.

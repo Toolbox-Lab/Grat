@@ -1,0 +1,25 @@
+---
+title: "WebSocket Streaming"
+description: "How Grat streams real-time traces to the web interface."
+---
+
+Grat uses a WebSocket-based streaming architecture to provide real-time feedback during long-running state reconstructions and transaction replays.
+
+## Connection Flow
+
+1. **Establishment**: The web client connects to `grat serve`.
+2. **Request**: Client sends a JSON payload: `{"tx_hash": "abc123..."}`.
+3. **Execution**: The server spawns an independent trace task.
+4. **Streaming**:
+   - `trace_started`: Initial event.
+   - `trace_node`: Sent for every execution step (throttled to 5ms).
+   - `resource_update`: Periodic progress on budget consumption.
+   - `state_diff_entry`: Incremental updates to ledger changes.
+5. **Completion**: `trace_completed` signifies the end of the session.
+
+## Performance Optimization
+
+- **Throttling**: A 5ms delay between nodes prevents the client from being overwhelmed by large traces.
+- **Batching**: Resource updates are batched every 10 nodes.
+- **Bounded Channels**: Broadcast channels have a 100-message capacity to prevent memory leaks in the server.
+- **Async Processing**: Each trace runs in its own task without blocking other concurrent sessions.

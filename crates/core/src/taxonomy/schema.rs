@@ -1,68 +1,66 @@
-//! Taxonomy database schema types.
-//!
-//! Defines the structure for error taxonomy entries loaded from TOML files.
-//! This schema is the canonical format for community contributions.
-
 use serde::{Deserialize, Serialize};
 
-/// A single error taxonomy entry.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TaxonomyEntry {
-    /// Unique identifier (e.g., "host.budget.limit_exceeded.cpu").
     pub id: String,
-    /// Error category.
+
     pub category: ErrorCategory,
-    /// Numeric error code within the category.
+
     pub code: u32,
-    /// Official error name from Stellar Core source.
+
     pub name: String,
-    /// Severity level.
+
     pub severity: String,
-    /// Protocol version this error was introduced.
+
     pub since_protocol: Option<u32>,
-    /// Protocol version this error was removed, if applicable.
+
     pub deprecated_protocol: Option<u32>,
-    /// One-sentence summary.
+
     pub summary: String,
-    /// Detailed multi-paragraph explanation.
+
     pub detailed_explanation: String,
-    /// Root causes, ordered by likelihood.
+
+    #[serde(default)]
     pub common_causes: Vec<TaxonomyCause>,
-    /// Suggested fixes, ordered by relevance.
+
+    #[serde(default)]
     pub suggested_fixes: Vec<TaxonomyFix>,
-    /// IDs of related errors.
+
+    #[serde(default)]
     pub related_errors: Vec<String>,
-    /// Path in stellar-core source.
+
     pub source_file: Option<String>,
-    /// Line number in source file.
+
     pub source_line: Option<u32>,
-    /// Link to official documentation.
+
     pub documentation_url: Option<String>,
 }
 
-/// A root cause in the taxonomy.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TaxonomyCause {
-    /// Description of the cause.
     pub description: String,
-    /// Likelihood: "high", "medium", "low".
+
     pub likelihood: String,
 }
 
-/// A suggested fix in the taxonomy.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TaxonomyFix {
-    /// Description of the fix.
     pub description: String,
-    /// Difficulty: "easy", "medium", "hard".
+
     pub difficulty: String,
-    /// Whether this fix requires a contract upgrade.
+
     pub requires_upgrade: bool,
-    /// Optional code example.
+
     pub example: Option<String>,
+
+    pub id: Option<String>,
+
+    pub remedy_code: Option<String>,
 }
 
-/// Soroban host error categories.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum ErrorCategory {
@@ -95,22 +93,17 @@ impl std::fmt::Display for ErrorCategory {
     }
 }
 
-/// A parsed TOML taxonomy file containing entries for a single category.
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TaxonomyFile {
-    /// Category metadata.
+#[serde(deny_unknown_fields)]
+pub struct TaxonomySchema {
     pub category: CategoryMeta,
-    /// Error entries.
     pub errors: Vec<TaxonomyEntry>,
 }
 
-/// Category-level metadata in a taxonomy TOML file.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct CategoryMeta {
-    /// Category name.
     pub name: String,
-    /// Category description.
     pub description: String,
-    /// Stellar Core source module.
     pub source_module: String,
 }

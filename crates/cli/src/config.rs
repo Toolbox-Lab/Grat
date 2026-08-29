@@ -1,49 +1,44 @@
-//! Global Prism configuration manager.
-//!
-//! Handles reading and writing user preferences at `~/.prism/config.toml`.
+#![allow(dead_code)]
 
 use anyhow::Context;
 use directories::BaseDirs;
-use prism_core::types::config::PrismConfig;
-use std::path::{Path, PathBuf};
+use grat_core::types::config::GratConfig;
+#[cfg(test)]
+use std::path::Path;
+use std::path::PathBuf;
 
-/// Reads and writes Prism's global configuration file.
 #[derive(Debug, Clone)]
 pub struct ConfigManager {
     config_path: PathBuf,
 }
 
 impl ConfigManager {
-    /// Create a config manager using the default global config location.
     pub fn new() -> anyhow::Result<Self> {
         Ok(Self {
             config_path: default_config_path()?,
         })
     }
 
-    /// Create a config manager using an explicit config file path.
-    ///
-    /// Useful for tests and tooling that need an isolated config file.
+    #[cfg(test)]
     pub fn with_path(config_path: PathBuf) -> Self {
         Self { config_path }
     }
 
-    /// Return the full path to the config file.
+    #[cfg(test)]
     pub fn path(&self) -> &Path {
         &self.config_path
     }
 
-    /// Load config from disk, returning defaults when the file does not exist.
-    pub fn load(&self) -> anyhow::Result<PrismConfig> {
+    pub fn load(&self) -> anyhow::Result<GratConfig> {
         if !self.config_path.exists() {
-            return Ok(PrismConfig::default());
+            return Ok(GratConfig::default());
         }
 
         let content = std::fs::read_to_string(&self.config_path).with_context(|| {
             format!("Failed to read config file {}", self.config_path.display())
         })?;
 
-        let config: PrismConfig = toml::from_str(&content).with_context(|| {
+        let config: GratConfig = toml::from_str(&content).with_context(|| {
             format!(
                 "Failed to parse config file {} as TOML",
                 self.config_path.display()
@@ -53,34 +48,8 @@ impl ConfigManager {
         Ok(config)
     }
 
-    /// Load config from disk, returning an error when the file does not exist.
-    ///
-    /// Use this when the path was explicitly provided by the user via
-    /// `--config-path`. Unlike `load()`, a missing file is always an error.
-    pub fn load_strict(&self) -> anyhow::Result<PrismConfig> {
-        if !self.config_path.exists() {
-            anyhow::bail!(
-                "Config file not found: {}",
-                self.config_path.display()
-            );
-        }
-
-        let content = std::fs::read_to_string(&self.config_path).with_context(|| {
-            format!("Failed to read config file {}", self.config_path.display())
-        })?;
-
-        let config: PrismConfig = toml::from_str(&content).with_context(|| {
-            format!(
-                "Failed to parse config file {} as TOML",
-                self.config_path.display()
-            )
-        })?;
-
-        Ok(config)
-    }
-
-    /// Save config to disk in TOML format.
-    pub fn save(&self, config: &PrismConfig) -> anyhow::Result<()> {
+    #[cfg(test)]
+    pub fn save(&self, config: &GratConfig) -> anyhow::Result<()> {
         if let Some(parent) = self.config_path.parent() {
             std::fs::create_dir_all(parent).with_context(|| {
                 format!("Failed to create config directory {}", parent.display())
@@ -88,7 +57,7 @@ impl ConfigManager {
         }
 
         let serialized =
-            toml::to_string_pretty(config).context("Failed to serialize Prism config to TOML")?;
+            toml::to_string_pretty(config).context("Failed to serialize Grat config to TOML")?;
 
         std::fs::write(&self.config_path, serialized).with_context(|| {
             format!("Failed to write config file {}", self.config_path.display())
@@ -100,9 +69,9 @@ impl ConfigManager {
 
 fn default_config_path() -> anyhow::Result<PathBuf> {
     let base_dirs = BaseDirs::new()
-        .ok_or_else(|| anyhow::anyhow!("Could not determine home directory for Prism config"))?;
+        .ok_or_else(|| anyhow::anyhow!("Could not determine home directory for Grat config"))?;
 
-    Ok(base_dirs.home_dir().join(".prism").join("config.toml"))
+    Ok(base_dirs.home_dir().join(".grat").join("config.toml"))
 }
 
 #[cfg(test)]
@@ -111,7 +80,7 @@ mod tests {
 
     fn unique_path(name: &str) -> PathBuf {
         std::env::temp_dir().join(format!(
-            "prism_cli_config_test_{}_{}",
+            "grat_cli_config_test_{}_{}",
             name,
             std::process::id()
         ))
@@ -126,7 +95,7 @@ mod tests {
 
         assert_eq!(
             loaded.default_network,
-            PrismConfig::default().default_network
+            GratConfig::default().default_network
         );
         assert!(!path.exists());
     }
@@ -137,8 +106,10 @@ mod tests {
         let path = root.join("config.toml");
         let manager = ConfigManager::with_path(path.clone());
 
-        let mut config = PrismConfig::default();
-        config.max_cache_size_mb = 1024;
+        let config = GratConfig {
+            max_cache_size_mb: 1024,
+            ..GratConfig::default()
+        };
 
         manager.save(&config).expect("save config");
         let loaded = manager.load().expect("load config");
@@ -150,11 +121,11 @@ mod tests {
     }
 
     #[test]
-    fn default_path_uses_prism_config_toml() {
+    fn default_path_uses_grat_config_toml() {
         let manager = ConfigManager::new().expect("manager with default path");
 
         let path = manager.path().to_string_lossy();
-        assert!(path.ends_with(".prism/config.toml") || path.ends_with(".prism\\config.toml"));
+        assert!(path.ends_with(".grat/config.toml") || path.ends_with(".grat\\config.toml"));
     }
 
     #[test]

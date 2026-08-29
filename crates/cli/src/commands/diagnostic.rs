@@ -1,23 +1,16 @@
-//! `prism diagnostic` — Health check for binary, network, and cache state.
+use std::path::{Path, PathBuf};
+use std::time::{Duration, Instant};
 
-use std::path::PathBuf;
-use std::time::{ Duration, Instant };
-
+use crate::output::theme::ColorPalette;
 use anyhow::Result;
-use colored::Colorize;
 use directories::ProjectDirs;
-
-// ─── Args ────────────────────────────────────────────────────────────────────
 
 #[derive(clap::Args)]
 #[command(about = "Check binary health, network connectivity, and cache state.")]
 pub struct DiagnosticArgs {
-    /// Only show warnings and errors (suppress OK lines).
     #[arg(long, short)]
     pub quiet: bool,
 }
-
-// ─── Status ──────────────────────────────────────────────────────────────────
 
 #[derive(Debug, Clone, PartialEq)]
 enum Status {
@@ -42,16 +35,15 @@ impl Status {
         }
     }
 
-    fn label(&self) -> colored::ColoredString {
+    fn label(&self) -> String {
+        let palette = ColorPalette::default();
         match self {
-            Self::Ok => "  OK   ".green().bold(),
-            Self::Warning(_) => " WARN  ".yellow().bold(),
-            Self::Error(_) => " ERROR ".red().bold(),
+            Self::Ok => palette.success_text("  OK   "),
+            Self::Warning(_) => palette.warning_text(" WARN  "),
+            Self::Error(_) => palette.error_text(" ERROR "),
         }
     }
 }
-
-// ─── Check ───────────────────────────────────────────────────────────────────
 
 struct Check {
     name: String,
@@ -60,37 +52,41 @@ struct Check {
 
 impl Check {
     fn ok(name: impl Into<String>) -> Self {
-        Self { name: name.into(), status: Status::Ok }
+        Self {
+            name: name.into(),
+            status: Status::Ok,
+        }
     }
 
     fn warn(name: impl Into<String>, msg: impl Into<String>) -> Self {
-        Self { name: name.into(), status: Status::Warning(msg.into()) }
+        Self {
+            name: name.into(),
+            status: Status::Warning(msg.into()),
+        }
     }
 
     fn error(name: impl Into<String>, msg: impl Into<String>) -> Self {
-        Self { name: name.into(), status: Status::Error(msg.into()) }
+        Self {
+            name: name.into(),
+            status: Status::Error(msg.into()),
+        }
     }
 }
-
-// ─── Checks ──────────────────────────────────────────────────────────────────
 
 fn check_binary_version() -> Check {
     let version = env!("CARGO_PKG_VERSION");
     let parts: Vec<&str> = version.split('.').collect();
     if parts.len() == 3 && parts.iter().all(|p| p.parse::<u32>().is_ok()) {
-        Check::ok(format!("Binary version                    v{}", version))
+        Check::ok(format!("Binary version                    v{version}"))
     } else {
         Check::warn(
             "Binary version",
-            format!("Unexpected version string: {}", version),
+            format!("Unexpected version string: {version}"),
         )
     }
 }
 
-async fn check_rpc(
-    label: &str,
-    network_config: &prism_core::types::config::NetworkConfig,
-) -> Check {
+async fn check_rpc(label: &str, network_config: &grat_core::types::config::NetworkConfig) -> Check {
     let start = Instant::now();
 
     let client = reqwest::Client::builder()
@@ -109,27 +105,33 @@ async fn check_rpc(
         .send()
         .await;
 
-    let check_name = format!("RPC connectivity  ({:<8})", label);
+    let check_name = format!("RPC connectivity  ({label:<8})");
 
     match result {
         Ok(resp) if resp.status().is_success() => {
             let ms = start.elapsed().as_millis();
             if ms > 2_000 {
-                Check::warn(check_name, format!("High latency: {}ms", ms))
+                Check::warn(check_name, format!("High latency: {ms}ms"))
             } else {
-                Check::ok(format!("{}  {}ms", check_name, ms))
+                Check::ok(format!("{check_name}  {ms}ms"))
             }
         }
         Ok(resp) => Check::error(check_name, format!("HTTP {}", resp.status())),
         Err(e) if e.is_timeout() => Check::error(check_name, "Timed out after 5s"),
-        Err(e) => Check::error(check_name, format!("Unreachable — {}", e)),
+        Err(e) => Check::error(check_name, format!("Unreachable — {e}")),
     }
 }
 
 async fn check_network() -> Vec<Check> {
     let configs = [
-        ("mainnet", prism_core::network::config::resolve_network("mainnet")),
-        ("testnet", prism_core::network::config::resolve_network("testnet")),
+        (
+            "mainnet",
+            grat_core::network::config::resolve_network("mainnet"),
+        ),
+        (
+            "testnet",
+            grat_core::network::config::resolve_network("testnet"),
+        ),
     ];
 
     let mut checks = Vec::new();
@@ -140,7 +142,7 @@ async fn check_network() -> Vec<Check> {
 }
 
 fn cache_dir() -> Option<PathBuf> {
-    ProjectDirs::from("io", "prism", "prism").map(|p| p.cache_dir().to_path_buf())
+    ProjectDirs::from("io", "grat", "grat").map(|p| p.cache_dir().to_path_buf())
 }
 
 fn check_cache() -> Vec<Check> {
@@ -153,7 +155,6 @@ fn check_cache() -> Vec<Check> {
 
     let mut checks = Vec::new();
 
-    // Existence
     if !dir.exists() {
         checks.push(Check::warn(
             format!("Cache directory   {}", dir.display()),
@@ -163,19 +164,20 @@ fn check_cache() -> Vec<Check> {
     }
     checks.push(Check::ok(format!("Cache directory   {}", dir.display())));
 
-    // Writability
-    let probe = dir.join(".prism_diag_probe");
+    let probe = dir.join(".grat_diag_probe");
     match std::fs::write(&probe, b"ok") {
-        Ok(_) => {
+        Ok(()) => {
             let _ = std::fs::remove_file(&probe);
             checks.push(Check::ok("Cache writability"));
         }
         Err(e) => {
-            checks.push(Check::error("Cache writability", format!("Cannot write — {}", e)));
+            checks.push(Check::error(
+                "Cache writability",
+                format!("Cannot write — {e}"),
+            ));
         }
     }
 
-    // Disk space
     match free_bytes(&dir) {
         Some(free) => {
             let mib = free / (1024 * 1024);
@@ -183,18 +185,17 @@ fn check_cache() -> Vec<Check> {
             const ERROR_MIB: u64 = 10;
             if mib < ERROR_MIB {
                 checks.push(Check::error(
-                    format!("Disk space                        {}MiB free", mib),
+                    format!("Disk space                        {mib}MiB free"),
                     "Cache writes may fail",
                 ));
             } else if mib < WARN_MIB {
                 checks.push(Check::warn(
-                    format!("Disk space                        {}MiB free", mib),
+                    format!("Disk space                        {mib}MiB free"),
                     "Running low on disk space",
                 ));
             } else {
                 checks.push(Check::ok(format!(
-                    "Disk space                        {}MiB free",
-                    mib
+                    "Disk space                        {mib}MiB free"
                 )));
             }
         }
@@ -203,11 +204,9 @@ fn check_cache() -> Vec<Check> {
         }
     }
 
-    // Cache size (informational)
     if let Ok(used) = dir_size_mib(&dir) {
         checks.push(Check::ok(format!(
-            "Cache size                        {}MiB used",
-            used
+            "Cache size                        {used}MiB used"
         )));
     }
 
@@ -215,20 +214,21 @@ fn check_cache() -> Vec<Check> {
 }
 
 #[cfg(unix)]
-fn free_bytes(path: &PathBuf) -> Option<u64> {
+#[allow(unsafe_code)]
+fn free_bytes(path: &Path) -> Option<u64> {
     use std::ffi::CString;
     let cpath = CString::new(path.to_string_lossy().as_bytes()).ok()?;
     let mut stat: libc::statvfs = unsafe { std::mem::zeroed() };
     let rc = unsafe { libc::statvfs(cpath.as_ptr(), &mut stat) };
     if rc == 0 {
-        Some(stat.f_bavail * stat.f_frsize as u64)
+        Some(stat.f_bavail * stat.f_frsize)
     } else {
         None
     }
 }
 
 #[cfg(not(unix))]
-fn free_bytes(_path: &PathBuf) -> Option<u64> {
+fn free_bytes(_path: &Path) -> Option<u64> {
     None
 }
 
@@ -243,12 +243,11 @@ fn dir_size_mib(path: &PathBuf) -> Result<u64> {
     Ok(total / (1024 * 1024))
 }
 
-// ─── Report ───────────────────────────────────────────────────────────────────
-
 fn print_report(checks: &[Check], quiet: bool) {
+    let palette = ColorPalette::default();
     let sep = "─".repeat(58);
-    println!("\n  {}", "Prism Diagnostic Report".bold());
-    println!("  {}\n", sep.dimmed());
+    println!("\n  {}", palette.accent_text("Grat Diagnostic Report"));
+    println!("  {}\n", palette.muted_text(&sep));
 
     for check in checks {
         if quiet && check.status.is_ok() {
@@ -256,11 +255,15 @@ fn print_report(checks: &[Check], quiet: bool) {
         }
         println!("  [{}]  {}", check.status.label(), check.name);
         if let Some(detail) = check.status.detail() {
-            println!("           {} {}", "└─".dimmed(), detail.dimmed());
+            println!(
+                "           {} {}",
+                palette.muted_text("└─"),
+                palette.muted_text(detail)
+            );
         }
     }
 
-    println!("\n  {}", sep.dimmed());
+    println!("\n  {}", palette.muted_text(&sep));
 
     let warnings = checks
         .iter()
@@ -269,20 +272,19 @@ fn print_report(checks: &[Check], quiet: bool) {
     let errors = checks.iter().filter(|c| c.status.is_error()).count();
 
     if errors == 0 && warnings == 0 {
-        println!("  {}\n", "All checks passed.".green().bold());
+        println!("  {}\n", palette.success_text("All checks passed."));
     } else {
         println!(
             "  {} warning(s), {} error(s).\n",
-            warnings.to_string().yellow(),
-            errors.to_string().red()
+            palette.warning_text(&warnings.to_string()),
+            palette.error_text(&errors.to_string())
         );
     }
 }
 
-// ─── Entry point ──────────────────────────────────────────────────────────────
-
 pub async fn run(args: DiagnosticArgs) -> Result<()> {
-    println!("{}", "Running diagnostics…".dimmed());
+    let palette = ColorPalette::default();
+    println!("{}", palette.muted_text("Running diagnostics..."));
 
     let mut checks: Vec<Check> = Vec::new();
 
@@ -298,8 +300,6 @@ pub async fn run(args: DiagnosticArgs) -> Result<()> {
 
     Ok(())
 }
-
-// ─── Tests ────────────────────────────────────────────────────────────────────
 
 #[cfg(test)]
 mod tests {

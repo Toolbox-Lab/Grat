@@ -1,0 +1,71 @@
+---
+title: "Core Library"
+sidebarTitle: "Core Library"
+description: "Embed Grat diagnostics into your own tools."
+icon: "cube"
+---
+
+The Grat core engine is published as a Rust crate and a WASM package.
+
+## Rust Usage
+
+Add `grat-core` to your `Cargo.toml`:
+
+```toml
+[dependencies]
+grat-core = "0.1.0"
+```
+
+## WASM Usage
+
+Embed Grat into your JavaScript/TypeScript applications:
+
+```bash
+npm install @grat-soroban/wasm
+```
+
+## Public API Highlights
+
+- `decode_error`: Returns a structured diagnostic report.
+- `resolve_contract_error`: Decodes custom error codes via WASM.
+- `replay_transaction`: Runs a full Tier 2/3 simulation.
+
+## HostError API
+
+The `HostError` enum is the central type the decode engine works with.
+It covers every Soroban host error category, contract-specific errors,
+and an `Unknown` variant for forward compatibility.
+
+### `summary() -> String`
+
+Returns a one-line plain-English sentence explaining what went wrong.
+This is the headline shown by `grat decode` — the first thing a developer
+reads when diagnosing a failed transaction.
+
+```rust
+use grat_core::decode::host_error::HostError;
+
+let err = HostError::Budget { code: 0 };
+println!("{}", err.summary());
+// → "CPU budget exceeded: the transaction ran out of CPU instructions before completing execution."
+
+let err = HostError::ContractSpecific {
+    contract_id: Some("CABC123...".to_string()),
+    code: 3,
+};
+println!("{}", err.summary());
+// → "Contract-specific error 3 from CABC123...: run with --resolve to look up the error name from the contract's WASM metadata."
+```
+
+**Behaviour guarantees:**
+
+- Every variant returns a non-empty string — no error is ever silent.
+- Known code `0` summaries are under 120 characters.
+- Unknown codes within known categories fall back to a formatted message including the code number.
+- `ContractSpecific` always mentions `--resolve` to guide the developer to the next step.
+- `Unknown` always includes both `type_code` and `sub_code` for diagnostic purposes.
+
+### `category_name() -> &str`
+
+Returns the human-readable category name for the error variant,
+e.g. `"Budget"`, `"Auth"`, `"ContractSpecific"`.

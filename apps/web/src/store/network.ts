@@ -1,4 +1,3 @@
-// Network state management (Zustand)
 import { create } from "zustand";
 import type { Network } from "@/lib/types";
 

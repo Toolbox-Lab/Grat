@@ -1,0 +1,42 @@
+---
+title: "Architecture Overview"
+description: "High-level component map and data flow."
+icon: "sitemap"
+---
+
+Grat is organized into a core library that all interfaces share, a shared infrastructure layer for network and data access, and multiple interface targets.
+
+## Component Map
+
+```mermaid
+graph TD
+    subgraph Interfaces
+        CLI[Rust CLI]
+        VSCode[VS Code Extension]
+        Web[Web App]
+    end
+
+    subgraph CoreEngine [Grat Core]
+        Decode[Decode Engine]
+        Replay[Replay Engine]
+        Breakpoint[Breakpoint Controller]
+        WhatIf[What-If Engine]
+    end
+
+    subgraph Infra [Shared Infrastructure]
+        XDR[XDR Codec]
+        RPC[Soroban RPC Client]
+        Archive[History Archive Client]
+        Taxonomy[Error Taxonomy DB]
+        Cache[Local Cache]
+    end
+
+    Interfaces --> CoreEngine
+    CoreEngine --> Infra
+```
+
+## Layers
+
+- **Interfaces**: Consume the core logic to provide user-facing experiences.
+- **Grat Core**: Implements the 3-tier diagnostic logic.
+- **Shared Infrastructure**: Handles communication with the Stellar network and disk storage.

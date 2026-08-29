@@ -6,36 +6,72 @@ members = [
     "crates/wasm",
 ]
 
+[workspace.lints.rust]
+unsafe_code = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+# Pedantic lints that are noisy or low-value for this codebase
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+doc_markdown = "allow"
+similar_names = "allow"
+unreadable_literal = "allow"
+cast_possible_truncation = "allow"
+cast_precision_loss = "allow"
+cast_sign_loss = "allow"
+float_cmp = "allow"
+needless_pass_by_value = "allow"
+return_self_not_must_use = "allow"
+unused_async = "allow"
+unnecessary_wraps = "allow"
+items_after_statements = "allow"
+doc_overindented_list_items = "allow"
+assigning_clones = "allow"
+default_trait_access = "allow"
+unnecessary_get_then_check = "allow"
+used_underscore_binding = "allow"
+format_push_string = "allow"
+string_add = "allow"
+borrow_as_ptr = "allow"
+
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
 license = "Apache-2.0"
-repository = "https://github.com/prism-soroban/prism"
+repository = "https://github.com/grat-soroban/grat"
 description = "Soroban Transaction Debugger — From cryptic error to root cause in one command."
 
 [workspace.dependencies]
 # Stellar / Soroban — Critical Path
-stellar-xdr = { version = "=21.2.0", features = ["std", "serde"] }
+stellar-xdr = { version = "21.2.0", features = ["std", "serde", "next"] }
 stellar-strkey = "0.0.9"
-soroban-env-host = "=21.2.0"
-soroban-spec = "=21.2.0"
-soroban-spec-tools = "=21.2.0"
+soroban-env-host = "21.2.0"
+soroban-spec = "21.0.0"
+soroban-spec-tools = "21.5.3"
 
 # Networking & Serialization
-reqwest = { version = "0.12", features = ["json", "gzip"] }
+reqwest = { version = "0.12", features = ["json", "gzip", "rustls-tls"] }
 tokio = { version = "1", features = ["full"] }
 tokio-tungstenite = "0.24"
-futures-util = "=0.3.30"
+futures-util = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 toml = "0.8"
 base64 = "0.22"
+hex = "0.4.3"
+libc = "0.2"
+sha2 = "0.10"
 
 # Web Server (using built-in HTTP server)
 
 # CLI Framework & Output
 clap = { version = "4", features = ["derive", "env", "color"] }
 anyhow = "1"
+thiserror = "1"
 colored = "2"
 indicatif = "0.17"
 dialoguer = "0.11"
@@ -47,9 +83,11 @@ wasmparser = "0.218"
 
 # Storage & Caching
 redb = "2"
+sled = "0.34"
 directories = "5"
 flate2 = "1"
 xz2 = "0.1"
+rpassword = "7"
 
 # TUI Debugger (Tier 3)
 ratatui = "0.29"
@@ -59,5 +97,15 @@ crossterm = "0.28"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
+# Metrics / Observability
+prometheus = "0.13"
+
+# URL parsing
+url = "2"
+
+# Markdown rendering
+pulldown-cmark = "0.13"
+unicode-width = "0.2"
+
 # Shared internal crates
-prism-core = { path = "crates/core" }
+grat-core = { path = "crates/core" }

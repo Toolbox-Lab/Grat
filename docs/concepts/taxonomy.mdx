@@ -1,0 +1,22 @@
+---
+title: "Error Taxonomy"
+description: "A versioned catalog of every known Soroban error."
+---
+
+The Error Taxonomy Database is a structured catalog that covers every error category in the Soroban host:
+`Budget`, `Storage`, `Auth`, `Context`, `Value`, `Object`, `Crypto`, `Contract`, `WASM`, and `Events`.
+
+## What's in an entry?
+
+Each entry in the database includes:
+
+- **Official Name**: The name defined in the Stellar Core source.
+- **Summary**: A one-sentence plain English description.
+- **Detailed Explanation**: Multi-paragraph breakdown of the error.
+- **Common Causes**: Ranked list of why this error usually happens.
+- **Suggested Fixes**: Ranked solutions with difficulty ratings.
+- **Source Links**: Direct links to the relevant Stellar Core source code.
+
+## Portability
+
+The taxonomy is published as a standalone TOML file. Other ecosystem tools can import and use it to provide better error messages without depending on the full Grat engine.

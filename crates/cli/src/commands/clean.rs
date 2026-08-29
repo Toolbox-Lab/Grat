@@ -1,5 +1,3 @@
-//! `prism clean` — Clear local Prism cache data.
-
 use clap::Args;
 use std::fs;
 use std::path::Path;
@@ -7,11 +5,11 @@ use std::path::Path;
 #[derive(Args)]
 pub struct CleanArgs;
 
-pub async fn run(_args: CleanArgs) -> anyhow::Result<()> {
-    let cache_dir = prism_cache_dir()?;
+pub async fn run(_args: CleanArgs, output_format: &str) -> anyhow::Result<()> {
+    let cache_dir = grat_cache_dir()?;
 
     if !cache_dir.exists() {
-        println!("Successfully cleared 0MB of cache data");
+        print_clean_result(0, output_format)?;
         return Ok(());
     }
 
@@ -19,7 +17,6 @@ pub async fn run(_args: CleanArgs) -> anyhow::Result<()> {
 
     clear_directory_contents(&cache_dir)?;
 
-    // Keep cache directory present after cleanup.
     fs::create_dir_all(&cache_dir).map_err(|e| {
         anyhow::anyhow!(
             "Failed to recreate cache directory {}: {}",
@@ -28,20 +25,38 @@ pub async fn run(_args: CleanArgs) -> anyhow::Result<()> {
         )
     })?;
 
-    println!(
-        "Successfully cleared {}MB of cache data",
-        format_mb(total_bytes)
-    );
+    print_clean_result(total_bytes, output_format)?;
 
     Ok(())
 }
 
-fn prism_cache_dir() -> anyhow::Result<std::path::PathBuf> {
+fn print_clean_result(total_bytes: u64, output_format: &str) -> anyhow::Result<()> {
+    if matches!(
+        crate::output::OutputFormat::parse(output_format),
+        crate::output::OutputFormat::Json
+    ) {
+        let payload = serde_json::json!({
+            "status": "ok",
+            "bytes_cleared": total_bytes,
+            "mb_cleared": format_mb(total_bytes),
+        });
+        println!("{}", serde_json::to_string_pretty(&payload)?);
+    } else {
+        println!(
+            "Successfully cleared {}MB of cache data",
+            format_mb(total_bytes)
+        );
+    }
+
+    Ok(())
+}
+
+fn grat_cache_dir() -> anyhow::Result<std::path::PathBuf> {
     let home = std::env::var_os("HOME")
         .or_else(|| std::env::var_os("USERPROFILE"))
         .ok_or_else(|| anyhow::anyhow!("Could not determine home directory for cache path"))?;
 
-    Ok(std::path::PathBuf::from(home).join(".prism").join("cache"))
+    Ok(std::path::PathBuf::from(home).join(".grat").join("cache"))
 }
 
 fn directory_size_bytes(path: &Path) -> anyhow::Result<u64> {

@@ -1,4 +1,3 @@
-// Hook for decoding transactions via WASM
 import { useState } from "react";
 import type { DiagnosticReport } from "@/lib/types";
 
@@ -11,7 +10,6 @@ export function useDecode() {
     setLoading(true);
     setError(null);
     try {
-      // TODO: Call WASM decode
       setReport(null);
     } catch (e) {
       setError(String(e));

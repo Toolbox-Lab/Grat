@@ -1,0 +1,41 @@
+---
+title: "Introduction"
+sidebarTitle: "Introduction"
+description: "Soroban transaction debugger: from cryptic error to root cause in one command."
+icon: "hand-wave"
+---
+
+**Grat** turns opaque Soroban errors into plain English, replays historical transactions against reconstructed ledger state, and lets you step through contract execution with full time-travel debugging.
+
+It handles everything from decoding `Error(Contract, #3)` into the actual enum name defined in the contract, to showing you exactly which host function call consumed the last byte of your CPU budget.
+
+## Why Grat Exists
+
+Soroban errors are notoriously opaque. `HostError(Budget, LimitExceeded)` tells you the budget was exceeded but not which call was expensive. `Error(Contract, #3)` tells you the contract returned error number three but not what three means.
+
+Today, developers debug these errors by grepping through Stellar Core source code, adding print statements, or asking on Discord. Grat is the missing diagnostic layer designed to give you the answer in seconds, not hours.
+
+## The 3-Tier Model
+
+Grat is organized into three tiers of depth, each building on the one before it.
+
+<CardGroup cols={3}>
+  <Card title="Tier 1: Decode" icon="magnifying-glass">
+    Instant error classification and contract-specific resolution.
+  </Card>
+  <Card title="Tier 2: Trace" icon="bolt">
+    Historical state reconstruction and hierarchical execution timelines.
+  </Card>
+  <Card title="Tier 3: Time-Travel" icon="clock-rotate-left">
+    Interactive breakpoints, stepping, and "what-if" re-simulation.
+  </Card>
+</CardGroup>
+
+## Supported Networks
+
+| Network   | Decode (Tier 1) | Replay (Tier 2–3) | Source                                  |
+| --------- | --------------- | ----------------- | --------------------------------------- |
+| Mainnet   | Yes             | Yes               | Soroban RPC + History Archives          |
+| Testnet   | Yes             | Yes               | Soroban RPC + History Archives          |
+| Futurenet | Yes             | Limited           | Soroban RPC (archive coverage varies)   |
+| Custom    | Yes             | Yes               | User-configured RPC endpoint + archives |

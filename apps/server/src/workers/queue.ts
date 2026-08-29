@@ -1,4 +1,3 @@
-// BullMQ job queue for replay requests
 import { Queue } from "bullmq";
 import { config } from "../config";
 

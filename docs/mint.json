@@ -1,0 +1,108 @@
+{
+  "name": "Grat",
+  "logo": {
+    "light": "https://img.shields.io/badge/Grat-Diagnostic-7C3AED?style=for-the-badge",
+    "dark": "https://img.shields.io/badge/Grat-Diagnostic-A78BFA?style=for-the-badge"
+  },
+  "favicon": "/favicon.png",
+  "colors": {
+    "primary": "#7C3AED",
+    "light": "#A78BFA",
+    "dark": "#5B21B6"
+  },
+  "topbarLinks": [
+    {
+      "name": "GitHub",
+      "url": "https://github.com/grat-soroban/grat"
+    }
+  ],
+  "anchors": [
+    {
+      "name": "Discord",
+      "icon": "discord",
+      "url": "https://discord.gg/placeholder"
+    }
+  ],
+  "navigation": [
+    {
+      "group": "Getting Started",
+      "pages": ["introduction", "installation", "quickstart", "roadmap"]
+    },
+    {
+      "group": "Core Concepts",
+      "pages": [
+        "concepts/error-decoding",
+        "concepts/execution-replay",
+        "concepts/time-travel",
+        "concepts/error-taxonomy"
+      ]
+    },
+    {
+      "group": "CLI Reference",
+      "pages": [
+        "cli/decode",
+        "cli/inspect",
+        "cli/trace",
+        "cli/profile",
+        "cli/diff",
+        "cli/replay",
+        "cli/whatif",
+        "cli/export",
+        "cli/serve",
+        "cli/db-update"
+      ]
+    },
+    {
+      "group": "Interfaces",
+      "pages": [
+        "interfaces/cli",
+        "interfaces/vscode",
+        "interfaces/web-app",
+        "interfaces/core-library"
+      ]
+    },
+    {
+      "group": "Architecture",
+      "pages": [
+        "architecture/overview",
+        "architecture/decode-engine",
+        "architecture/replay-engine",
+        "architecture/breakpoint-controller",
+        "architecture/what-if-engine",
+        "architecture/shared-infrastructure"
+      ]
+    },
+    {
+      "group": "API Reference",
+      "pages": [
+        "api/decode-error",
+        "api/resolve-contract-error",
+        "api/replay-transaction",
+        "api/profile-transaction",
+        "api/diff-state"
+      ]
+    },
+    {
+      "group": "Guides",
+      "pages": [
+        "guides/debugging-transactions",
+        "guides/resource-optimization",
+        "guides/regression-testing",
+        "guides/contributing-taxonomy"
+      ]
+    }
+  ],
+  "footerLinks": [
+    {
+      "name": "MIT License",
+      "url": "/license"
+    },
+    {
+      "name": "Contributing",
+      "url": "/contributing"
+    }
+  ],
+  "footerSocials": {
+    "github": "https://github.com/grat-soroban/grat"
+  }
+}

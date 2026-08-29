@@ -1,0 +1,45 @@
+---
+title: "Installation"
+description: "Get Grat installed on your machine."
+icon: "download"
+---
+
+## Prerequisites
+
+Before installing Grat, ensure your environment meets the following requirements:
+
+- **Rust**: 1.77 or higher
+- **Node.js**: 20 or higher
+- **pnpm**: 9 or higher (for monorepo development)
+
+## Install CLI
+
+<Tabs>
+  <Tab title="Cargo">
+    The easiest way to install Grat is via Cargo: ```bash cargo install grat ```
+  </Tab>
+  <Tab title="Pre-built Binaries">
+    Download the latest binary for your platform from the [GitHub
+    Releases](https://github.com/grat-soroban/grat/releases) page. -
+    `grat-linux-x86_64` - `grat-macos-aarch64` - `grat-windows-x86_64.exe`
+  </Tab>
+  <Tab title="From Source">
+    <Steps>
+      <Step title="Clone the Repository">
+        ```bash git clone https://github.com/grat-soroban/grat.git cd Grat ```
+      </Step>
+      <Step title="Install Dependencies">```bash pnpm install ```</Step>
+      <Step title="Build the Binary">```bash cargo build --release ```</Step>
+      <Step title="Verify Installation">
+        ```bash ./target/release/grat --version ```
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Accessing RPC
+
+Grat requires access to a Soroban RPC endpoint to fetch transaction data.
+
+- **Testnet/Mainnet**: Works out of the box using public endpoints.
+- **Custom**: Use the `--rpc-url` flag or set the `SOROBAN_RPC_URL` environment variable.

@@ -1,0 +1,21 @@
+---
+title: "Debugging Transactions"
+description: "A real-world walkthrough of fixing a Soroban error."
+---
+
+In this guide, we walk through the process of debugging a failed cross-contract swap.
+
+<Steps>
+  <Step title="Initial Failure">
+    The transaction fails on mainnet with a generic `HostError(Value, InvalidInput)`.
+  </Step>
+  <Step title="Run Decode">
+    Run `grat decode <hash>`. Grat identifies that the `InvalidInput` happened inside the `Token` contract during a transfer call.
+  </Step>
+  <Step title="Esclate to Trace">
+    Run `grat trace <hash>`. The hierarchical timeline shows that the `swap` contract passed a negative amount to the `token` contract.
+  </Step>
+  <Step title="Root Cause Found">
+    The root cause is a slippage calculation bug in the `swap` contract that resulted in a negative value under extreme market conditions.
+  </Step>
+</Steps>

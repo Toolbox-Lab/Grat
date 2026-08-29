@@ -1,0 +1,14 @@
+---
+title: "replay_transaction"
+description: "Starts a Tier 2/3 simulation."
+---
+
+```rust
+pub async fn replay_transaction(
+    tx_hash: &str,
+    state: &ReconstructedState,
+    options: ReplayOptions
+) -> Result<TraceTimeline, GratError>
+```
+
+Replays a transaction against a reconstructed state snapshot and returns a hierarchical execution trace.

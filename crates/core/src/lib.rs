@@ -1,36 +1,57 @@
-//! # Prism Core
-//!
-//! Core library for the Prism Soroban Transaction Debugger.
-//!
-//! This crate provides:
-//! - **Decode Engine** (Tier 1): Error decoding, contract error resolution, and transaction context enrichment
-//! - **Replay Engine** (Tier 2): Historical state reconstruction and execution replay
-//! - **Debugger** (Tier 3): Interactive stepping, breakpoints, and what-if analysis
-//!
-//! ## Feature Flags
-//! - `decode` (default): Enable Tier 1 decode engine
-//! - `taxonomy` (default): Include the error taxonomy database
-//! - `replay`: Enable Tier 2 replay engine
-//! - `debugger`: Enable Tier 3 interactive debugger (implies `replay`)
-//! - `wasm-compat`: Build for WASM target (disables features requiring native I/O)
-
+#[cfg(feature = "decode")]
+pub mod archive;
+#[cfg(feature = "decode")]
 pub mod cache;
+#[cfg(feature = "decode")]
 pub mod debugger;
+#[cfg(feature = "decode")]
 pub mod decode;
+pub mod error;
+#[cfg(feature = "decode")]
 pub mod network;
+#[cfg(feature = "decode")]
 pub mod replay;
+#[cfg(feature = "decode")]
+pub mod rpc;
+#[cfg(feature = "decode")]
 pub mod spec;
 pub mod taxonomy;
+#[cfg(feature = "decode")]
 pub mod types;
 pub mod xdr;
 
-// Re-export key types for convenience
+#[cfg(feature = "decode")]
+pub use decode::{
+    walk_diagnostic_events, AddressCredential, AddressWithNonce, ArgumentDecoder, AuthChain,
+    AuthCredential, AuthFunctionKind, AuthInvocation, DecodedArgument, DecodedFunctionCall,
+    DiagnosticEventKind, DiagnosticEventWalker, FunctionCallDecoder, MultiOpDecoder,
+    ReturnValueDecoder, StructuredDiagnosticEvent,
+};
+pub use error::{GratError, GratResult};
+#[cfg(feature = "decode")]
+pub use network::config::Network;
+#[cfg(feature = "decode")]
+pub use types::address::Address;
+#[cfg(feature = "decode")]
 pub use types::config::NetworkConfig;
-pub use types::error::PrismError;
+#[cfg(feature = "decode")]
 pub use types::report::DiagnosticReport;
 
-/// Library version
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Soroban ledger protocol version supported by linked core crates.
-pub const SOROBAN_PROTOCOL_VERSION: u64 = soroban_env_host::meta::INTERFACE_VERSION;
+pub const SOROBAN_PROTOCOL_VERSION: u32 =
+    soroban_env_host::meta::get_ledger_protocol_version(soroban_env_host::meta::INTERFACE_VERSION);
+
+#[cfg(test)]
+#[ctor::ctor]
+fn init_test_logging() {
+    use tracing_subscriber::EnvFilter;
+
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("grat_core=debug,soroban_env_host=warn"));
+
+    let _ = tracing_subscriber::fmt()
+        .with_env_filter(filter)
+        .with_test_writer()
+        .try_init();
+}

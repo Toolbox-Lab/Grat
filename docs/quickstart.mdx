@@ -1,0 +1,37 @@
+---
+title: "Quickstart"
+description: "Decode your first failed transaction in under 60 seconds."
+icon: "bolt"
+---
+
+Follow these steps to diagnose a failed Soroban transaction using the Grat CLI.
+
+<Steps>
+  <Step title="Identify a failed transaction">
+    Find a transaction hash (`tx_hash`) that failed with a cryptic error like
+    `Error(Contract, #3)`.
+  </Step>
+  <Step title="Run the decode command">
+    <CodeGroup>
+      ```bash Terminal grat decode abc123def456... --network testnet ```
+    </CodeGroup>
+  </Step>
+  <Step title="Review the diagnostic report">
+    Grat will resolve the error and provide a clear explanation. ```text
+    Diagnostic Report: ------------------ Error: InsufficientBalance (resolved
+    from #3) Contract: CD...123 (MyTokenContract) Reason: The sender does not
+    have enough XLM to complete the transfer. Suggested Fix: Ensure the account
+    has at least 10 XLM before retrying. ```
+  </Step>
+</Steps>
+
+## What's Next?
+
+<CardGroup cols={2}>
+  <Card title="Trace Execution" icon="route" href="/cli/trace">
+    See exactly where the budget was spent.
+  </Card>
+  <Card title="Interactive Debugging" icon="bug" href="/concepts/time-travel">
+    Set breakpoints and step through host calls.
+  </Card>
+</CardGroup>

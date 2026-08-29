@@ -1,0 +1,30 @@
+---
+title: "Security"
+description: "How Grat ensures the safety of your data and keys."
+---
+
+Security is a top priority for Grat. As a diagnostic tool, we follow a strict set of principles to protect user data.
+
+## No Private Keys
+
+Grat is a **read-only** diagnostic tool.
+
+- It never asks for, handles, or stores private keys.
+- It never signs transactions or submits data to the ledger.
+- All operations are performed on public blockchain data.
+
+## Replay Isolation
+
+Transaction replaying occurs in a local, isolated sandbox.
+
+- The sandbox has no network access during execution.
+- It cannot modify any real-world ledger state.
+- It operates strictly on a historical snapshot reconstructed from public archives.
+
+## Data Validation
+
+All external inputs, including XDR payloads and WASM contract metadata, are strictly validated at the boundary before processing to prevent exploitation of the parsing engines.
+
+## Reporting Vulnerabilities
+
+If you identify a security vulnerability in Grat, please report it privately by emailing the project maintainers. Do not open public issues for security-related concerns.

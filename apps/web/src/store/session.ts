@@ -1,4 +1,3 @@
-// Debug session state management (Zustand)
 import { create } from "zustand";
 import type { DiagnosticReport } from "@/lib/types";
 

@@ -1,0 +1,20 @@
+---
+title: "grat inspect"
+sidebarTitle: "inspect"
+description: "View full transaction context including arguments, auth, and fees."
+icon: "circle-info"
+---
+
+The `inspect` command provides a deep dive into the transaction metadata without replaying execution.
+
+## Usage
+
+```bash
+grat inspect <TX_HASH> [FLAGS]
+```
+
+## Features
+
+- **Decoded Arguments**: See function arguments mapped to their names.
+- **Auth Requirements**: View which signatures were provided vs. what the contract required.
+- **Resource Breakdown**: See exact storage footprint and fee consumption.

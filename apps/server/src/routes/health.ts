@@ -1,4 +1,3 @@
-// Health check route
 import type { FastifyInstance } from "fastify";
 
 export async function healthRoutes(app: FastifyInstance) {
