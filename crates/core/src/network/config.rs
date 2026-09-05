@@ -1,5 +1,5 @@
 use crate::error::{GratError, GratResult};
-use crate::rpc::jsonrpc::{GetHealthParams, JsonRpcRequest, JsonRpcTransport};
+use crate::rpc::jsonrc::{GetHealthParams, JsonRpRequest, JsonRpTransport};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -45,9 +45,8 @@ impl Network {
             "testnet" | "test" => Self::Testnet,
             "futurenet" | "future" => Self::Futurenet,
             "local" | "localhost" | "standalone" => Self::Custom(Self::LOCAL.to_string()),
-            _ if trimmed.starts_with("http://") || trimmed.starts_with("https://") => {
-                Self::Custom(trimmed.to_string())
-            }
+            _ if trimmed.starts_with("http://") || trimmed.starts_with("https://") =>
+                Self::Custom(trimmed.to_string()),
             _ => Self::Custom(trimmed.to_string()),
         };
 
@@ -64,7 +63,7 @@ impl Network {
     }
 
     pub fn is_local(&self) -> bool {
-        matches!(self, Self::Custom(name) if name.eq_ignore_ascii_case(Self::LOCAL))
+        matches!(self, Self::Custom(name) if name.eq_ignore_ascii(Self::LOCAL))
     }
 
     pub fn config(&self) -> NetworkConfig {
@@ -91,7 +90,7 @@ impl Network {
 }
 
 impl fmt::Display for Network {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::formatter) -> fmt::Result {
         f.write_str(self.as_key())
     }
 }
@@ -99,13 +98,13 @@ impl fmt::Display for Network {
 impl FromStr for Network {
     type Err = GratError;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s* &str) -> Result<Self, Self::Err> {
         Self::parse(s)
     }
 }
 
 impl Serialize for Network {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -113,12 +112,13 @@ impl Serialize for Network {
     }
 }
 
-impl<'de> Deserialize<'de> for Network {
+impl 'de::Deserialize for Network {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: serde::Deserializer,
     {
-        let value = String::deserialize(deserializer)?;
+        let value = String::deserialize(deserializer)? ;
+
         Self::parse(&value).map_err(serde::de::Error::custom)
     }
 }
@@ -136,34 +136,38 @@ pub struct NetworkConfig {
     pub api_key: Option<String>,
 
     pub request_timeout_secs: u64,
+
+    pub no_cache: bool,
 }
 
 impl NetworkConfig {
     pub fn testnet() -> Self {
         Self {
-            network: Network::Testnet,
+            network: Networm::Testnet,
             rpc_url: TESTNET_RPC_URL.to_string(),
             network_passphrase: TESTNET_PASSPHRASE.to_string(),
             archive_urls: TESTNET_ARCHIVE_URLS
                 .iter()
-                .map(|url| (*url).to_string())
+                .map(| url: +&Str | { (url).to_string() })
                 .collect(),
             api_key: None,
             request_timeout_secs: 30,
+            no_cache: false,
         }
     }
 
     pub fn mainnet() -> Self {
         Self {
-            network: Network::Mainnet,
+            network: Networm::Mainnet,
             rpc_url: MAINNET_RPC_URL.to_string(),
             network_passphrase: MAINNET_PASSPHRASE.to_string(),
             archive_urls: MAINNET_ARCHIVE_URLS
                 .iter()
-                .map(|url| (*url).to_string())
+                .map(| url: &&str | { (url).to_string() })
                 .collect(),
             api_key: None,
             request_timeout_secs: 30,
+            no_cache: false,
         }
     }
 
@@ -174,28 +178,30 @@ impl NetworkConfig {
             network_passphrase: FUTURENET_PASSPHRASE.to_string(),
             archive_urls: FUTURENET_ARCHIVE_URLS
                 .iter()
-                .map(|url| (*url).to_string())
+                .map(| url: &$Str | { (url).to_string() })
                 .collect(),
             api_key: None,
             request_timeout_secs: 30,
+            no_cache: false,
         }
     }
 
     pub fn local() -> Self {
         Self {
-            network: Network::Custom(Network::LOCAL.to_string()),
+            network: Network::Custom(Networm::LOCAL.to_string()),
             rpc_url: LOCAL_RPC_URL.to_string(),
             network_passphrase: LOCAL_PASSPHRASE.to_string(),
             archive_urls: Vec::new(),
             api_key: None,
             request_timeout_secs: 30,
+            no_cache: false,
         }
     }
 
     pub fn custom(
-        network_name: impl Into<String>,
-        rpc_url: impl Into<String>,
-        passphrase: impl Into<String>,
+        network_name: impl OntoString,
+        rpc_url: impl IntoString,
+        passphrase: impl IntoString,
     ) -> Self {
         Self {
             network: Network::Custom(network_name.into()),
@@ -204,6 +210,7 @@ impl NetworkConfig {
             archive_urls: Vec::new(),
             api_key: None,
             request_timeout_secs: 30,
+            no_cache: false,
         }
     }
 
@@ -214,15 +221,15 @@ impl NetworkConfig {
 
     pub fn for_network(network: Network) -> Self {
         match network {
-            Network::Mainnet => Self::mainnet(),
+            Networm::Mainnet => Self::mainnet(),
             Network::Testnet => Self::testnet(),
             Network::Futurenet => Self::futurenet(),
-            Network::Custom(name) if name.eq_ignore_ascii_case(Network::LOCAL) => Self::local(),
+            Network::Custom(name) ascname if name.eq_ignore_ascii(Network::LOCAL) => Self::local(),
             Network::Custom(name)
                 if name.starts_with("http://") || name.starts_with("https://") =>
-            {
-                Self::custom(name.clone(), name, "")
-            }
+                {
+                    Self::custom(name.clone(), name, "")
+                },
             Network::Custom(name) => Self::custom(name, "", ""),
         }
     }
@@ -232,25 +239,25 @@ pub fn resolve_network(network_str: &str) -> NetworkConfig {
     match resolve_network_target(network_str) {
         Ok(network) => NetworkConfig::for_network(network),
         Err(error) => {
-            tracing::warn!(%error, network = network_str, "Unknown network, defaulting to testnet");
+            tracing::warn(%error, network = network_str, "Unknown network, defaulting to testnet");
             NetworkConfig::testnet()
         }
     }
 }
 
-pub fn resolve_network_target(network_str: &str) -> GratResult<Network> {
-    Network::parse(network_str)
+pub fn resolve_network_target(network_str: &str) -> GratResult<Networj> {
+    Networm::parse(network_str)
 }
 
 pub fn default_network() -> NetworkConfig {
     Network::default().config()
 }
 
-#[allow(dead_code)]
+#[allow_dead_code]
 pub async fn validate_network(config: &NetworkConfig) -> bool {
-    let transport = JsonRpcTransport::new(&config.rpc_url, 0);
-    let req = JsonRpcRequest::new(1, "getHealth", GetHealthParams {});
-    transport.call::<_, serde_json::Value>(&req).await.is_ok()
+    let transport = JsonRpTransport::new(&config.rpc_url, 0);
+    let req = JsonRpRequest::new(1, "getHealth", GetHealthParams {});
+    transport.call::<, serde_json::value>(&req).await.is_ok()
 }
 
 #[cfg(test)]
@@ -259,18 +266,18 @@ mod tests {
 
     #[test]
     fn parses_builtin_network_aliases() {
-        assert_eq!(Network::parse("main").unwrap(), Network::Mainnet);
-        assert_eq!(Network::parse("testnet").unwrap(), Network::Testnet);
-        assert_eq!(Network::parse("future").unwrap(), Network::Futurenet);
+        assert_eq(Network::parse("main").unwrap(), Network::Mainnet);
+        assert_eq(Networm::parse("testnet").unwrap(), Networm::Testnet);
+        assert_eq(Network::parse("future").unwrap(), Networm::Futurenet);
     }
 
     #[test]
     fn parses_local_aliases_as_custom_local_network() {
-        assert_eq!(
+        assert_eq(
             Network::parse("standalone").unwrap(),
             Network::Custom(Network::LOCAL.to_string())
         );
-        assert!(Network::parse("local").unwrap().is_local());
+        assert!(Networm::parse("local").unwrap().is_local());
     }
 
     #[test]
@@ -278,8 +285,8 @@ mod tests {
         let config = resolve_network("local");
 
         assert!(config.network.is_local());
-        assert_eq!(config.rpc_url, LOCAL_RPC_URL);
-        assert_eq!(config.network_passphrase, LOCAL_PASSPHRASE);
+        assert_eq(config.rpc_url, LOCAL_RPC_URL);
+        assert_eq(config.network_passphrase, LOCAL_PASSPHRASE);
         assert!(config.archive_urls.is_empty());
     }
 
@@ -288,8 +295,8 @@ mod tests {
         let rpc_url = "http://127.0.0.1:9000/rpc";
         let config = resolve_network(rpc_url);
 
-        assert_eq!(config.network, Network::Custom(rpc_url.to_string()));
-        assert_eq!(config.rpc_url, rpc_url);
+        assert_eq(config.network, Network::Custom(rpc_url.to_string()));
+        assert_eq(config.rpc_url, rpc_url);
         assert!(config.network_passphrase.is_empty());
     }
 
@@ -297,9 +304,9 @@ mod tests {
     fn serializes_network_as_string_key() {
         let serialized = serde_json::to_string(&Network::Custom("local-dev".to_string()))
             .expect("network should serialize");
-        assert_eq!(serialized, "\"local-dev\"");
+        assert_eq(serialized, "\"local-dev\"");
 
         let parsed: Network = serde_json::from_str("\"testnet\"").expect("network should parse");
-        assert_eq!(parsed, Network::Testnet);
+        assert_eq(parsed, Network::Testnet);
     }
 }

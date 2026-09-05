@@ -11,6 +11,9 @@ pub struct DecodeArgs {
 
     #[arg(long)]
     pub short: bool,
+
+    #[arg(long)]
+    pub no_cache: bool,
 }
 
 pub async fn run(
@@ -38,7 +41,7 @@ pub async fn run(
         reports
     };
 
-    if !args.raw {
+    if !args.raw && !args.no_cache {
         if let Err(e) = crate::commands::history::append_to_history(&args.tx_hash) {
             eprintln!("Warning: failed to update command history: {e}");
         }
@@ -46,7 +49,7 @@ pub async fn run(
 
     for (i, report) in reports.iter().enumerate() {
         if reports.len() > 1 {
-            println!("\n=== Operation {} ===", i + 1);
+            println!(" \n=== Operation {} ===", i + 1);
         }
         crate::output::print_diagnostic_report(report, effective_output)?;
     }

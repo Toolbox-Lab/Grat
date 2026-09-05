@@ -87,6 +87,7 @@ pub struct SorobanRpcClient {
     client: reqwest::Client,
 
     rpc_url: String,
+    no_cache: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq, Eq)]
@@ -129,6 +130,7 @@ impl SorobanRpcClient {
         Self {
             client,
             rpc_url: config.rpc_url.clone(),
+            no_cache: false,
         }
     }
 
@@ -142,6 +144,15 @@ impl SorobanRpcClient {
             .build()
             .expect("Failed to build reqwest client");
         self
+    }
+
+    pub fn with_no_cache(mut self, no_cache: bool) -> Self {
+        self.no_cache = no_cache;
+        self
+    }
+
+    pub fn no_cache(&self) -> bool {
+        self.no_cache
     }
 
     pub async fn get_transaction(&self, tx_hash: &str) -> GratResult<GetTransactionResponse> {
@@ -250,7 +261,12 @@ impl SorobanRpcClient {
             let started = Instant::now();
             tracing::debug!(method, endpoint = %self.rpc_url, attempt, "Sending RPC request");
 
-            match self.client.post(&self.rpc_url).json(&request).send().await {
+            let mut http_request = self.client.post(&self.rpc_url).json(&request);
+            if self.no_cache {
+                http_request = http_request.header("Cache-Control", "no-cache");
+            }
+
+            match http_request.send().await {
                 Ok(response) => {
                     let status = response.status();
                     let elapsed_ms = started.elapsed().as_millis();
